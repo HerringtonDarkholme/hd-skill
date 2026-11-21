@@ -1,0 +1,5 @@
+# expect: check mixed-signedness
+fn total(words: List[string]) -> i32:
+    let count: i32 = 0
+    count = count + words.len()
+    count

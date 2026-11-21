@@ -1,0 +1,6 @@
+# expect: check private-type-leak
+trait Mailer:
+    fn send(&mut self, to: string) -> void
+
+pub fn remind() -> void $ Mailer:
+    $.use(Mailer).send("a")

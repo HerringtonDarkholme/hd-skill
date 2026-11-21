@@ -1,0 +1,2 @@
+# expect: check syntax-error
+use std.fs.read_text!

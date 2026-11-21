@@ -1,0 +1,7 @@
+# expect: check conflicting-access
+fn fill(target: &mut List[usize], count: usize) -> void:
+    target.push(count)
+
+fn f() -> void:
+    let mut values: List[usize] = []
+    fill(&mut values, values.len())

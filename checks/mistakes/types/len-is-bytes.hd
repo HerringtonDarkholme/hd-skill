@@ -1,0 +1,3 @@
+# expect: prints 6 5
+word := "héllo"
+println("${word.len()} ${word.chars().count()}")

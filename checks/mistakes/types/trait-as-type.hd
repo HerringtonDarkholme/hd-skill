@@ -1,0 +1,6 @@
+# expect: check trait-used-as-type
+trait Shape:
+    fn area(&self) -> f64
+
+fn total(shapes: List[Shape]) -> f64:
+    0.0

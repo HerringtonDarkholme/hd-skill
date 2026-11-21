@@ -1,0 +1,6 @@
+# expect: check missing-return-value
+use std.console.{ConsoleInput, read_line}
+
+pub fn main!() -> Result[void, ConsoleError] $ Console + ConsoleInput:
+    line := read_line!()?
+    println(line.unwrap_or(""))

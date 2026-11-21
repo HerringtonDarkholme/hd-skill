@@ -1,0 +1,2 @@
+# expect: check prelude-name-shadow
+fn string(n: i32) -> i32: n

@@ -1,0 +1,4 @@
+# expect: check unknown-name
+fn f() -> void $ Console:
+    defer(fn() -> void $ Console: println("done"))
+    println("work")

@@ -1,0 +1,9 @@
+# expect: tests unsatisfied-trait-bound
+struct Point:
+    x: i32
+
+fn origin() -> Point: Point { x: 0 }
+
+tests:
+    it("is the origin"):
+        assert_equal(origin(), Point { x: 0 })

@@ -1,0 +1,9 @@
+# expect: check reference-equality
+@derive(Eq)
+struct P:
+    x: i32
+
+fn same() -> bool:
+    a := box(P { x: 1 })
+    b := box(P { x: 1 })
+    a == b

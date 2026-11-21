@@ -1,0 +1,3 @@
+# expect: lint private-main
+fn main() -> void $ Console:
+    println("hello")

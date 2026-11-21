@@ -1,0 +1,3 @@
+# expect: check unknown-field
+fn f(xs: List[i32]) -> usize:
+    xs.length

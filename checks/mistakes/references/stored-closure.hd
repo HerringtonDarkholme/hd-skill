@@ -1,0 +1,6 @@
+# expect: check local-reference-escapes
+struct Button:
+    on_click: fn() -> void
+
+fn button(on_click: fn() -> void) -> Button:
+    Button { on_click: on_click }

@@ -1,0 +1,3 @@
+# expect: check unsatisfied-trait-bound
+fn show(xs: List[i32]) -> string:
+    "$xs"

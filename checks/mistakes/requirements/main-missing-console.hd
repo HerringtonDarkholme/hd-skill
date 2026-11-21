@@ -1,0 +1,3 @@
+# expect: check missing-requirement
+pub fn main() -> void:
+    println("hello")

@@ -1,0 +1,5 @@
+# expect: check syntax-error
+fn f(ok: bool) -> i32:
+    if not ok:
+        return 1
+    2

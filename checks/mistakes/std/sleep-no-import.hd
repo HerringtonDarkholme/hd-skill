@@ -1,0 +1,3 @@
+# expect: check unknown-name
+fn wait!() -> void:
+    sleep!(1ms)

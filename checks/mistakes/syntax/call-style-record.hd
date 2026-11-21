@@ -1,0 +1,6 @@
+# expect: check trailing-block-position
+struct Item:
+    name: string
+
+fn f() -> Item:
+    Item(name: "a")

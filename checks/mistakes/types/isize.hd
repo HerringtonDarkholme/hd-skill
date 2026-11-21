@@ -1,0 +1,2 @@
+# expect: check unknown-type
+fn f(n: isize) -> isize: n

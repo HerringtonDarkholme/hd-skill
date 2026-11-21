@@ -1,0 +1,5 @@
+# expect: check bang-call-outside-suspension
+use std.console.{ConsoleInput, read_line}
+
+pub fn main() -> void $ Console + ConsoleInput:
+    _ := read_line!()

@@ -1,0 +1,3 @@
+# expect: check argument-count
+fn f(n: i32) -> void $ Console:
+    println("{}", n)

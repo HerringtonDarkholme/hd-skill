@@ -1,0 +1,8 @@
+# expect: tests missing-requirement
+fn one() -> i32: 1
+
+println("${one()}")
+
+tests:
+    it("a"):
+        assert_equal(one(), 1)

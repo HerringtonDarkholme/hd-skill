@@ -1,0 +1,4 @@
+# expect: check syntax-error
+fn f() -> i32:
+    pair := (+1, "one")
+    pair.0

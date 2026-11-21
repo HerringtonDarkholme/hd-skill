@@ -1,0 +1,7 @@
+# expect: check non-reassignable-parameter-binding
+struct P:
+    x: i32
+
+impl P:
+    fn bump(self) -> void:
+        self.x += 1

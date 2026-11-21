@@ -1,0 +1,3 @@
+# expect: check syntax-error
+fn f(xs: List[i32]) -> List[i32]:
+    xs.map(|x| x + 1)

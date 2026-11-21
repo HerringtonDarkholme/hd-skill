@@ -1,0 +1,10 @@
+# expect: check extra-trait-member
+use std.ops.Add
+
+struct Money:
+    cents: i64
+
+impl Add for Money:
+    type Output = Money
+    fn add(self, rhs: Money) -> Money:
+        Money { cents: self.cents + rhs.cents }

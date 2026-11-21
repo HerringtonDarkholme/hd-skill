@@ -1,0 +1,5 @@
+# expect: check unknown-method
+fn f() -> usize:
+    let mut m: Map[string, i32] = {}
+    m.insert("a", 1)
+    m.len()

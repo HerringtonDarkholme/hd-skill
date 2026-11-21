@@ -1,0 +1,4 @@
+# expect: check syntax-error
+fn f() -> i32 {
+    1
+}

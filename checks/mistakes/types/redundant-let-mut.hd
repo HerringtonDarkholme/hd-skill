@@ -1,0 +1,5 @@
+# expect: lint redundant-let-mut
+fn count() -> i32:
+    let mut n = +0
+    n = n + 1
+    n

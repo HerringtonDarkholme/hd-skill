@@ -1,0 +1,4 @@
+# expect: check syntax-error
+fn f() -> usize:
+    m := {:}
+    m.len()

@@ -1,0 +1,3 @@
+# expect: check mixed-signedness
+fn over(limit: i32, words: List[string]) -> bool:
+    limit < words.len()

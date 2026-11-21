@@ -1,0 +1,8 @@
+# expect: check unknown-trait
+struct Money:
+    cents: i64
+
+impl Add for Money:
+    type Out = Money
+    fn add(self, rhs: Money) -> Money:
+        Money { cents: self.cents + rhs.cents }

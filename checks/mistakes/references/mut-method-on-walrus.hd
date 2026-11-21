@@ -1,0 +1,12 @@
+# expect: check not-writable
+struct P:
+    x: i32
+
+impl P:
+    fn bump(&mut self) -> void:
+        self.x += 1
+
+fn f() -> i32:
+    p := P { x: 1 }
+    p.bump()
+    p.x

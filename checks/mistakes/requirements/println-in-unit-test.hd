@@ -1,0 +1,6 @@
+# expect: tests missing-requirement
+fn one() -> i32: 1
+
+tests:
+    it("prints"):
+        println("${one()}")

@@ -1,0 +1,10 @@
+# expect: check nonexhaustive-match
+enum Light:
+    Red
+    Green
+    Amber
+
+fn go(light: Light) -> bool:
+    match light:
+        .Red => false
+        .Green => true

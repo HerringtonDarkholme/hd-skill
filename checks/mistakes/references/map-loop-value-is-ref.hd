@@ -1,0 +1,8 @@
+# expect: check type-mismatch
+use std.cmp.max
+
+fn best(scores: Map[string, i32]) -> i32:
+    let best = +0
+    for (_, score) in scores:
+        best = max(best, score)
+    best

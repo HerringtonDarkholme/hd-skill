@@ -1,0 +1,5 @@
+# expect: check discarded-must-use-value
+use std.time.{Clock, ms, sleep}
+
+fn wait!() -> void $ Clock:
+    sleep(1ms)

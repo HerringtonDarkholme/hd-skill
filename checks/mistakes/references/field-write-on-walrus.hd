@@ -1,0 +1,8 @@
+# expect: check non-reassignable-binding
+struct P:
+    x: i32
+
+fn f() -> i32:
+    p := P { x: 1 }
+    p.x = 2
+    p.x

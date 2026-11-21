@@ -1,0 +1,6 @@
+# expect: check type-mismatch
+struct Point:
+    x: i32
+
+fn same(a: Point, b: Point) -> bool:
+    a == b

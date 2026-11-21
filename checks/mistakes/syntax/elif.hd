@@ -1,0 +1,8 @@
+# expect: check syntax-error
+fn f(n: i32) -> i32:
+    if n > 1:
+        1
+    elif n > 0:
+        2
+    else:
+        3

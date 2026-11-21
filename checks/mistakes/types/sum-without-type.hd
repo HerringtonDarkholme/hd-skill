@@ -1,0 +1,4 @@
+# expect: check cannot-infer-type
+fn f(xs: List[i32]) -> string:
+    total := xs.iter().sum()
+    "$total"

@@ -1,0 +1,9 @@
+# expect: check trait-method-signature
+trait Mailer:
+    fn send(&mut self, to: string) -> void
+
+struct Stdout: pass
+
+impl Mailer for Stdout:
+    fn send(&mut self, to: string) -> void $ Console:
+        println(to)

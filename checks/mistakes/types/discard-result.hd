@@ -1,0 +1,4 @@
+# expect: check discarded-must-use-value
+fn f() -> void:
+    let mut xs = [+1, 2]
+    xs.pop()

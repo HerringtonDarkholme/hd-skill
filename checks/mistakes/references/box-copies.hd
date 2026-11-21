@@ -1,0 +1,8 @@
+# expect: prints 1 2
+struct P:
+    x: i32
+
+let mut p = P { x: 1 }
+shared := box(p)
+shared.x = 2
+println("${p.x} ${shared.x}")

@@ -1,0 +1,5 @@
+# expect: check non-reassignable-binding
+fn count() -> i32:
+    n := +0
+    n = n + 1
+    n

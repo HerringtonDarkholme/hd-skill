@@ -1,0 +1,3 @@
+# expect: check unknown-name
+fn first(xs: List[i32]) -> i32?:
+    if xs.is_empty(): None else: Some(xs[0])

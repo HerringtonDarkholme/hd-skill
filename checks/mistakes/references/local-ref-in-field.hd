@@ -1,0 +1,9 @@
+# expect: check local-reference-escapes
+struct P:
+    x: i32
+
+struct Holder:
+    p: *P
+
+fn hold(p: &P) -> Holder:
+    Holder { p: p }

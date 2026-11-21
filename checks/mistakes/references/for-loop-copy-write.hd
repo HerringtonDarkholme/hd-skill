@@ -1,0 +1,7 @@
+# expect: check not-writable
+struct Task:
+    done: bool
+
+fn finish(tasks: &mut List[Task]) -> void:
+    for task in tasks:
+        task.done = true

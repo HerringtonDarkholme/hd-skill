@@ -1,0 +1,4 @@
+# expect: check syntax-error
+fn f(a: bool, b: bool) -> bool:
+    a
+        && b

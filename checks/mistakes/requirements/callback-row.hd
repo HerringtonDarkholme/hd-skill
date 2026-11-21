@@ -1,0 +1,7 @@
+# expect: check type-mismatch
+fn twice(body: fn() -> void) -> void:
+    body()
+    body()
+
+pub fn main() -> void $ Console:
+    twice(fn() -> void $ Console: println("hi"))

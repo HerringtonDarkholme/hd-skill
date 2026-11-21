@@ -1,0 +1,5 @@
+# expect: check syntax-error
+fn f(n: i32?) -> i32:
+    match n:
+        .Some(v) => { v }
+        .None => { 0 }

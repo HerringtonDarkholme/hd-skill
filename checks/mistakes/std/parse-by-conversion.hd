@@ -1,0 +1,3 @@
+# expect: check not-callable
+fn f(text: string) -> i32:
+    i32(text)

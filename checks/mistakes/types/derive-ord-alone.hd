@@ -1,0 +1,4 @@
+# expect: check mixed-derived-law
+@derive(Ord)
+struct Version:
+    major: u32

@@ -1,0 +1,5 @@
+# expect: check syntax-error
+use std.time.Clock
+
+pub fn main() -> void $ Console, Clock:
+    println("hello")

@@ -1,0 +1,3 @@
+# expect: check unknown-trait
+pub fn main() -> void $ Console + Clock:
+    println("hello")

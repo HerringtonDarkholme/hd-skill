@@ -1,0 +1,10 @@
+# expect: tests duplicate-tests-block
+fn one() -> i32: 1
+
+tests:
+    it("a"):
+        assert_equal(one(), 1)
+
+tests:
+    it("b"):
+        assert_equal(one(), 1)

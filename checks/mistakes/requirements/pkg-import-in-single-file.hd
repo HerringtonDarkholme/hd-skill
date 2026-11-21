@@ -1,0 +1,4 @@
+# expect: check unknown-module
+use pkg.pricing.total
+
+println("${total([1])}")

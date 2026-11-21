@@ -1,0 +1,11 @@
+# expect: check type-mismatch
+struct P:
+    x: i32
+
+fn bump(p: &mut P) -> void:
+    p.x += 1
+
+fn f() -> i32:
+    let mut p = P { x: 1 }
+    bump(p)
+    p.x

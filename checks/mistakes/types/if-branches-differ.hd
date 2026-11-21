@@ -1,0 +1,3 @@
+# expect: check type-mismatch
+fn label(ok: bool) -> string:
+    if ok: "yes" else: 0

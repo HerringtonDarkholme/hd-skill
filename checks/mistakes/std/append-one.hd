@@ -1,0 +1,5 @@
+# expect: check type-mismatch
+fn f() -> List[i32]:
+    let mut xs: List[i32] = []
+    xs.append(1)
+    xs

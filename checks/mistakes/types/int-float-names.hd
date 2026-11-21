@@ -1,0 +1,3 @@
+# expect: check unknown-type
+fn half(n: int) -> float:
+    0.5

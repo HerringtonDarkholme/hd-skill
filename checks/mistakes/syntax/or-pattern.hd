@@ -1,0 +1,10 @@
+# expect: check syntax-error
+enum Side:
+    Left
+    Right
+    Up
+
+fn f(side: Side) -> i32:
+    match side:
+        .Left | .Right => 1
+        .Up => 2

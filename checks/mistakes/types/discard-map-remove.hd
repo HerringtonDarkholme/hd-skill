@@ -1,0 +1,4 @@
+# expect: check discarded-must-use-value
+fn f() -> void:
+    let mut m = {"a": +1}
+    m.remove("a")

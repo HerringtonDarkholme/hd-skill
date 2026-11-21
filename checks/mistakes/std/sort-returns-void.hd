@@ -1,0 +1,4 @@
+# expect: check missing-return-value
+fn f(xs: List[i32]) -> List[i32]:
+    let mut ys = xs
+    ys.sort()

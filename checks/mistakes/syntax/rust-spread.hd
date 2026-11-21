@@ -1,0 +1,7 @@
+# expect: check syntax-error
+struct P:
+    x: i32
+    y: i32
+
+fn f(p: P) -> P:
+    P { ..p, x: 1 }

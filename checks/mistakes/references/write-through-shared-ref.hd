@@ -1,0 +1,6 @@
+# expect: check not-writable
+struct P:
+    x: i32
+
+fn bump(p: &P) -> void:
+    p.x += 1

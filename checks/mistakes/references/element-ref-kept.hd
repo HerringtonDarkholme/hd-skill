@@ -1,0 +1,7 @@
+# expect: check conflicting-access
+fn f() -> i32:
+    let mut xs = [+1, 2]
+    r := &mut xs[0]
+    xs.push(3)
+    *r = 5
+    xs[0]

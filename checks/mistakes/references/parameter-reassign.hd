@@ -1,0 +1,5 @@
+# expect: check non-reassignable-parameter-binding
+fn clamp_low(n: i32) -> i32:
+    if n < 0:
+        n = 0
+    n

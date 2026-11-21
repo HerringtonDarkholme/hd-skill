@@ -1,0 +1,5 @@
+# expect: check not-writable
+fn names() -> List[string]:
+    let xs: List[string] = []
+    xs.push("a")
+    xs

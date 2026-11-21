@@ -1,0 +1,4 @@
+# expect: check cannot-infer-type
+fn doubled(xs: List[i32]) -> usize:
+    ys := xs.iter().map(fn(x): x * 2).collect()
+    ys.len()

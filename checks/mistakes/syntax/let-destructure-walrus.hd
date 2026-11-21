@@ -1,0 +1,4 @@
+# expect: check missing-let
+fn f() -> i32:
+    (a, b) := (+1, 2)
+    a + b

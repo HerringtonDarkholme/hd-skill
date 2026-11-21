@@ -1,0 +1,9 @@
+# expect: check type-mismatch
+use std.task.join
+
+fn first!() -> string: "a"
+
+fn second!() -> string: "b"
+
+fn both!() -> (string, string):
+    join!(first!(), second!())

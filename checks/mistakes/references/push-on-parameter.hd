@@ -1,0 +1,3 @@
+# expect: check not-writable
+fn add(xs: List[i32]) -> void:
+    xs.push(1)

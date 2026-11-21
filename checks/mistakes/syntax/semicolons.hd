@@ -1,0 +1,4 @@
+# expect: check reserved-semicolon
+fn f() -> i32:
+    let x = +1;
+    x

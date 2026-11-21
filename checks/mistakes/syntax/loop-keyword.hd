@@ -1,0 +1,4 @@
+# expect: check unknown-name
+fn f() -> void:
+    loop:
+        break

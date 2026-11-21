@@ -1,0 +1,4 @@
+# expect: check missing-let
+fn total() -> i64:
+    total: i64 = 0
+    total

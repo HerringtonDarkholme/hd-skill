@@ -1,0 +1,18 @@
+# expect: check local-reference-escapes
+trait Mailer:
+    fn send(&mut self, to: string) -> void
+
+struct Fake:
+    sent: List[string]
+
+impl Mailer for Fake:
+    fn send(&mut self, to: string) -> void:
+        self.sent.push(to)
+
+fn remind() -> void $ Mailer:
+    $.use(Mailer).send("a")
+
+fn run() -> void:
+    let mut fake = Fake { sent: [] }
+    $.with(Mailer=&mut fake):
+        remind()
