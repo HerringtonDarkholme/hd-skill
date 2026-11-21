@@ -11,7 +11,6 @@ use std.cli.{Arg, ArgParser, CliError, Parsed}
 use std.console.{MemoryConsole, eprintln}
 use std.fs.{FsRead, FsWrite, MemoryFs, read_text, write_text}
 use std.host.{Args, ScriptedArgs}
-use std.num.ParseNumberError
 use std.path.Path
 use std.process.ExitCode
 
@@ -27,7 +26,7 @@ fn parser() -> *mut ArgParser:
         .arg(Arg { name: "ignore-case", kind: .Flag, short: 'i', help: "count Tea and tea together" })
 
 fn options(parsed: Parsed) -> Result[Options, CliError]:
-    top := parsed.value_as::[usize, ParseNumberError]("top")?.unwrap_or(3)
+    top := parsed.value_as::[usize]("top")?.unwrap_or(3)   # write the value type
     .Ok(Options {
         path: parsed.value("file").unwrap_or(""),
         top: top,
@@ -107,8 +106,8 @@ options:
   `short`, `help`, `required`, `choices`, `repeated`.
 - **Read them** from `Parsed`: `value(name)` gives `string?`, `flag(name)`
   a `bool`, `values(name)` a list for a repeated option, and
-  `value_as::[T, E](name)` a parsed value. `value_as` needs both type
-  arguments written: the value type and its parse error.
+  `value_as::[T](name)` a parsed value. Always write the type argument,
+  as `value_as::[usize]("top")`.
 - **Exit status.** Return `ExitCode` from `main`. `error.exit()` on a
   `CliError` prints the usage and picks the status. Without `std.cli`,
   `args()` from `std.host` gives the raw list

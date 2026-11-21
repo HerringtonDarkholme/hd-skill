@@ -10,7 +10,6 @@ and reports a bad value with its name.
 use std.fs.{FsError, FsRead, FsWrite, MemoryFs, read_text, stat, write_text}
 use std.host.{Env, HostError, ScriptedEnv, env, env_as}
 use std.json.{JsonError, decode, encode_pretty}
-use std.num.ParseNumberError
 use std.path.Path
 use std.serde.{Deserialize, Serialize}
 
@@ -48,7 +47,7 @@ fn with_environment(config: Config) -> Result[Config, ConfigError] $ Env:
     match env("APP_NAME"):
         .Some(name) => result.name = name
         .None => pass
-    match env_as::[u16, ParseNumberError]("APP_PORT")?:
+    match env_as::[u16]("APP_PORT")?:
         .Some(port) => result.port = port
         .None => pass
     .Ok(result)
@@ -100,9 +99,9 @@ tests:
   is an error that names its path.
 - **Defaults live on the struct.** With a default on every field,
   `Config {}` is the default configuration.
-- **Environment**: `env(name)` gives `string?`. `env_as::[T, E](name)`
-  parses the value and gives `Result[T?, HostError]`; write both type
-  arguments, the value type and its parse error.
+- **Environment**: `env(name)` gives `string?`. `env_as::[T](name)` parses
+  the value and gives `Result[T?, HostError]`. Always write the type
+  argument, as `env_as::[u16]("APP_PORT")`.
 - **One error type**: an `@error` enum with a `@from` variant per source,
   so `?` converts each failure on the way up. It is `pub` because the
   public `main` returns it.
