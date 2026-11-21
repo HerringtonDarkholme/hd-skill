@@ -1,6 +1,6 @@
 ---
 name: hd-lang
-description: Write, check, test and run hd-lang (hd) code - a statically typed, indentation-based language that compiles to WebAssembly. Gives the edit-check loop for the `hd` command, the rules that differ from Python and Rust, and an index of focused references - syntax by topic, values and references, requirement rows after `$`, bang calls, the standard library, testing, packages, and the diagnostics agents hit most with their fixes. Use before writing or editing any `.hd` file or `hd.toml` package, and whenever running the `hd` command.
+description: Write, check, test and run hd-lang (hd) code - a statically typed, indentation-based language that compiles to WebAssembly. Gives the edit-check loop for the `hd` command, the rules that differ from Python and Rust, and an index of focused references - how-to pages by scenario (a command-line tool, files, JSON config, an HTTP API, concurrency, shared state, project layout), syntax by topic, the standard library, testing, packages, and the diagnostics agents hit most with their fixes. Use before writing or editing any `.hd` file or `hd.toml` package, and whenever running the `hd` command.
 ---
 
 # Write hd-lang Code
@@ -31,8 +31,9 @@ disagree, the compiler is right: read its message, then `hd help` or
 
 ## Steps
 
-1. **Read** the reference for the topic before writing: the table under
-   [References](#references) says which file covers what.
+1. **Read** before writing. When the task matches a scenario under
+   [How to](#how-to-by-scenario), start from that page: it is a complete,
+   tested program to adapt. Otherwise open the page for the topic.
 2. **Write** the code.
 3. **Check**: `hd check --format json FILE.hd`, or
    `hd check --format json --tests` inside a package. Each output line is
@@ -139,6 +140,26 @@ Requirements:
 ## References
 
 Open the file the task needs. Each is short and covers one topic.
+
+### How to, by scenario
+
+Each page is one task as a complete program with its tests, then the
+pieces it is made of.
+
+| To | Read |
+| --- | --- |
+| build a command-line tool: options, `--help`, exit status | [cli-tool.md](references/how-to/cli-tool.md) |
+| read standard input and transform it | [stdin-filter.md](references/how-to/stdin-filter.md) |
+| parse a text or CSV file into typed records, with line-numbered errors | [text-records.md](references/how-to/text-records.md) |
+| load configuration from JSON, environment variables and defaults | [configuration.md](references/how-to/configuration.md) |
+| list, read, write and move files | [files-and-directories.md](references/how-to/files-and-directories.md) |
+| call an HTTP API and decode JSON | [http-api.md](references/how-to/http-api.md) |
+| run another program and read its output | [run-commands.md](references/how-to/run-commands.md) |
+| do several waits at once, with timeouts and retries | [concurrent-work.md](references/how-to/concurrent-work.md) |
+| share and update state: `&mut`, `box`, or a provider | [shared-state.md](references/how-to/shared-state.md) |
+| model states, transitions and validation rules | [domain-model.md](references/how-to/domain-model.md) |
+| start a project and split it into modules | [project-layout.md](references/how-to/project-layout.md) |
+| translate a habit from Python, TypeScript, Rust or Go | [from-other-languages.md](references/how-to/from-other-languages.md) |
 
 ### Language
 

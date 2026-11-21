@@ -5,9 +5,9 @@ write [hd-lang](https://github.com/HerringtonDarkholme/hd-lang): a
 statically typed, indentation-based language that compiles to WebAssembly.
 
 Without it, an agent writes hd from its Python and Rust habits, and the
-code does not check. With it, the agent has the syntax by example, the
-edit-check loop for the `hd` command, and a lookup from each common
-diagnostic to its fix.
+code does not check. With it, the agent has how-to pages for common
+scenarios, the syntax by example, the edit-check loop for the `hd`
+command, and a lookup from each common diagnostic to its fix.
 
 ## Install
 
@@ -33,6 +33,19 @@ cargo install hd-lang
 skills/hd-lang/
   SKILL.md                  when to use it, the edit-check loop, the rules that surprise, the index
   references/
+    how-to/                 one page per scenario: a complete, tested program and its pieces
+      cli-tool.md           options, --help, exit status
+      stdin-filter.md       read standard input and transform it
+      text-records.md       parse a text or CSV file into typed records
+      configuration.md      JSON file, environment variables, defaults
+      files-and-directories.md  list, read, write, move
+      http-api.md           call an API, decode JSON, test without a network
+      run-commands.md       run another program
+      concurrent-work.md    several waits at once, timeouts, retries
+      shared-state.md       &mut, box, or a provider
+      domain-model.md       states, transitions, rules
+      project-layout.md     start a project and split it into modules
+      from-other-languages.md  Python, TypeScript, Rust and Go habits in hd
     language/               one page per topic
       basics.md             scripts and main, bindings, numbers, strings
       collections.md        lists, maps, tuples, loops, comprehensions, iterators
