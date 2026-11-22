@@ -49,6 +49,7 @@ tests:
     it("finds, reports and archives the large logs"):
         fs := MemoryFs::new()
         $.with(FsWrite=fs, FsRead=fs):
+            _ := create_dir_all!(Path("app/deep"))      # folders first, as on a real disk
             _ := write_text!(Path("app/run.log"), "x".repeat(40))
             _ := write_text!(Path("app/deep/old.log"), "x".repeat(50))
             _ := write_text!(Path("app/small.log"), "x")
@@ -81,9 +82,10 @@ tests:
 - **Reading**: `read_text!(path)` for text, `read_bytes!(path)` for
   `List[u8]`. A whole file is read at once; `text.lines()` splits it.
 - **Writing**: `write_text!` replaces the file, and `append_text!` adds to
-  its end. Neither creates a missing folder on a real disk (the result is
-  `.Err(.NotFound(...))`): call `create_dir_all!(folder)` first. A
-  `MemoryFs` is more forgiving, so cover this in an integration test.
+  its end. Neither creates a missing folder: the result is
+  `.Err(.NotFound(...))`. Call `create_dir_all!(folder)` first, in the
+  program and when seeding a `MemoryFs` in a test. The same holds for the
+  destination of `copy!` and `rename!`.
 - **Moving and deleting**: `rename!(from, to)`, `copy!(from, to)`,
   `remove!(path)`.
 - **Capabilities**: `$ FsRead` and `$ FsWrite` are separate, so a function

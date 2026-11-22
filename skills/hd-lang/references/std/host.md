@@ -71,10 +71,11 @@ with `FsError`.
 | `create_dir_all!(path)`, `remove!(path)`, `rename!(from, to)`, `copy!(from, to)` | `FsWrite` | `void` |
 
 ```hd
-use std.fs.{FsError, FsRead, FsWrite, read_text, write_text}
+use std.fs.{FsError, FsRead, FsWrite, create_dir_all, read_text, write_text}
 use std.path.Path
 
 fn save_report!(name: string, total: i32) -> Result[void, FsError] $ FsWrite:
+    create_dir_all!(Path("reports"))?       # a write does not create the folder
     write_text!(Path("reports").join("$name.txt"), "total: $total\n")
 
 fn report_total!(name: string) -> Result[i32, FsError] $ FsRead:
