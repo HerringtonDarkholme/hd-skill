@@ -1,4 +1,4 @@
 # expect: check unknown-method
 fn f() -> void:
     let mut xs = [+1, 2]
-    _ := xs.remove(0)
+    _ := xs.remove_at(0)

@@ -1,3 +1,0 @@
-# expect: check unknown-method
-fn f(text: string) -> i32:
-    text.parse::[i32]().unwrap()

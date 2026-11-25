@@ -1,0 +1,3 @@
+# expect: check unsatisfied-trait-bound
+fn f[T, E](r: Result[T, E]) -> T:
+    r.unwrap()

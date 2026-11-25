@@ -14,8 +14,9 @@ test requires must be installed in the test.
 | `FsRead`, `FsWrite` | `MemoryFs::new()` from `std.fs` | `read_text!` through the same fake |
 | `Clock` | `ManualClock::new(start)` from `std.time` | sleeps finish at once, in virtual time |
 | `Random` | `SeededRandom::new(seed)` from `std.random` | |
-| `Args` | `box(ScriptedArgs::new(program, values))` from `std.host` | |
+| `Args` | `box(ScriptedArgs::new(program, values))` from `std.cli` | |
 | `Env` | `box(ScriptedEnv::new({"HOME": "/h"}))` from `std.host` | |
+| `Signals` | `ScriptedSignals::new([.Interrupt])` from `std.host` | |
 
 Each `new` in the first rows returns a shared object, ready to pass to
 `$.with`. `ScriptedArgs` and `ScriptedEnv` are plain values, so they are

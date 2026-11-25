@@ -1,4 +1,4 @@
-# expect: check unknown-method
+# expect: check discarded-must-use-value
 fn f() -> usize:
     let mut m: Map[string, i32] = {}
     m.insert("a", 1)

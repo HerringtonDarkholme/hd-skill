@@ -105,3 +105,48 @@ tests:
 - Tasks take turns: one runs until its next `!` call, then another may
   run. Two tasks never change a value at the same instant, so there are
   no locks to write.
+
+## Stop on Ctrl-C
+
+Race the work against a `Signals` wait. Whichever finishes first wins, and
+the other is cancelled, so the `defer` blocks of the cancelled work still
+run.
+
+```hd
+use std.host.{ScriptedSignals, Signals}
+use std.task.race
+use std.time.{Clock, ManualClock, Timestamp, s, sleep}
+
+fn work!(rounds: usize) -> string $ Clock:
+    for _ in 0..rounds:
+        sleep!(1s)                          # one unit of work
+    "done"
+
+fn interrupted!() -> string $ Signals:
+    $.use(Signals).wait!(.Interrupt)        # Ctrl-C, or SIGINT
+    "stopped"
+
+pub fn run!(rounds: usize) -> string $ Clock + Signals:
+    race!(work(rounds), interrupted())
+
+tests:
+    fn clock() -> *mut ManualClock:
+        ManualClock::new(Timestamp::from_unix_milliseconds(0))
+
+    it("stops on Ctrl-C"):
+        $.with(Clock=clock(), Signals=ScriptedSignals::new([.Interrupt])):
+            assert_equal(run!(1000), "stopped")
+
+    it("finishes when no signal arrives"):
+        $.with(Clock=clock(), Signals=ScriptedSignals::new([])):
+            assert_equal(run!(3), "done")
+```
+
+- The kinds are `.Interrupt` (Ctrl-C, SIGINT), `.Terminate` (SIGTERM) and
+  `.Hangup` (SIGHUP). While a wait for a kind is running, that signal
+  completes the wait instead of stopping the program.
+- With no wait running, Ctrl-C stops the program as usual.
+- `ScriptedSignals::new([...])` delivers each listed signal once, to the
+  first wait for its kind. A wait for a kind the list does not hold never
+  finishes, so the other side of the race wins.
+- A package grants it with `Signals = true` in `[capabilities]`.

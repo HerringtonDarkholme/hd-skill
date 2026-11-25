@@ -124,8 +124,8 @@ Types and values:
 - A struct, list, map and string are values: assigning or passing one
   copies it. `&mut x` lends a variable to one call; `box(value)` makes a
   shared object.
-- There is no `null` and no `unwrap()`: use `match`, `?`,
-  `unwrap_or(fallback)` or `expect("why")`.
+- There is no `null`: use `T?`. `unwrap()` panics on failure; use `match`, `?`,
+  `unwrap_or(fallback)` or `expect("why")` for the behavior you need.
 - An unused `Result` or optional is an error: discard it with `_ := expr`.
 
 Requirements:
@@ -155,7 +155,7 @@ pieces it is made of.
 | list, read, write and move files | [files-and-directories.md](references/how-to/files-and-directories.md) |
 | call an HTTP API and decode JSON | [http-api.md](references/how-to/http-api.md) |
 | run another program and read its output | [run-commands.md](references/how-to/run-commands.md) |
-| do several waits at once, with timeouts and retries | [concurrent-work.md](references/how-to/concurrent-work.md) |
+| do several waits at once, with timeouts and retries, or stop on Ctrl-C | [concurrent-work.md](references/how-to/concurrent-work.md) |
 | share and update state: `&mut`, `box`, or a provider | [shared-state.md](references/how-to/shared-state.md) |
 | model states, transitions and validation rules | [domain-model.md](references/how-to/domain-model.md) |
 | start a project and split it into modules | [project-layout.md](references/how-to/project-layout.md) |

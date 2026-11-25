@@ -21,11 +21,14 @@ Codex, Cursor, Copilot, Gemini CLI and others; see
 `skills/hd-lang/` into your project's `.claude/skills/` or
 `.agents/skills/`.
 
-You also need the `hd` command:
+You also need the `hd` command. The skill tracks hd-lang's main branch,
+which is ahead of the crates.io release:
 
 ```sh
-cargo install hd-lang
+cargo install --locked --git https://github.com/HerringtonDarkholme/hd-lang hd-lang
 ```
+
+`hd test` also needs Node 26.13.1 or newer.
 
 ## What is inside
 
@@ -41,7 +44,7 @@ skills/hd-lang/
       files-and-directories.md  list, read, write, move
       http-api.md           call an API, decode JSON, test without a network
       run-commands.md       run another program
-      concurrent-work.md    several waits at once, timeouts, retries
+      concurrent-work.md    several waits at once, timeouts, retries, Ctrl-C
       shared-state.md       &mut, box, or a provider
       domain-model.md       states, transitions, rules
       project-layout.md     start a project and split it into modules

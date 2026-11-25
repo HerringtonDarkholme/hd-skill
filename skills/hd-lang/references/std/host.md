@@ -30,7 +30,8 @@ pub fn main!() -> Result[void, ConsoleError] $ Console + ConsoleInput:
 ## Arguments and environment
 
 ```hd
-use std.host.{Args, Env, args, env}
+use std.cli.{Args, args}
+use std.host.{Env, env}
 
 pub fn main() -> void $ Console + Args + Env:
     words := args()                             # the arguments after `--`
@@ -43,8 +44,7 @@ Run it as `hd greet.hd -- Ada`. For options, flags and `--help`, use
 `std.cli`:
 
 ```hd
-use std.cli.{Arg, ArgParser}
-use std.host.Args
+use std.cli.{Arg, ArgParser, Args}
 use std.process.ExitCode
 
 pub fn main() -> ExitCode $ Args + Console:
@@ -95,7 +95,7 @@ pub fn main!() -> Result[void, FsError] $ Console + FsRead + FsWrite:
 
 `Timestamp` is a point in UTC time, `Duration` a length of time, and
 `Instant` a reading for measuring intervals. Duration literals use the
-suffixes `ms`, `s`, `min`, `h`, imported from `std.time`.
+units `ms`, `s`, `min`, `h`; ordinary calls import `ms`, `s`, `minutes`, `h` from `std.time`.
 
 ```hd
 use std.time.{Clock, Timestamp, elapsed, monotonic, ms, now, s, sleep}
@@ -125,8 +125,8 @@ Derive `Serialize` and `Deserialize`, then `decode::[T](text)` and
 extra field is ignored; a field with a default may be left out.
 
 ```hd
-use std.json.{JsonError, decode, encode, parse}
-use std.serde.{Deserialize, Serialize}
+use std.encoding.json.{JsonError, decode, encode, parse}
+use std.encoding.{Deserialize, Serialize}
 
 @derive(Serialize, Deserialize, Debug)
 struct Limits:

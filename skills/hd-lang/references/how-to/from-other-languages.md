@@ -31,7 +31,7 @@ that explains it.
 | `a if c else b`, `c ? a : b` | `if c: a else: b` |
 | `switch`, `match` with `A \| B` arms | `match`, one pattern per arm, `_` for the rest |
 | `for i in range(n)`, `for (let i = 0; i < n; i++)` | `for i in 0..n:` |
-| `for i, x in enumerate(xs)` | `for (i, x) in xs.iter().enumerate():` |
+| `for i, x in enumerate(xs)` | `for (i, x) in xs.enumerate():` |
 | `while True`, `loop {}`, `for {}` | `while true:` |
 | `[f(x) for x in xs if c]`, `xs.filter(c).map(f)` | `[for x in xs if c => f(x)]`, or `xs.filter(c).map(f)` |
 | `lambda x: x + 1`, `x => x + 1`, `\|x\| x + 1` | `fn(x): x + 1` |
@@ -75,7 +75,7 @@ that explains it.
 | `import x`, `use x::y`, `require` | `use std.fs.{read_text}`, `use pkg.cart.total`, at the top of the file |
 | `public` / `private`, `pub`, an exported name | `pub`; everything else is private to its file |
 | `if __name__ == "__main__"`, `fn main()`, `func main()` | `pub fn main() -> void $ Console:` |
-| `sys.argv`, `process.argv`, `os.Args` | `args()` from `std.host`, with `$ Args` |
+| `sys.argv`, `process.argv`, `os.Args` | `args()` from `std.cli`, with `$ Args` |
 | `os.environ`, `process.env` | `env("NAME")` from `std.host`, with `$ Env` |
 | `open(path).read()`, `fs.readFile` | `read_text!(Path(path))?`, with `$ FsRead` |
 | `subprocess.run`, `exec.Command` | `Command::new("git").args([...]).run!()`, with `$ Process` |
