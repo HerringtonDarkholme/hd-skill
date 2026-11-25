@@ -1,0 +1,23 @@
+name: check
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays: catch drift against hd-lang main
+
+jobs:
+  examples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      # The skill tracks hd-lang main, which is ahead of the crates.io release.
+      - name: Install hd
+        run: cargo install --locked --git https://github.com/HerringtonDarkholme/hd-lang hd-lang
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 26 # `hd test` needs Node 26.13.1 or newer
+      - name: Check every example against hd
+        run: node scripts/check-examples.mjs
