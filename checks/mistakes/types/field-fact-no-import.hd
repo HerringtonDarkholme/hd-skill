@@ -1,0 +1,7 @@
+# expect: check unknown-name
+use std.validate.Validate
+
+@derive(Validate)
+struct Order:
+    @range(1, 9)
+    quantity: u32

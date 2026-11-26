@@ -1,0 +1,9 @@
+# expect: check member-not-derivable
+use std.validate.Validate
+
+struct Line:
+    quantity: u32
+
+@derive(Validate)
+struct Order:
+    line: Line

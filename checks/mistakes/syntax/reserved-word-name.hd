@@ -1,4 +1,4 @@
 # expect: check syntax-error
 fn f() -> i32:
-    data := +1
-    data
+    type := +1
+    type

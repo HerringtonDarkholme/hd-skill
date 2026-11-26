@@ -1,0 +1,4 @@
+# expect: check unknown-trait
+@derive(Clone)
+struct Point:
+    x: i32

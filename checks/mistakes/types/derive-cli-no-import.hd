@@ -1,0 +1,4 @@
+# expect: check unknown-trait
+@derive(Cli)
+struct Options:
+    top: usize = 3

@@ -1,0 +1,8 @@
+# expect: check unsatisfied-trait-bound
+use std.encoding.json.{JsonError, decode}
+
+struct Plain:
+    id: i32
+
+fn load(text: string) -> Result[Plain, JsonError]:
+    decode::[Plain](text)

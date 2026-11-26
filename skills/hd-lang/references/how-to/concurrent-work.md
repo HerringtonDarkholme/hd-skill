@@ -7,17 +7,16 @@ test it all without real waiting.
 ## The program
 
 ```hd
-use std.convert.From
-use std.task.{Backoff, TimedOut, apply, join, race, retry, with_timeout}
+use std.task.{Backoff, TimedOut, apply, join, map_join, race, retry, with_timeout}
 use std.time.{Clock, ManualClock, Timestamp, ms, s, sleep}
 
+@error
 @derive(Eq, Debug)
 pub enum FetchError:
+    @error("the service is busy")
     Busy
-    Slow(TimedOut)
-
-impl From[TimedOut] for FetchError:         # lets a timeout become a FetchError
-    fn from(error: TimedOut) -> FetchError: .Slow(error)
+    @error("no answer in time")
+    Slow(@from error: TimedOut)              # `@from`: a timeout becomes a FetchError
 
 pub trait Catalog:
     fn price!(&mut self, item: string) -> Result[i32, FetchError]
@@ -32,6 +31,10 @@ fn two_prices!() -> (Result[i32, FetchError], Result[i32, FetchError]) $ Catalog
 # Any number of calls together: build a list of calls, then spread it.
 fn prices!(items: List[string]) -> List[Result[i32, FetchError]] $ Catalog:
     join!([for item in items => price(item)]...)
+
+# The same, with at most 2 calls waiting at a time.
+fn some_prices!(items: List[string]) -> List[Result[i32, FetchError]] $ Catalog:
+    map_join!(items, 2, price)
 
 # Retry up to 3 times, 10 ms apart, all within one second.
 fn patient_price!(item: string) -> Result[i32, FetchError] $ Catalog + Clock:
@@ -61,6 +64,7 @@ tests:
         $.with(Catalog=box(Flaky { failures: 0, calls: 0 })):
             assert_equal(two_prices!(), (.Ok(300), .Ok(400)))
             assert_equal(prices!(["tea", "cake", "jam"]), [.Ok(300), .Ok(400), .Ok(300)])
+            assert_equal(some_prices!(["tea", "cake", "jam"]), [.Ok(300), .Ok(400), .Ok(300)])
 
     it("retries a busy answer, on a clock that does not wait"):
         catalog := box(Flaky { failures: 2, calls: 0 })
@@ -90,11 +94,15 @@ tests:
   already ran.
 - **A list of calls** is spread with `...` after the list:
   `join!(calls...)` returns a list of results.
+- **A bound on how many wait at once**: `map_join!(items, 2, price)`
+  calls `price` on each item with at most 2 in flight, and returns the
+  results in item order.
 - **Policies** come from `std.task` and compose with `|>`, from the work
   outward: `retry(backoff) |> with_timeout(1s, _)` puts one deadline
   around all attempts. `apply!(policy):` runs the indented block under it.
   The block returns a `Result`, and its error type needs
-  `From[TimedOut]` so a deadline can be reported.
+  `From[TimedOut]` so a deadline can be reported: a `@from` payload of type
+  `TimedOut` in an `@error` enum writes that conversion.
 - **Other policies**: `timeout(duration)` alone, and
   `fallback(backup_function, policy)` to call a backup when the work
   fails.
