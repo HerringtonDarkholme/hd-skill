@@ -1,0 +1,227 @@
+## An integer expression evaluator: decimal integers, `+ - * /`,
+## parentheses and unary minus. Input is parsed into a tree, then the
+## tree is evaluated.
+
+@derive(Eq, Debug)
+pub enum CalcError:
+    DivideByZero
+    Unexpected(at: usize) # byte offset of the first token the grammar rejects
+
+## One lexical token. `Invalid` is a character or number literal that is not
+## valid here; the parser rejects it where it is reached, so an error later in
+## the input is never reported ahead of an earlier one.
+enum Token:
+    Number(value: i64)
+    Plus
+    Minus
+    Star
+    Slash
+    LParen
+    RParen
+    Invalid
+    End
+
+struct Spanned:
+    token: Token
+    at: usize # byte offset of the token's first byte
+
+enum Op:
+    Add
+    Sub
+    Mul
+    Div
+
+enum Expr:
+    Num(value: i64)
+    Neg(operand: *Expr)
+    Bin(op: Op, left: *Expr, right: *Expr)
+
+fn is_digit(b: u8) -> bool:
+    b >= 48 && b <= 57 # '0'..'9'
+
+## Splits `src` into tokens. The list always ends with an `End` token whose
+## offset is `src.len()`.
+fn lex(src: string) -> List[Spanned]:
+    bytes := src.to_utf8()
+    let mut tokens: List[Spanned] = []
+    let i: usize = 0
+    while i < bytes.len():
+        b := bytes[i]
+        if b == 32: # ' ': spaces are only separators
+            i += 1
+        else if is_digit(b):
+            start := i
+            while i < bytes.len() && is_digit(bytes[i]):
+                i += 1
+            let token: Token = match src.slice(start, i).parse::[i64]():
+                .Ok(value) => .Number(value)
+                .Err(_) => .Invalid # too large for i64
+            tokens.push(Spanned { token: token, at: start })
+        else:
+            let token: Token = match b:
+                40 => .LParen # '('
+                41 => .RParen # ')'
+                42 => .Star # '*'
+                43 => .Plus # '+'
+                45 => .Minus # '-'
+                47 => .Slash # '/'
+                _ => .Invalid
+            tokens.push(Spanned { token: token, at: i })
+            i += 1
+    tokens.push(Spanned { token: .End, at: src.len() })
+    tokens
+
+fn peek(tokens: &List[Spanned], pos: usize) -> Spanned:
+    tokens[pos]
+
+## primary := NUMBER | '(' expr ')'
+fn parse_primary(tokens: &List[Spanned], pos: usize) -> Result[(Expr, usize), CalcError]:
+    current := peek(tokens, pos)
+    match current.token:
+        .Number(value) => .Ok((Expr.Num(value), pos + 1))
+        .LParen =>
+            inner := parse_expr(tokens, pos + 1)?
+            close := peek(tokens, inner._1)
+            match close.token:
+                .RParen => .Ok((inner._0, inner._1 + 1))
+                _ => .Err(.Unexpected(close.at))
+        _ => .Err(.Unexpected(current.at))
+
+## unary := '-' unary | primary
+fn parse_unary(tokens: &List[Spanned], pos: usize) -> Result[(Expr, usize), CalcError]:
+    current := peek(tokens, pos)
+    match current.token:
+        .Minus =>
+            operand := parse_unary(tokens, pos + 1)?
+            .Ok((Expr.Neg(box(operand._0)), operand._1))
+        _ => parse_primary(tokens, pos)
+
+## term := unary (('*' | '/') unary)*
+fn parse_term(tokens: &List[Spanned], pos: usize) -> Result[(Expr, usize), CalcError]:
+    first := parse_unary(tokens, pos)?
+    let mut left = first._0
+    let at: usize = first._1
+    while true:
+        match peek(tokens, at).token:
+            .Star =>
+                next := parse_unary(tokens, at + 1)?
+                left = Expr.Bin(Op.Mul, box(left), box(next._0))
+                at = next._1
+            .Slash =>
+                next := parse_unary(tokens, at + 1)?
+                left = Expr.Bin(Op.Div, box(left), box(next._0))
+                at = next._1
+            _ => return .Ok((left, at))
+
+## expr := term (('+' | '-') term)*
+fn parse_expr(tokens: &List[Spanned], pos: usize) -> Result[(Expr, usize), CalcError]:
+    first := parse_term(tokens, pos)?
+    let mut left = first._0
+    let at: usize = first._1
+    while true:
+        match peek(tokens, at).token:
+            .Plus =>
+                next := parse_term(tokens, at + 1)?
+                left = Expr.Bin(Op.Add, box(left), box(next._0))
+                at = next._1
+            .Minus =>
+                next := parse_term(tokens, at + 1)?
+                left = Expr.Bin(Op.Sub, box(left), box(next._0))
+                at = next._1
+            _ => return .Ok((left, at))
+
+## Parses all of `src`; the whole input must be one expression.
+fn parse(src: string) -> Result[Expr, CalcError]:
+    tokens := lex(src)
+    parsed := parse_expr(&tokens, 0)?
+    end := peek(&tokens, parsed._1)
+    match end.token:
+        .End => .Ok(parsed._0)
+        _ => .Err(.Unexpected(end.at))
+
+fn apply(op: Op, a: i64, b: i64) -> Result[i64, CalcError]:
+    match op:
+        .Add => .Ok(a + b)
+        .Sub => .Ok(a - b)
+        .Mul => .Ok(a * b)
+        .Div =>
+            if b == 0:
+                return .Err(.DivideByZero)
+            .Ok(a / b) # truncates toward zero
+
+fn eval_tree(expr: &Expr) -> Result[i64, CalcError]:
+    match expr:
+        .Num(value) => .Ok(value)
+        .Neg(operand) =>
+            value := eval_tree(operand)?
+            .Ok(0 - value)
+        .Bin(op, left, right) =>
+            a := eval_tree(left)?
+            b := eval_tree(right)?
+            apply(op, a, b)
+
+## Evaluates an integer expression. Syntax errors are reported before any
+## arithmetic happens; integer overflow panics, as all hd integer arithmetic does.
+pub fn eval(src: string) -> Result[i64, CalcError]:
+    tree := parse(src)?
+    eval_tree(&tree)
+
+tests:
+    use std.testing.{it_each}
+
+    it("follows precedence and left associativity"):
+        assert_equal(eval("1 + 2 * 3"), .Ok(7))
+        assert_equal(eval("10 - 4 - 3"), .Ok(3))
+        assert_equal(eval("100 / 10 / 5"), .Ok(2))
+        assert_equal(eval("2 * 3 / 4"), .Ok(1))
+
+    it("uses parentheses and unary minus"):
+        assert_equal(eval("(1 + 2) * 3"), .Ok(9))
+        assert_equal(eval("-3 * -2"), .Ok(6))
+        assert_equal(eval("- -4"), .Ok(4))
+        assert_equal(eval("-(2 + 3)"), .Ok(-5))
+        assert_equal(eval("2 - -3"), .Ok(5))
+
+    it("truncates division toward zero"):
+        assert_equal(eval("7 / 2"), .Ok(3))
+        assert_equal(eval("-7 / 2"), .Ok(-3))
+        assert_equal(eval("7 / -2"), .Ok(-3))
+
+    it("allows spaces anywhere between tokens"):
+        assert_equal(eval("  1+2 *3 "), .Ok(7))
+        assert_equal(eval("(  4 )"), .Ok(4))
+
+    it("accepts a single number and the largest i64"):
+        assert_equal(eval("0"), .Ok(0))
+        assert_equal(eval("9223372036854775807"), .Ok(9223372036854775807))
+
+    it("reports division by zero"):
+        assert_equal(eval("1 / (2 - 2)"), .Err(.DivideByZero))
+        assert_equal(eval("5 / 0 * 0"), .Err(.DivideByZero))
+
+    it("reports the offset of the first unexpected token"):
+        assert_equal(eval("1 +"), .Err(.Unexpected(3)))
+        assert_equal(eval("1 2"), .Err(.Unexpected(2)))
+        assert_equal(eval(""), .Err(.Unexpected(0)))
+        assert_equal(eval("1 $ 2"), .Err(.Unexpected(2)))
+        assert_equal(eval("(1"), .Err(.Unexpected(2)))
+        assert_equal(eval("1 + )"), .Err(.Unexpected(4)))
+        assert_equal(eval("()"), .Err(.Unexpected(1)))
+        assert_equal(eval("1 ) "), .Err(.Unexpected(2)))
+        assert_equal(eval("1 * * 2"), .Err(.Unexpected(4)))
+        assert_equal(eval("   "), .Err(.Unexpected(3)))
+
+    it("reports the first failure, not a later invalid character"):
+        assert_equal(eval("1 2 $"), .Err(.Unexpected(2)))
+        assert_equal(eval("1$"), .Err(.Unexpected(1)))
+        assert_equal(eval("1\t+ 2"), .Err(.Unexpected(1)))
+
+    it("treats a number too large for i64 as unexpected"):
+        assert_equal(eval("99999999999999999999"), .Err(.Unexpected(0)))
+        assert_equal(eval("1 + 99999999999999999999"), .Err(.Unexpected(4)))
+
+    it_each(
+        "reports the end of input when a nested expression is unfinished",
+        [("((1 + 2)", 8), ("1 + (2 * 3", 10), ("1 - 2 -", 7)],
+        body=fn!(row: (string, usize)): assert_equal(eval(row._0), .Err(.Unexpected(row._1)))
+    )

@@ -1,16 +1,16 @@
 # Evaluation: baseline-t3
 
-- Skill: hd-skill 5ccaa45; model: `haiku`; date: 2026-11-27
-- Passed: **10 / 12**
+- Skill: hd-skill fc82f0c + uncommitted skill changes; model: `haiku`; date: 2026-11-27
+- Passed: **11 / 12**
 - Mean idiom score: **81%**
 - Skill opened: 12 / 12
-- Total cost: $0.31; turns: 300
+- Total cost: $0.31; turns: 301
 
 | Task | Pass | Check | Hidden | Runs | Idiom | Own tests | Skill | Pages | hd check (failing) | Turns | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 01-colsum | ✅ | ok | 5/5 | 4/4 | 67% | 17/17 | yes | 0 | 3 (0) | 19 | $0.02 |
 | 02-todos | ✅ | ok | 5/5 | – | 75% | 11/11 | yes | 0 | 6 (1) | 20 | $0.02 |
-| 03-config | ❌ | ok | 0/11 | – | 100% | 15/15 | yes | 2 | 2 (0) | 15 | $0.02 |
+| 03-config | ✅ | ok | 11/11 | – | 100% | 13/13 | yes | 2 | 4 (1) | 16 | $0.02 |
 | 04-ratelimit | ✅ | ok | 4/4 | – | 100% | 9/9 | yes | 4 | 5 (2) | 36 | $0.03 |
 | 05-users | ✅ | ok | 3/3 | 1/1 | 100% | 4/4 | yes | 0 | 4 (1) | 16 | $0.02 |
 | 06-quotes | ✅ | ok | 4/4 | – | 100% | 8/8 | yes | 9 | 11 (3) | 38 | $0.04 |
@@ -36,18 +36,19 @@
 | `not-writable` | 53 |
 | `missing-capability` | 8 |
 | `unknown-import` | 7 |
+| `unknown-trait` | 7 |
 | `underivable-trait` | 6 |
-| `unknown-trait` | 5 |
 | `local-reference-escapes` | 5 |
 | `syntax-error` | 4 |
 | `missing-requirement` | 4 |
 | `cannot-infer-type` | 4 |
+| `type-mismatch` | 3 |
 | `unregistered-auto-closing` | 3 |
+| `member-not-derivable` | 2 |
 | `unknown-type` | 2 |
 | `missing-let` | 2 |
 | `refutable-let-pattern` | 2 |
 | `type-used-as-value` | 2 |
-| `type-mismatch` | 1 |
 | `unknown-name` | 1 |
 | `trait-used-as-type` | 1 |
 
@@ -62,7 +63,7 @@
 | references/testing/fakes.md | 2 |
 | references/language/traits.md | 2 |
 | references/language/errors.md | 2 |
-| references/std/host.md | 1 |
+| references/how-to/configuration.md | 1 |
 | references/language/suspension.md | 1 |
 | references/how-to/concurrent-work.md | 1 |
 | references/language/data.md | 1 |
@@ -73,7 +74,5 @@
 
 ## Failures
 
-- **03-config**
-  - hidden tests did not compile: tests/zz_hidden_eval.hd:19: private-member: `Config` has the private field `host`, so only its module can construct or copy it / tests/zz_hidden_eval.hd:22: private-member: `Config` has the private field `host`, so only its module can construct or copy it
 - **08-derive-template**
   - hidden tests did not compile: tests/zz_hidden_eval.hd:3: underivable-trait: `FieldNames` has no template and cannot be derived / tests/zz_hidden_eval.hd:10: underivable-trait: `FieldNames` has no template and cannot be derived

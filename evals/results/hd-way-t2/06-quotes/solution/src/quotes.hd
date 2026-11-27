@@ -1,0 +1,94 @@
+use std.task.{Backoff, apply, map_join, retry}
+use std.time.{Clock, ManualClock, Timestamp, ms}
+
+# Why a sku could not be quoted.
+@derive(Eq, Debug)
+pub enum QuoteError:
+    Busy
+    Unknown(sku: string)
+
+# The quote service the caller provides.
+pub trait Quotes:
+    fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]
+
+fn quote_once!(sku: string) -> Result[i64, QuoteError] $ Quotes:
+    $.use(Quotes).quote!(sku)
+
+# One sku, up to 3 attempts, about 10 ms apart, before its error counts.
+fn quote_sku!(sku: string) -> Result[i64, QuoteError] $ Quotes + Clock:
+    policy := retry(Backoff { attempts: 3, initial: 10ms, factor: 1 })
+    apply!(policy):
+        quote_once!(sku)
+
+# Prices every sku, at most 4 in flight, and sums them. The first failing
+# sku in the order's order decides the error.
+pub fn order_total!(skus: List[string]) -> Result[i64, QuoteError] $ Quotes + Clock:
+    quoted := map_join!(skus, 4, quote_sku)
+    let total: i64 = 0
+    for price in quoted:
+        total += price?
+    .Ok(total)
+
+tests:
+    struct Shop:
+        prices: Map[string, i64]
+        busy: Map[string, usize] # Busy answers still to give, per sku
+        asked: Map[string, usize] # calls seen, per sku
+
+    impl Quotes for Shop:
+        fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]:
+            seen := self.asked.get(sku).unwrap_or(0)
+            self.asked[sku] = seen + 1
+            left := self.busy.get(sku).unwrap_or(0)
+            if left > 0:
+                self.busy[sku] = left - 1
+                return .Err(.Busy)
+            match self.prices.get(sku):
+                .Some(cents) => .Ok(cents)
+                .None => .Err(.Unknown(sku))
+
+    fn clock() -> *mut ManualClock:
+        ManualClock::new(Timestamp::from_unix_milliseconds(0))
+
+    it("an empty order totals zero"):
+        $.with(Quotes=box(Shop { prices: {}, busy: {}, asked: {} }), Clock=clock()):
+            assert_equal(order_total!([]), .Ok(0))
+
+    it("sums the prices of every sku, repeats included"):
+        prices := { "tea": 300, "cake": 450 }
+        $.with(Quotes=box(Shop { prices: prices, busy: {}, asked: {} }), Clock=clock()):
+            assert_equal(order_total!(["tea", "cake", "tea"]), .Ok(1050))
+
+    it("retries a busy sku and then counts its price"):
+        shop := box(Shop { prices: { "tea": 300 }, busy: { "tea": 2 }, asked: {} })
+        $.with(Quotes=shop, Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Ok(300))
+        assert_equal(shop.asked["tea"], 3, reason="two busy answers, then the price")
+
+    it("gives up on a sku after three attempts"):
+        shop := box(Shop { prices: { "tea": 300 }, busy: { "tea": 3 }, asked: {} })
+        $.with(Quotes=shop, Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Err(.Busy))
+        assert_equal(shop.asked["tea"], 3, reason="exactly three attempts")
+
+    it("retries an unknown sku too, then reports it"):
+        shop := box(Shop { prices: {}, busy: {}, asked: {} })
+        $.with(Quotes=shop, Clock=clock()):
+            assert_equal(order_total!(["nope"]), .Err(.Unknown("nope")))
+        assert_equal(shop.asked["nope"], 3, reason="unknown skus get three attempts")
+
+    it("reports the first failing sku in the order's order"):
+        shop := box(Shop { prices: { "tea": 300 }, busy: {}, asked: {} })
+        $.with(Quotes=shop, Clock=clock()):
+            assert_equal(order_total!(["jam", "tea", "cake"]), .Err(.Unknown("jam")))
+            assert_equal(order_total!(["tea", "cake", "jam"]), .Err(.Unknown("cake")))
+
+    it("a busy sku earlier in the list beats a later unknown one"):
+        shop := box(Shop { prices: {}, busy: { "tea": 3 }, asked: {} })
+        $.with(Quotes=shop, Clock=clock()):
+            assert_equal(order_total!(["tea", "nope"]), .Err(.Busy))
+
+    it("quote errors compare and print"):
+        assert_equal(QuoteError.Busy, QuoteError.Busy)
+        assert_equal(QuoteError.Unknown("a") == QuoteError.Unknown("b"), false)
+        assert(debug(QuoteError.Unknown("a")).len() > 0)

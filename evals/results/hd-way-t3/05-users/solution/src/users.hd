@@ -1,0 +1,71 @@
+@derive(Eq, Debug)
+pub struct User:
+    pub id: i64
+    pub name: string
+
+@derive(Eq, Debug)
+@error
+pub enum UserError:
+    @error("no user $id")
+    NotFound(id: i64)
+    @error("the name is empty")
+    EmptyName
+
+pub trait UserStore:
+    fn get!(&mut self, id: i64) -> User?
+    fn put!(&mut self, user: User) -> void
+
+pub fn rename!(id: i64, name: string) -> Result[User, UserError] $ UserStore:
+    trimmed := name.trim()
+    if trimmed.len() == 0:
+        return .Err(.EmptyName)
+    store := $.use(UserStore)
+    match store.get!(id):
+        .None => .Err(.NotFound(id))
+        .Some(found) =>
+            renamed := User { id: found.id, name: trimmed }
+            store.put!(renamed)
+            .Ok(renamed)
+
+tests:
+    struct FakeStore:
+        users: List[User]
+        puts: i64
+
+    impl UserStore for FakeStore:
+        fn get!(&mut self, id: i64) -> User?:
+            for user in self.users:
+                if user.id == id:
+                    return .Some(user)
+            .None
+
+        fn put!(&mut self, user: User) -> void:
+            self.puts += 1
+            for i in 0..self.users.len():
+                if self.users[i].id == user.id:
+                    self.users[i] = user
+
+    it("trims the name and stores the renamed user once"):
+        store := box(FakeStore { users: [User { id: 1, name: "ada" }], puts: 0 })
+        $.with(UserStore=store):
+            result := rename!(1, "  Ada Lovelace  ")
+            assert_equal(result, .Ok(User { id: 1, name: "Ada Lovelace" }))
+        assert_equal(store.puts, 1, reason="one put")
+        assert_equal(store.users, [User { id: 1, name: "Ada Lovelace" }], reason="stored")
+
+    it("refuses a blank name and stores nothing"):
+        store := box(FakeStore { users: [User { id: 1, name: "ada" }], puts: 0 })
+        $.with(UserStore=store):
+            assert_equal(rename!(1, "   "), .Err(.EmptyName))
+        assert_equal(store.puts, 0, reason="no put")
+        assert_equal(store.users, [User { id: 1, name: "ada" }], reason="unchanged")
+
+    it("reports a missing user and stores nothing"):
+        store := box(FakeStore { users: [User { id: 1, name: "ada" }], puts: 0 })
+        $.with(UserStore=store):
+            assert_equal(rename!(2, "Grace"), .Err(.NotFound(2)))
+        assert_equal(store.puts, 0, reason="no put")
+
+    it("formats errors with their messages"):
+        assert_equal("${UserError.NotFound(2)}", "no user 2")
+        assert_equal("${UserError.EmptyName}", "the name is empty")

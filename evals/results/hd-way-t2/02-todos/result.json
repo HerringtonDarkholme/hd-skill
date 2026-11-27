@@ -1,0 +1,82 @@
+{
+  "task": "02-todos",
+  "package": "todos",
+  "scenario": "JSON in and out",
+  "selling_points": [
+    "derive Serialize/Deserialize",
+    "field defaults",
+    "property tests"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 12,
+      "passed": 12,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-serde",
+        "desc": "JSON through @derive(Serialize, Deserialize)",
+        "ok": true
+      },
+      {
+        "id": "field-default",
+        "desc": "done defaults with a field default",
+        "ok": true
+      },
+      {
+        "id": "prop-test",
+        "desc": "round trip checked with a property test",
+        "ok": false
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.75
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 13,
+    "hd": {
+      "help": 2,
+      "new": 1,
+      "check": 4,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t2/02-todos/todos && cat > src/lib.hd <<'EOF'\npub use self.todos.{Todo, TodoError, load, dump, complete, pending"
+    ],
+    "diagnostic_codes": {
+      "trailing-block-position": 3,
+      "unknown-import": 2
+    },
+    "failing_checks": 1,
+    "turns": 23,
+    "cost_usd": 0.019800000000000005,
+    "duration_s": 66,
+    "tokens": 631298,
+    "final_message": "The `todos` package is written and passes `hd check --tests`, `hd test` (12 of 12), `hd fmt` and `hd lint`.\n\n- **`src/todos.hd`** holds `Todo`, `TodoError`, `load`, `dump`, `complete` and `pending` with the signatures you gave. `Todo` and `TodoError` derive `Eq` and `Debug`. A missing `done` defaults to `false`. Any decode failure becomes `BadJson` with the decoder's message. `dump` uses the same JSON encoder, so `load` reads its output back unchanged.\n- **`src/lib.hd`** re-exports the public API, so `pkg.load` and similar also work from other packages. `hd new --lib` scaffolded this file as the library root, and I kept it rather than deleting it.\n- **`tests/todos.hd`** is an integration test through the package root. The unit tests are in the `tests:` block at the end of `src/todos.hd`.\n\nChoices I made that you may want to change:\n- An extra field in an object is ignored, not rejected, because that is how the derived JSON decoder behaves.\n- Duplicate ids are accepted, and `complete` marks every todo with the matching id.\n- `hd new` was run with `--vcs none`, since the directory is not a git repository. Nothing was committed.\n\nThe shell blocked one heredoc command with a permission denial, so I wrote the two test files with the file tool instead. The formatter then reformatted both files, and I re-ran check and test after that.",
+    "is_error": false
+  },
+  "agent_exit": null
+}

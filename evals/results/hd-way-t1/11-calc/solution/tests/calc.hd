@@ -1,0 +1,9 @@
+use pkg.{CalcError, eval}
+use std.testing.assert_equal
+
+it("evaluates the documented examples through the public API"):
+    assert_equal(eval("1 + 2 * (3 - 1)"), .Ok(5))
+    assert_equal(eval("-7 / 2"), .Ok(-3))
+    assert_equal(eval("8 / (4 - 4)"), .Err(CalcError.DivideByZero))
+    assert_equal(eval("1 +"), .Err(CalcError.Unexpected(3)))
+    assert_equal(eval(""), .Err(CalcError.Unexpected(0)))

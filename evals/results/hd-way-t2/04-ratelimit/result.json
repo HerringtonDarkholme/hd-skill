@@ -1,0 +1,81 @@
+{
+  "task": "04-ratelimit",
+  "package": "ratelimit",
+  "scenario": "time-dependent logic",
+  "selling_points": [
+    "Clock requirement",
+    "ManualClock fake"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "manual-clock",
+        "desc": "tests control time with ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/testing/fakes.md",
+      "references/cli/packages.md",
+      "references/std/api/README.md",
+      "references/std/api/time.md",
+      "references/std/api/collections-map.md",
+      "references/std/api/collections-list.md",
+      "references/language/modules.md"
+    ],
+    "bash": 12,
+    "hd": {
+      "new": 1,
+      "doc": 4,
+      "check": 5,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: S=.claude/skills/hd-lang/references; cat $S/testing/fakes.md; echo ----; cat $S/cli/packages.md | head -200; echo ----; grep -rn -i \"clock\\|Instant\\|Duration\" $S/std/host.md | head -40",
+      "Bash: sed -i '' 's/limiter := new_limiter/let mut limiter = new_limiter/' src/limiter.hd && hd check --tests --format json; echo \"exit=$?\""
+    ],
+    "diagnostic_codes": {
+      "unknown-method": 1,
+      "syntax-error": 1,
+      "not-writable": 19
+    },
+    "failing_checks": 2,
+    "turns": 31,
+    "cost_usd": 0.024142730000000005,
+    "duration_s": 64,
+    "tokens": 922242,
+    "final_message": "The `ratelimit` library is written and passes `hd check --tests`, `hd test`, `hd fmt --check` and `hd lint`. `hd test` reports 6 passed, 0 failed.\n\n**What's in the package**\n\n- `src/limiter.hd` holds `Limiter`, `new_limiter` and `Limiter::allow`, plus the unit tests in a `tests:` block at the end of the file.\n- `src/lib.hd` re-exports `Limiter` and `new_limiter` from `ratelimit.limiter`, so callers write `use ratelimit.{Limiter, new_limiter}`.\n- `hd.toml` is the generated library manifest. I did not add any capabilities, since `allow` needs only `Clock`, which the tests fake.\n\n**How `allow` works**\n\n- It reads `now()` from `$ Clock`, drops that key's events where `now - t >= window`, and allows the event only if fewer than `max` remain.\n- A refused event is not pushed, so it does not count against later calls.\n- Each key has its own list, so keys are independent.\n\n**Tests**\n\nThe six tests use `ManualClock` and advance time with `sleep!`. They cover:\n- the basic allow-then-refuse case,\n- `max = 0`, which refuses everything,\n- the exact window boundary (an event at age 9999 ms still counts, age 10000 ms does not),\n- refused events not being recorded,\n- the window sliding over several events,\n- keys being counted separately.\n\n**Decisions and limits**\n\n- I used the wall-clock `Timestamp` from `now()` and stored milliseconds as `i64`. Window math uses `Duration.as_milliseconds()`.\n- The key map is never pruned. Keys stay in the map after their events expire, so memory grows with t",
+    "is_error": false
+  },
+  "agent_exit": null
+}

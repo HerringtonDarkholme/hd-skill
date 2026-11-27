@@ -1,0 +1,77 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 4,
+      "passed": 4,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 2,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": true
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 11,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "doc": 5,
+      "check": 4,
+      "test": 4,
+      "fmt": 1
+    },
+    "denied": [
+      "Bash: cat > src/lib.hd <<'EOF'\n## Derive `FieldNames` on any struct to get its field names in declaration order.\npub use self.fields.{FieldNames}\nEOF\ncat > tests/fields.hd <<'EOF'\nuse pkg.FieldNames\nu"
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "unknown-method": 2,
+      "argument-count": 2
+    },
+    "failing_checks": 1,
+    "turns": 21,
+    "cost_usd": 0.01588887,
+    "duration_s": 45,
+    "tokens": 563400,
+    "final_message": "The `fields` package is in the current directory and both `hd check --tests` and `hd test` pass (4 tests, 0 failures).\n\n**What's there**\n\n- `src/fields.hd` defines `pub trait FieldNames` and a derive template, `impl[T] FieldNames for T by Structure`. It walks the struct's fields in declaration order and collects their names. Users write `@derive(FieldNames)` and nothing else; there is no per-struct `impl`.\n- `src/lib.hd` re-exports the trait (`pub use self.fields.{FieldNames}`), so code in the package can write `use pkg.FieldNames`. This is my choice, not something you asked for. The template lives in the trait's own module, so the re-export is only a convenience.\n- `tests/fields.hd` covers an integration-style test module: a `pub` struct with two fields, an empty struct, and a struct with a `List`, an optional and a `Map` field. It checks that every field is listed in order, including the non-scalar ones.\n- `src/fields.hd` has a `tests:` block with a `@derive(FieldNames)` struct defined inside the module itself, so the derive is exercised from within the package's own code as well as from `tests/`.\n\n**Notes**\n\n- The walker handles `List` fields through its `rest` method as well as `data_member`, so list-typed fields are not dropped. The test on `tags` covers this.\n- I did not verify cross-package use (a dependent package doing `use dep....FieldNames`); this package has no dependents to test against.\n- One shell command was denied by the approval gate (a heredoc containing br",
+    "is_error": false
+  },
+  "agent_exit": null
+}

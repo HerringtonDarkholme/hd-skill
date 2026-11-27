@@ -1,0 +1,92 @@
+{
+  "task": "03-config",
+  "package": "config",
+  "scenario": "configuration from file and environment",
+  "selling_points": [
+    "derive Validate + field facts",
+    "env_decode",
+    "@from errors",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 14,
+      "passed": 14,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 11,
+      "passed": 11,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-validate",
+        "desc": "rules written as @derive(Validate) field facts",
+        "ok": false
+      },
+      {
+        "id": "field-facts",
+        "desc": "uses @range / @length facts",
+        "ok": false
+      },
+      {
+        "id": "from-errors",
+        "desc": "error variants convert with @from",
+        "ok": true
+      },
+      {
+        "id": "fake-fs-env",
+        "desc": "tests use MemoryFs and ScriptedEnv",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.6
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 12,
+    "hd": {
+      "new": 2,
+      "help": 1,
+      "check": 5,
+      "file": 2,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t3/03-config/config && hd check --format json --tests 2>&1 | head -40; echo \"exit ${PIPESTATUS[0]}\"",
+      "Bash: sed -i '' 's/load_config!}/load_config}/' src/lib.hd tests/config.hd && sed -i '' 's/use std.fs.{FsError, FsRead, MemoryFs, read_text, write_text}/use std.fs.{FsError, FsRead, FsWrite, MemoryFs,"
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "syntax-error": 2,
+      "unknown-trait": 12,
+      "unknown-type": 1
+    },
+    "failing_checks": 1,
+    "turns": 23,
+    "cost_usd": 0.022734629999999995,
+    "duration_s": 65,
+    "tokens": 758392,
+    "final_message": "The `config` package is in place in this directory. `hd check --tests` reports no errors, and `hd test` passes all 14 tests (13 unit tests in `src/config.hd`, 1 integration test in `tests/config.hd`). I also ran `hd fmt`, which reformatted both files, and `hd lint`, which reported nothing.\n\n**Files**\n- `hd.toml`: library manifest, created by `hd new --lib --vcs none .`.\n- `src/config.hd`: `Config`, `ConfigError`, and `load_config!`, plus the unit tests.\n- `src/lib.hd`: re-exports `Config`, `ConfigError` and `load_config`, so callers write `pkg.load_config`.\n- `tests/config.hd`: one integration test that goes through the public API.\n\n**Choices I made**\n- `Config` derives `Eq`, `Debug` and `Deserialize`. `Deserialize` is not in your spec, but the JSON parse needs it. `workers` defaults to 4 through the struct default.\n- `Read`, `Parse` and `Environment` each wrap the std error (`FsError`, `JsonError`, `HostError`) with `@from`, so `?` converts them. `Invalid` wraps a `string` message.\n- The host rule counts Unicode characters (`chars().count()`), not bytes, to match \"characters\" in your spec.\n- The rules are explicit `if` checks, not `@derive(Validate)`. The `Invalid` message names the failing field and the allowed range. The port check runs after `APP_PORT` is applied.\n- `load_config!` is the only `!` function. It reads the file with `read_text!`, so the `!` is required.\n- The tests use `MemoryFs` and `ScriptedEnv` through `$.with`. They cover each error variant, the defaults,",
+    "is_error": false
+  },
+  "agent_exit": null
+}

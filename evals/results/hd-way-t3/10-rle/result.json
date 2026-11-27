@@ -1,0 +1,69 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 18,
+      "passed": 18,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 14,
+    "hd": {
+      "help": 2,
+      "new": 1,
+      "check": 4,
+      "test": 4,
+      "fmt": 3,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: rm -f tests/rle.hd && cat > src/lib.hd <<'EOF'\npub use self.rle.{Run, decode, encode}\nEOF\ncat > tests/rle.hd <<'EOF'\nuse pkg.{Run, decode, encode}\nuse std.testing.{it_prop}\n\nit_prop(\"the public ",
+      "Bash: hd test 2>&1 | tail -60; echo \"exit=${PIPESTATUS[0]}\""
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 20,
+    "cost_usd": 0.01637728,
+    "duration_s": 46,
+    "tokens": 589972,
+    "final_message": "The `rle` package is in place, and `hd check --tests` and `hd test` both pass (18 tests, 0 failures). `hd fmt --check` was failing before I ran `hd fmt`, which reformatted the two test files. I re-ran check and tests after that.\n\n**What's there**\n\n- **`src/rle.hd`**: `pub struct Run` (`pub value: i32`, `pub count: usize`, `@derive(Eq, Debug)`), `pub fn encode`, and `pub fn decode`. `encode` builds maximal runs, so there are no empty runs and neighbours differ. `decode` expands each run `count` times, so a zero-count run contributes nothing.\n- **`src/lib.hd`**: the scaffold's sample `greet` is replaced with `pub use self.rle.{Run, decode, encode}`. Callers import from `pkg`.\n- **`tests/rle.hd`**: a small integration-style test of the public API. The scaffold's `greet` test is gone.\n\n**Tests**\n\n- Example tables for `encode` (including negatives, `i32` min/max, and a 100,000-element run) and `decode` (including a zero-count run).\n- Property tests with `it_prop` over generated `List[i32]`:\n  - `decode(encode(xs)) == xs`, the round-trip you asked for.\n  - `encode(decode(encode(xs))) == encode(xs)`.\n  - Every run has a count above zero, and neighbouring values differ.\n  - The counts sum to `len(xs)`.\n\n**Choices I made**\n\n- The package was created with `hd new --lib --vcs none`, so there is no git repository or `.gitignore`.\n- The name `rle` came from the directory name.\n\n**Tool issues**\n\nTwo of my shell commands were denied by the permission system with no way to approve them: a he",
+    "is_error": false
+  },
+  "agent_exit": null
+}

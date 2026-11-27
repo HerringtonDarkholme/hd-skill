@@ -1,0 +1,11 @@
+use pkg.{CalcError, eval}
+use std.testing.assert_equal
+
+it("evaluates the spec's precedence example"):
+    assert_equal(eval("1 + 2 * 3"), .Ok(7))
+
+it("reports a dangling operator at src.len()"):
+    assert_equal(eval("1 +"), .Err(CalcError.Unexpected(3)))
+
+it("reports division by zero"):
+    assert_equal(eval("4 / (1 - 1)"), .Err(CalcError.DivideByZero))

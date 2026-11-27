@@ -227,18 +227,15 @@
         "codes": []
       },
       "own_tests": {
-        "cases": 13,
-        "passed": 13,
+        "cases": 15,
+        "passed": 15,
         "failed": []
       },
       "hidden": {
         "expected": 11,
-        "passed": 0,
+        "passed": 11,
         "failed": [],
-        "compile_errors": [
-          "tests/zz_hidden_eval.hd:19: private-member: `Config` has the private field `host`, so only its module can construct or copy it",
-          "tests/zz_hidden_eval.hd:22: private-member: `Config` has the private field `host`, so only its module can construct or copy it"
-        ]
+        "compile_errors": []
       },
       "runs": [],
       "idiom": [
@@ -269,7 +266,7 @@
         }
       ],
       "fmt_clean": true,
-      "pass": false,
+      "pass": true,
       "idiom_score": 1
     },
     "metrics": {
@@ -277,30 +274,29 @@
       "pages_read": [
         "references/how-to/configuration.md",
         "references/cli/packages.md",
-        "references/testing/fakes.md",
-        "references/testing/unit-tests.md"
+        "references/testing/fakes.md"
       ],
-      "bash": 10,
+      "bash": 13,
       "hd": {
-        "new": 2,
-        "check": 4,
+        "help": 1,
+        "check": 3,
         "test": 3,
-        "fmt": 1,
-        "lint": 1
+        "fmt": 1
       },
       "denied": [
-        "Bash: S=$(mktemp -d) && cd \"$S\" && hd new scratchlib --lib && find scratchlib -type f | sort && echo ---- && cat scratchlib/hd.toml && echo ---- && cat scratchlib/src/lib.hd && echo ---- && cat scratc"
+        "Bash: cd /private/var/675 2>/dev/null; cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/baseline-t1/03-config/config/.claude/skills/hd-lang/references && grep -rn \"fn repeat\\",
+        "Bash: sed -n 48,51p src/config.hd; grep -n -B2 -A8 \"\\$.with\" .claude/skills/hd-lang/references/testing/fakes.md | sed -n 1,60p; grep -rn \"\\*mut\" .claude/skills/hd-lang/references/language/references.m",
+        "Bash: hd test 2>&1 | tail -60; echo \"exit=${PIPESTATUS[0]}\""
       ],
       "diagnostic_codes": {
-        "unknown-trait": 1,
-        "unsatisfied-trait-bound": 14
+        "type-mismatch": 1
       },
       "failing_checks": 1,
-      "turns": 21,
-      "cost_usd": 0.026770539999999995,
-      "duration_s": 85,
-      "tokens": 758990,
-      "final_message": "The `config` package is in the current directory, and `hd check --tests` and `hd test` both pass (13 of 13 tests).\n\n**Files**\n- `src/config.hd`: `Config`, `ConfigError`, and `load_config!`, plus the `tests:` block.\n- `hd.toml`: a minimal manifest with `name = \"config\"`.\n- `build/`: test output from `hd test`. Remove it if you don't want it in the tree.\n\n**Choices I made**\n- **Order of steps:** read the file, parse JSON, apply `APP_PORT`, then validate. So a broken file reports `Read` or `Parse` before the environment is looked at.\n- **No default port:** `host` and `port` are required in the JSON. Only `workers` defaults to 4. `APP_PORT` replaces the port, but the file must still contain a `port` key to parse.\n- **Missing file is `Read`:** the spec gives no fallback, so there is no \"absent file means defaults\" behavior.\n- **Host length** uses `@length(1, 253)`, which counts characters. I didn't check whether `hd` counts characters or bytes for this rule.\n- **Error details:** each variant wraps the source error, with a message that includes it. `ConfigError` has no `Eq` or `Debug`, since the spec only asks for those on `Config`.\n\n**Tests** cover a valid file, the `workers` default, each error variant, the `APP_PORT` override and its failure cases, and the boundaries for host (253 and 254 characters), port (1023, 1024, 65535, 65536), and workers (0, 1, 64, 65). They also check `Config` equality.\n\n**Two things to know**\n- **Scratch `hd new` was blocked:** a permission prompt deni",
+      "turns": 24,
+      "cost_usd": 0.026390929999999996,
+      "duration_s": 86,
+      "tokens": 865945,
+      "final_message": "The `config` package is written and both required commands pass: `hd check --tests` reports no errors, and `hd test` reports 15 passed, 0 failed.\n\nFiles in the current directory:\n- `hd.toml`: `[package] name = \"config\"`, with no capabilities, since the library has no `main` and its tests use fakes.\n- `src/config.hd`: the library module, with `Config`, `ConfigError`, `load_config!`, and the tests.\n\nHow the spec maps onto the code:\n- **Loading:** `load_config!` reads the file, decodes it with `@derive(Deserialize)`, and applies `APP_PORT` through `env_as::[i32]`. A bad value there becomes `Environment`. The override is written into the struct before validation, so an overridden port is checked too.\n- **Rules:** `@derive(Validate)` with `@length(1, 253)` on `host`, `@range(1024, 65535)` on `port`, and `@range(1, 64)` on `workers`. A failed rule becomes `Invalid`.\n- **Defaults:** `workers` defaults to 4 when the JSON omits it. `host` and `port` have no default, so a missing one is a `Parse` error.\n- **Traits:** `Config` derives `Eq` and `Debug`.\n- **Errors:** each `ConfigError` variant has one `@from` field, so `?` converts each source error automatically.\n\nChoices I made:\n- The spec says `src/config.hd` with no `lib.hd`, so I followed that. `hd check` accepted it.\n- `@length` counts bytes, not characters. The 253 and 254 limits are exact for ASCII hosts, but a multi-byte host name could hit the limit earlier than a character count would.\n- The tests cover each error variant, the",
       "is_error": false
     },
     "agent_exit": null
@@ -335,11 +331,6 @@
         {
           "id": "manual-clock",
           "desc": "tests control time with ManualClock",
-          "ok": true
-        },
-        {
-          "id": "virtual-sleep",
-          "desc": "tests advance virtual time with sleep!",
           "ok": true
         },
         {

@@ -1,0 +1,173 @@
+use std.encoding.Deserialize
+use std.encoding.json.{JsonError, decode}
+use std.fs.{FsError, FsRead, FsWrite, MemoryFs, read_text, write_text}
+use std.host.{Env, HostError, ScriptedEnv, env_as}
+use std.path.Path
+
+## A service's configuration, read from a JSON file.
+@derive(Eq, Debug, Deserialize)
+pub struct Config:
+    pub host: string
+    pub port: i32
+    pub workers: i32 = 4
+
+@error
+pub enum ConfigError:
+    @error("cannot read the config file: $error")
+    Read(
+        @from
+        error: FsError,
+    )
+    @error("the config file is not a valid Config: $error")
+    Parse(
+        @from
+        error: JsonError,
+    )
+    @error("invalid environment: $error")
+    Environment(
+        @from
+        error: HostError,
+    )
+    @error("invalid configuration: $message")
+    Invalid(message: string)
+
+# `APP_PORT`, when set, replaces the port from the file.
+fn apply_port_override(config: Config) -> Result[Config, ConfigError] $ Env:
+    port := env_as::[i32]("APP_PORT")?
+    .Ok(Config { ...config, port: port.unwrap_or(config.port) })
+
+fn check_rules(config: Config) -> Result[Config, ConfigError]:
+    hosts := config.host.chars().count()
+    if hosts < 1 || hosts > 253:
+        return .Err(.Invalid("host has $hosts characters, must be 1 to 253"))
+    if config.port < 1024 || config.port > 65535:
+        return .Err(.Invalid("port is ${config.port}, must be 1024 to 65535"))
+    if config.workers < 1 || config.workers > 64:
+        return .Err(.Invalid("workers is ${config.workers}, must be 1 to 64"))
+    .Ok(config)
+
+## Reads the JSON config file at `path`, applies `APP_PORT`, then checks the rules.
+pub fn load_config!(path: string) -> Result[Config, ConfigError] $ FsRead + Env:
+    text := read_text!(Path(path))?
+    parsed := decode::[Config](text)?
+    with_port := apply_port_override(parsed)?
+    check_rules(with_port)
+
+tests:
+    it("reads a config and defaults workers to 4"):
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("c.json"), "{\"host\": \"localhost\", \"port\": 8080}")
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+            config := load_config!("c.json").ok().expect("a valid config")
+            assert_equal(config, Config { host: "localhost", port: 8080, workers: 4 })
+
+    it("reads an explicit workers value"):
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("c.json"), "{\"host\": \"h\", \"port\": 2000, \"workers\": 16}")
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+            config := load_config!("c.json").ok().expect("a valid config")
+            assert_equal(config.workers, 16)
+
+    it("replaces the port with APP_PORT"):
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("c.json"), "{\"host\": \"h\", \"port\": 2000}")
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({ "APP_PORT": "9000" }))):
+            config := load_config!("c.json").ok().expect("a valid config")
+            assert_equal(config.port, 9000)
+
+    it("reports a missing file as Read"):
+        $.with(FsRead=MemoryFs::new(), Env=box(ScriptedEnv::new({}))):
+            match load_config!("missing.json"):
+                .Err(.Read(_)) => assert(true)
+                other => assert(false, reason="expected Read, got ${other.is_ok()}")
+
+    it("reports text that is not valid JSON as Parse"):
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("c.json"), "{not json")
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+            match load_config!("c.json"):
+                .Err(.Parse(_)) => assert(true)
+                other => assert(false, reason="expected Parse, got ${other.is_ok()}")
+
+    it("reports a missing required field as Parse"):
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("c.json"), "{\"host\": \"h\"}")
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+            match load_config!("c.json"):
+                .Err(.Parse(_)) => assert(true)
+                other => assert(false, reason="expected Parse, got ${other.is_ok()}")
+
+    it("reports a non-integer APP_PORT as Environment"):
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("c.json"), "{\"host\": \"h\", \"port\": 2000}")
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({ "APP_PORT": "http" }))):
+            match load_config!("c.json"):
+                .Err(.Environment(_)) => assert(true)
+                other => assert(false, reason="expected Environment, got ${other.is_ok()}")
+
+    it("rejects an empty host"):
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("c.json"), "{\"host\": \"\", \"port\": 2000}")
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+            match load_config!("c.json"):
+                .Err(.Invalid(_)) => assert(true)
+                other => assert(false, reason="expected Invalid, got ${other.is_ok()}")
+
+    it("rejects a host of 254 characters"):
+        long := "a".repeat(254)
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("c.json"), "{\"host\": \"$long\", \"port\": 2000}")
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+            match load_config!("c.json"):
+                .Err(.Invalid(_)) => assert(true)
+                other => assert(false, reason="expected Invalid, got ${other.is_ok()}")
+
+    it("accepts a host of 253 characters"):
+        long := "a".repeat(253)
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("c.json"), "{\"host\": \"$long\", \"port\": 2000}")
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+            assert(load_config!("c.json").is_ok())
+
+    it("rejects a port below 1024"):
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("c.json"), "{\"host\": \"h\", \"port\": 1023}")
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+            match load_config!("c.json"):
+                .Err(.Invalid(_)) => assert(true)
+                other => assert(false, reason="expected Invalid, got ${other.is_ok()}")
+
+    it("rejects an APP_PORT above 65535, even though the file's port is valid"):
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("c.json"), "{\"host\": \"h\", \"port\": 2000}")
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({ "APP_PORT": "65536" }))):
+            match load_config!("c.json"):
+                .Err(.Invalid(_)) => assert(true)
+                other => assert(false, reason="expected Invalid, got ${other.is_ok()}")
+
+    it("rejects zero workers and 65 workers, accepts 1 and 64"):
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("zero.json"), "{\"host\": \"h\", \"port\": 2000, \"workers\": 0}")
+            _ := write_text!(
+                Path("many.json"),
+                "{\"host\": \"h\", \"port\": 2000, \"workers\": 65}",
+            )
+            _ := write_text!(Path("one.json"), "{\"host\": \"h\", \"port\": 2000, \"workers\": 1}")
+            _ := write_text!(Path("max.json"), "{\"host\": \"h\", \"port\": 2000, \"workers\": 64}")
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+            assert(load_config!("zero.json").is_err())
+            assert(load_config!("many.json").is_err())
+            assert(load_config!("one.json").is_ok())
+            assert(load_config!("max.json").is_ok())

@@ -1,0 +1,89 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 9,
+      "passed": 9,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": true
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 14,
+    "hd": {
+      "help": 3,
+      "doc": 3,
+      "new": 2,
+      "check": 4,
+      "test": 2,
+      "fmt": 1
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t1/06-quotes/quotes && hd new --lib --vcs none . && find . -path ./.claude -prune -o -type f -print && cat hd.to"
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "type-mismatch": 9,
+      "unknown-trait": 2
+    },
+    "failing_checks": 1,
+    "turns": 27,
+    "cost_usd": 0.02602314999999999,
+    "duration_s": 72,
+    "tokens": 951466,
+    "final_message": "The `quotes` package is in place at the current directory. `hd check --tests` passes, and `hd test` passes 9 of 9.\n\n**Layout**\n- `hd.toml`: package `quotes`, created with `hd new --lib`.\n- `src/quotes.hd`: the implementation and its `tests:` block.\n- `src/lib.hd`: `pub use self.quotes.{QuoteError, Quotes, order_total}`. hd treats `src/lib.hd` as the library root, so this re-export makes `order_total` importable as `quotes.order_total`. If you want the root to be `src/quotes.hd` itself, say so and I'll change it.\n- `tests/quotes.hd`: replaced the sample `greet` test with an integration test that uses the public API through a fake `Quotes`.\n\n**Implementation choices**\n- **Per-sku retry:** `retry(Backoff { attempts: 3, initial: 10ms, factor: 1 })` inside `apply!`. `attempts` counts total tries, so 3 means 3 attempts. `factor: 1` keeps the wait at a constant 10 ms.\n- **Retry on every error:** each sku is retried on any `Err`, including `Unknown`, because the spec says each sku gets up to 3 attempts before its error counts.\n- **Concurrency cap:** `map_join!(skus, 4, quote_one)` keeps at most 4 quotes in flight and returns results in list order.\n- **Totals and errors:** the results are summed with `?`, so the first failing sku in list order is the error returned. An empty list returns `.Ok(0)`.\n- **Derives:** `QuoteError` derives `Eq` and `Debug`. It is not `@error`, since the spec did not ask for messages.\n\n**Tests (9)**\n- Empty order, and a summed order.\n- A 6-sku order, which go",
+    "is_error": false
+  },
+  "agent_exit": null
+}

@@ -1,0 +1,3 @@
+## Greets `name`.
+pub fn greet(name: string) -> string:
+    "hello, ${name}"

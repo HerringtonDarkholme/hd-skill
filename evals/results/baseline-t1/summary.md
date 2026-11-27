@@ -1,16 +1,16 @@
 # Evaluation: baseline-t1
 
-- Skill: hd-skill 5ccaa45; model: `haiku`; date: 2026-11-27
-- Passed: **10 / 12**
+- Skill: hd-skill fc82f0c + uncommitted skill changes; model: `haiku`; date: 2026-11-27
+- Passed: **11 / 12**
 - Mean idiom score: **80%**
 - Skill opened: 12 / 12
-- Total cost: $0.30; turns: 316
+- Total cost: $0.30; turns: 319
 
 | Task | Pass | Check | Hidden | Runs | Idiom | Own tests | Skill | Pages | hd check (failing) | Turns | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 01-colsum | ✅ | ok | 5/5 | 4/4 | 67% | 14/14 | yes | 9 | 4 (1) | 30 | $0.03 |
 | 02-todos | ✅ | ok | 5/5 | – | 75% | 15/15 | yes | 4 | 3 (1) | 22 | $0.02 |
-| 03-config | ❌ | ok | 0/11 | – | 100% | 13/13 | yes | 4 | 4 (1) | 21 | $0.03 |
+| 03-config | ✅ | ok | 11/11 | – | 100% | 15/15 | yes | 3 | 3 (1) | 24 | $0.03 |
 | 04-ratelimit | ✅ | ok | 4/4 | – | 100% | 6/6 | yes | 11 | 4 (0) | 24 | $0.02 |
 | 05-users | ✅ | ok | 3/3 | 1/1 | 80% | 4/4 | yes | 6 | 2 (0) | 21 | $0.02 |
 | 06-quotes | ✅ | ok | 4/4 | – | 80% | 6/6 | yes | 0 | 2 (0) | 18 | $0.02 |
@@ -35,15 +35,14 @@
 
 | Code | Count |
 | --- | --- |
-| `unsatisfied-trait-bound` | 18 |
 | `underivable-trait` | 8 |
 | `missing-capability` | 6 |
+| `type-mismatch` | 5 |
+| `unsatisfied-trait-bound` | 4 |
 | `unknown-field` | 4 |
 | `private-member` | 4 |
-| `type-mismatch` | 4 |
 | `unknown-name` | 3 |
 | `type-used-as-value` | 3 |
-| `unknown-trait` | 1 |
 | `non-reassignable-binding` | 1 |
 | `not-writable` | 1 |
 
@@ -52,8 +51,8 @@
 | Page | Tasks |
 | --- | --- |
 | references/cli/packages.md | 8 |
-| references/testing/unit-tests.md | 7 |
 | references/language/modules.md | 6 |
+| references/testing/unit-tests.md | 6 |
 | references/std/host.md | 4 |
 | references/language/traits.md | 3 |
 | references/how-to/cli-tool.md | 2 |
@@ -76,7 +75,5 @@
 
 ## Failures
 
-- **03-config**
-  - hidden tests did not compile: tests/zz_hidden_eval.hd:19: private-member: `Config` has the private field `host`, so only its module can construct or copy it / tests/zz_hidden_eval.hd:22: private-member: `Config` has the private field `host`, so only its module can construct or copy it
 - **08-derive-template**
   - hidden tests did not compile: tests/zz_hidden_eval.hd:3: underivable-trait: `FieldNames` has no template and cannot be derived / tests/zz_hidden_eval.hd:10: underivable-trait: `FieldNames` has no template and cannot be derived

@@ -1,0 +1,121 @@
+use std.encoding.{Deserialize, Serialize}
+use std.encoding.json.{decode, encode}
+
+# One todo item. `done` may be left out of the JSON, and then it is false.
+@derive(Eq, Debug, Serialize, Deserialize)
+pub struct Todo:
+    pub id: i32
+    pub title: string
+    pub done: bool = false
+
+@derive(Eq, Debug)
+pub enum TodoError:
+    BadJson(message: string)
+    UnknownId(id: i32)
+
+# Reads a JSON array of {"id", "title", "done"} objects.
+pub fn load(json: string) -> Result[List[Todo], TodoError]:
+    match decode::[List[Todo]](json):
+        .Ok(todos) => .Ok(todos)
+        .Err(error) => .Err(.BadJson("${error}"))
+
+# Writes the todos as a JSON array that `load` reads back unchanged.
+pub fn dump(todos: List[Todo]) -> string:
+    encode(todos)
+
+# Marks the todo with `id` as done.
+pub fn complete(todos: List[Todo], id: i32) -> Result[List[Todo], TodoError]:
+    let mut out: List[Todo] = []
+    let found = false
+    for item in todos:
+        if item.id == id:
+            found = true
+            out.push(Todo { ...item, done: true })
+        else:
+            out.push(item)
+    if !found:
+        return .Err(.UnknownId(id))
+    .Ok(out)
+
+# The titles of the todos that are not done, in order.
+pub fn pending(todos: List[Todo]) -> List[string]:
+    let mut titles: List[string] = []
+    for item in todos:
+        if !item.done:
+            titles.push(item.title)
+    titles
+
+tests:
+    it("loads an array of todos"):
+        result := load(
+            "[{\"id\": 1, \"title\": \"milk\", \"done\": true}, {\"id\": 2, \"title\": \"eggs\", \"done\": false}]",
+        )
+        assert_equal(
+            result,
+            .Ok([Todo { id: 1, title: "milk", done: true }, Todo { id: 2, title: "eggs" }]),
+        )
+
+    it("treats a missing done as false"):
+        assert_equal(
+            load("[{\"id\": 3, \"title\": \"tea\"}]"),
+            .Ok([Todo { id: 3, title: "tea", done: false }]),
+        )
+
+    it("loads an empty array"):
+        assert_equal(load("[]"), .Ok([]))
+
+    it("ignores extra fields"):
+        assert_equal(
+            load("[{\"id\": 4, \"title\": \"x\", \"note\": \"y\"}]"),
+            .Ok([Todo { id: 4, title: "x" }]),
+        )
+
+    it("rejects input that is not an array"):
+        assert(load("{\"id\": 1, \"title\": \"x\"}").is_err())
+        assert(load("null").is_err())
+        assert(load("").is_err())
+        assert(load("[1, 2]").is_err())
+
+    it("reports a bad todo as BadJson"):
+        match load("[{\"id\": 1}]"):
+            .Err(.BadJson(message)) => assert(message.len() > 0)
+            _ => panic("expected BadJson")
+        match load("[{\"id\": \"one\", \"title\": \"x\"}]"):
+            .Err(.BadJson(_)) => assert(true)
+            _ => panic("expected BadJson")
+        match load("[{\"id\": 1, \"title\": \"x\"}"):
+            .Err(.BadJson(_)) => assert(true)
+            _ => panic("expected BadJson")
+
+    it("dump writes JSON that load reads back"):
+        todos := [Todo { id: 1, title: "milk", done: true }, Todo { id: 2, title: "say \"hi\"" }]
+        assert_equal(load(dump(todos)), .Ok(todos))
+
+    it("dump of an empty list round-trips"):
+        assert_equal(load(dump([])), .Ok([]))
+
+    it("complete marks one todo done"):
+        todos := [Todo { id: 1, title: "a" }, Todo { id: 2, title: "b" }]
+        assert_equal(
+            complete(todos, 2),
+            .Ok([Todo { id: 1, title: "a" }, Todo { id: 2, title: "b", done: true }]),
+        )
+
+    it("complete refuses an unknown id"):
+        todos := [Todo { id: 1, title: "a" }]
+        assert_equal(complete(todos, 9), .Err(.UnknownId(9)))
+
+    it("complete on an empty list is UnknownId"):
+        assert_equal(complete([], 1), .Err(.UnknownId(1)))
+
+    it("pending lists undone titles in order"):
+        todos := [
+            Todo { id: 1, title: "a" },
+            Todo { id: 2, title: "b", done: true },
+            Todo { id: 3, title: "c" },
+        ]
+        assert_equal(pending(todos), ["a", "c"])
+
+    it("pending of nothing is empty"):
+        assert_equal(pending([]), [])
+        assert_equal(pending([Todo { id: 1, title: "a", done: true }]), [])

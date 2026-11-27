@@ -15,27 +15,30 @@
       "codes": []
     },
     "own_tests": {
-      "cases": 13,
-      "passed": 13,
+      "cases": 15,
+      "passed": 15,
       "failed": []
     },
     "hidden": {
       "expected": 11,
-      "passed": 11,
+      "passed": 0,
       "failed": [],
-      "compile_errors": []
+      "compile_errors": [
+        "tests/zz_hidden_eval.hd:19: private-member: `Config` has the private field `host`, so only its module can construct or copy it",
+        "tests/zz_hidden_eval.hd:22: private-member: `Config` has the private field `host`, so only its module can construct or copy it"
+      ]
     },
     "runs": [],
     "idiom": [
       {
         "id": "derive-validate",
         "desc": "rules written as @derive(Validate) field facts",
-        "ok": true
+        "ok": false
       },
       {
         "id": "field-facts",
         "desc": "uses @range / @length facts",
-        "ok": true
+        "ok": false
       },
       {
         "id": "from-errors",
@@ -54,44 +57,36 @@
       }
     ],
     "fmt_clean": true,
-    "pass": true,
-    "idiom_score": 1
+    "pass": false,
+    "idiom_score": 0.6
   },
   "metrics": {
     "skill_invoked": true,
-    "pages_read": [
-      "references/cli/packages.md",
-      "references/std/host.md",
-      "references/std/api/README.md",
-      "references/std/api/validate.md",
-      "references/testing/fakes.md",
-      "references/language/modules.md"
-    ],
+    "pages_read": [],
     "bash": 12,
     "hd": {
-      "help": 3,
+      "help": 2,
       "new": 1,
-      "check": 3,
+      "check": 5,
       "test": 2,
+      "doc": 1,
       "fmt": 1,
       "lint": 1
     },
     "denied": [
-      "Bash: H=.claude/skills/hd-lang/references; sed -n 1,200p $H/cli/packages.md; echo ----; hd help new; echo ----; sed -n 1,80p $H/how-to/project-layout.md",
-      "Bash: H=.claude/skills/hd-lang/references; grep -n -E \"read_text|env_as|fn env\\b|HostError|InvalidValue\" $H/std/api/*.md | head -40; echo ----; grep -n -E \"validated|length|range|Validate\" $H/std/api/"
+      "Bash: printf '%s\\n' '## The `config` library: load and validate a service'\"'\"'s configuration.' 'pub use self.config.{Config, ConfigError, load_config}' > src/lib.hd && cat src/lib.hd && hd check --fo"
     ],
     "diagnostic_codes": {
-      "unknown-name": 3,
-      "syntax-error": 1,
-      "type-mismatch": 1,
-      "missing-requirement": 20
+      "missing-capability": 1,
+      "unknown-trait": 1,
+      "type-mismatch": 2
     },
-    "failing_checks": 1,
-    "turns": 29,
-    "cost_usd": 0.02380219,
-    "duration_s": 73,
-    "tokens": 703006,
-    "final_message": "The `config` library is in place: `src/config.hd` holds `Config`, `ConfigError` and `load_config!`, and `hd check --tests` and `hd test` both pass (13 of 13 tests).\n\nWhat's in the package:\n\n- **`src/config.hd`**: `Config` derives `Eq` and `Debug`, plus `Deserialize` and `Validate`. The rules are `@length(1, 253)` on `host`, `@range(1024, 65535)` on `port`, and `@range(1, 64)` on `workers`, which defaults to 4. `ConfigError` has the four variants: `Read` from `FsError`, `Parse` from `JsonError`, `Environment` from `HostError`, and `Invalid` from `ValidationError`.\n- **`load_config!`**: reads the file, decodes it, applies `APP_PORT` through `env_as::[i32]`, then runs `validated()`. The override happens before validation, so an overridden port is checked too.\n- **`src/lib.hd`**: re-exports `Config`, `ConfigError` and `load_config`.\n- **`hd.toml`**: the package is named `config`. It has no `[capabilities]` table because it is a library, not an app.\n\nDecisions to check:\n\n- **Module layout**: the spec asked for `src/config.hd`, but `hd new --lib` generates `src/lib.hd` as the library root. I kept both: `lib.hd` re-exports from `config.hd`.\n- **Bang on the re-export**: the compiler does not accept `load_config!` in a `use` line, so the re-export names `load_config`. The function is still defined and called as `load_config!`. I did not test calling it from another package.\n- **Sample files**: I deleted the generated `tests/config.hd`, which only tested the sample `greet` function. Th",
+    "failing_checks": 2,
+    "turns": 19,
+    "cost_usd": 0.024408340000000004,
+    "duration_s": 85,
+    "tokens": 660045,
+    "final_message": "The `config` package is written and passes both `hd check --tests` and `hd test` (15 tests, all passing). `hd fmt` and `hd lint` are clean too.\n\n**Files**\n- `src/config.hd`: `Config` (`@derive(Deserialize, Eq, Debug)`, `workers` defaults to 4), `ConfigError` with the four variants, `load_config!`, and a `tests:` block.\n- `src/lib.hd`: re-exports `Config`, `ConfigError` and `load_config` as the library root, so callers write `pkg.load_config!`.\n- `hd.toml`: `name = \"config\"`, created by `hd new --lib`.\n\n**Choices I made**\n- **Error payloads:** `Read`, `Parse` and `Environment` wrap the underlying error with `@from`, so `?` converts it. `Invalid` holds one string listing every broken rule, joined with `; `.\n- **Rules:** I wrote the three range checks by hand rather than with `@derive(Validate)`. The host length counts characters, not bytes, so a 253-character host with multi-byte characters is valid. A test covers this.\n- **Port override:** `env_as::[i32](\"APP_PORT\")` runs first, then the rules, so an overridden port is checked too.\n- **Required fields:** `host` and `port` have no default, so JSON that omits them is a `Parse` error, as the spec describes.\n\n**Things you should know**\n- **Git repo created:** `hd new` ran `git init` and wrote a `.gitignore` in this directory, which was not a git repository before. I did not remove them. Pass `--vcs none` next time, or delete `.git` if you don't want it.\n- **Sample files removed:** `hd new` generated a `greet` sample in `src/lib.hd",
     "is_error": false
   },
   "agent_exit": null

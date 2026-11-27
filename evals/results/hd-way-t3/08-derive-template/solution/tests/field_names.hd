@@ -1,0 +1,19 @@
+use pkg.FieldNames
+use std.testing.assert_equal
+
+@derive(FieldNames)
+pub struct Order:
+    pub id: string
+    pub cents: i32
+    pub tags: List[string] = []
+
+@derive(FieldNames)
+struct Pair:
+    left: i32
+    right: i32
+
+it("derives field names in a test module"):
+    assert_equal(Order { id: "A-1", cents: 5 }.field_names(), ["id", "cents", "tags"])
+
+it("derives for a private struct"):
+    assert_equal(Pair { left: 1, right: 2 }.field_names(), ["left", "right"])

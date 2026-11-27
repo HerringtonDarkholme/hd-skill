@@ -1,0 +1,52 @@
+use std.process.Command
+use std.testing.{assert_equal, hd_run}
+
+it("counts each file and prints the total"):
+    let out = hd_run!(
+        *Command::new("linecount").args(["data/three.txt", "data/nolf.txt", "data/empty.txt"]),
+    )
+    assert_equal(
+        out.stdout,
+        "3 data/three.txt\n2 data/nolf.txt\n0 data/empty.txt\n5 total\n",
+        reason="one line per file, then the total",
+    )
+    assert_equal(out.stderr, "", reason="nothing is reported on standard error")
+    assert_equal(out.status, 0, reason="every file was read")
+
+it("prints a zero total with no files"):
+    let out = hd_run!(*Command::new("linecount"))
+    assert_equal(out.stdout, "0 total\n", reason="an empty total")
+    assert_equal(out.status, 0, reason="no failures")
+
+it("skips an unreadable file, reports it, and exits 1 after the rest"):
+    let out = hd_run!(*Command::new("linecount").args(["data/missing.txt", "data/three.txt"]))
+    assert_equal(
+        out.stdout,
+        "3 data/three.txt\n3 total\n",
+        reason="the readable file is still counted",
+    )
+    assert_equal(
+        out.stderr,
+        "linecount: data/missing.txt: not found: data/missing.txt\n",
+        reason="the reason goes to standard error",
+    )
+    assert_equal(out.status, 1, reason="a file failed")
+
+it("refuses every file outside data/"):
+    for name in ["../hd.toml", "/etc/hosts", "data/../hd.toml", "database/x", "src/main.hd"]:
+        let out = hd_run!(*Command::new("linecount").args([name]))
+        assert_equal(out.stdout, "0 total\n", reason="no file outside data/ is counted")
+        assert(
+            out.stderr.starts_with("linecount: $name: access to "),
+            reason="the refusal is reported for $name",
+        )
+        assert_equal(out.status, 1, reason="a refused file is a failure")
+
+it("accepts a path that stays inside data/ after normalizing"):
+    let out = hd_run!(*Command::new("linecount").args(["data/../data/nolf.txt"]))
+    assert_equal(
+        out.stdout,
+        "2 data/../data/nolf.txt\n2 total\n",
+        reason="the path resolves inside data/",
+    )
+    assert_equal(out.status, 0, reason="the file was read")

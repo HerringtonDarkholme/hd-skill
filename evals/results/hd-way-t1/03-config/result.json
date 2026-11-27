@@ -1,0 +1,97 @@
+{
+  "task": "03-config",
+  "package": "config",
+  "scenario": "configuration from file and environment",
+  "selling_points": [
+    "derive Validate + field facts",
+    "env_decode",
+    "@from errors",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 13,
+      "passed": 13,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 11,
+      "passed": 11,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-validate",
+        "desc": "rules written as @derive(Validate) field facts",
+        "ok": false
+      },
+      {
+        "id": "field-facts",
+        "desc": "uses @range / @length facts",
+        "ok": false
+      },
+      {
+        "id": "from-errors",
+        "desc": "error variants convert with @from",
+        "ok": true
+      },
+      {
+        "id": "fake-fs-env",
+        "desc": "tests use MemoryFs and ScriptedEnv",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.6
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/cli/packages.md",
+      "references/std/host.md",
+      "references/std/text.md",
+      "references/testing/unit-tests.md"
+    ],
+    "bash": 13,
+    "hd": {
+      "help": 3,
+      "new": 2,
+      "file": 1,
+      "check": 2,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: S=.claude/skills/hd-lang/references; cat $S/cli/packages.md; echo ----; hd help new 2>&1; echo ----; hd help 2>&1 | head -50",
+      "Bash: S=.claude/skills/hd-lang/references; cat $S/std/host.md | head -150; echo ----; grep -n \"read_text\\|FsError\\|stat\" $S/std/api/*.md | head -30",
+      "Bash: mkdir -p /tmp/hd-scratch-config && cd /tmp/hd-scratch-config && hd new cfgprobe --lib && find cfgprobe -type f | sort && cat cfgprobe/hd.toml cfgprobe/src/lib.hd cfgprobe/tests/cfgprobe.hd",
+      "Read: /tmp/hd-scratch-config/cfgprobe/hd.toml",
+      "Read: /tmp/hd-scratch-config/cfgprobe/src/lib.hd",
+      "Read: /tmp/hd-scratch-config/cfgprobe/tests/cfgprobe.hd",
+      "Bash: rm -rf /tmp/hd-scratch-config"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 27,
+    "cost_usd": 0.021450859999999992,
+    "duration_s": 66,
+    "tokens": 639470,
+    "final_message": "The `config` package is in place: `hd check --tests` passes and `hd test` runs 13 tests, all passing.\n\nFiles:\n- `hd.toml`: `[package] name = \"config\"`. I left out `[capabilities]` because the library only needs the grants of whoever calls `load_config!`, and the tests use fakes.\n- `src/config.hd`: `Config`, `ConfigError`, and `load_config!`, with the `tests:` block at the end.\n\nHow the spec maps onto the code:\n- **`Config`** is `pub struct` with `pub` fields. `workers` defaults to 4. It derives `Eq` and `Debug`.\n- **`ConfigError`** has one field per variant. `Read`, `Parse` and `Environment` wrap the source errors (`FsError`, `JsonError`, `HostError`) with `@from`, so `?` converts them. `Invalid` holds a `string` reason.\n- **`load_config!`** reads the file, decodes JSON, applies `APP_PORT` via `env_as::[i32]`, then checks the three rules. The port override is checked too.\n- **Host length** is counted in characters (`chars().count()`), not bytes, to match \"characters\" in the spec.\n\nTests cover: defaults and explicit `workers`, the `APP_PORT` override, each error variant, the boundaries for host (253 accepted, 254 refused), port (1023/1024/65535/65536), workers (0/1/64/65), an overridden port that is out of range, and `Config` equality and debug output.\n\nThings to know:\n- I ran `hd fmt` on `src/config.hd`, and `hd lint` reports no issues.\n- `ConfigError` does not derive `Eq` or `Debug`, since the spec only asked for that on `Config`. The tests check variants with a `kind` helpe",
+    "is_error": false
+  },
+  "agent_exit": null
+}

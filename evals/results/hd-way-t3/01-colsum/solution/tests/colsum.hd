@@ -1,0 +1,24 @@
+use std.process.Command
+use std.testing.hd_run
+
+it("sums a column of standard input, grouped by key"):
+    let out = hd_run!(Command { program: "colsum", stdin: "a,1\nb,2\na,3\n" })
+    assert_equal(out.stdout, "a,4\nb,2\n", reason="totals sorted by key")
+    assert_equal(out.status, 0, reason="a clean run")
+
+it("honours --key and --value"):
+    let out = hd_run!(
+        Command {
+            program: "colsum",
+            args: ["--key", "2", "--value", "3"],
+            stdin: "x,a,1\ny,b,2\nz,a,4\n",
+        },
+    )
+    assert_equal(out.stdout, "a,5\nb,2\n")
+    assert_equal(out.status, 0)
+
+it("writes the error to standard error and exits 1"):
+    let out = hd_run!(Command { program: "colsum", stdin: "a,1\nb,oops\n" })
+    assert_equal(out.stdout, "", reason="nothing on standard output")
+    assert_equal(out.stderr, "colsum: line 2: not an integer: oops\n")
+    assert_equal(out.status, 1)

@@ -1,0 +1,104 @@
+{
+  "task": "05-users",
+  "package": "users",
+  "scenario": "service with a user-defined effect",
+  "selling_points": [
+    "own effect trait",
+    "$.use",
+    "$.with providers",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 3,
+      "passed": 3,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [],
+        "ok": true,
+        "status": 0,
+        "stdout": "renamed 1 to Ada Lovelace\nerror: no user 2\n",
+        "stderr": ""
+      }
+    ],
+    "idiom": [
+      {
+        "id": "use-effect",
+        "desc": "logic reaches the store with $.use(UserStore)",
+        "ok": true
+      },
+      {
+        "id": "provide-in-main",
+        "desc": "main provides a store with $.with",
+        "ok": true
+      },
+      {
+        "id": "fake-store",
+        "desc": "tests define their own UserStore fake",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "UserError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/language/requirements.md",
+      "references/testing/fakes.md",
+      "references/cli/packages.md",
+      "references/language/traits.md",
+      "references/testing/unit-tests.md",
+      "references/language/suspension.md",
+      "references/language/modules.md"
+    ],
+    "bash": 12,
+    "hd": {
+      "help": 5,
+      "new": 2,
+      "check": 6,
+      "test": 3,
+      "run": 2,
+      "fmt": 1
+    },
+    "denied": [
+      "Bash: hd help new; hd help check; hd help test; S=.claude/skills/hd-lang/references; grep -n -i -A12 \"derived implementations\" $S/language/traits.md | head -80; grep -n -B2 -A10 \"tests:\" $S/testing/un"
+    ],
+    "diagnostic_codes": {
+      "unknown-name": 4,
+      "missing-let": 2
+    },
+    "failing_checks": 2,
+    "turns": 30,
+    "cost_usd": 0.022102200000000006,
+    "duration_s": 63,
+    "tokens": 643085,
+    "final_message": "The `users` package is in the current directory. `hd check --tests` and `hd test` both pass (6 tests), and `hd run` prints exactly the two required lines.\n\n**Layout**\n- `hd.toml`: application package named `users`, created with `hd new --app --vcs none`. Not a git repo.\n- `src/users.hd`: `User`, `UserError`, the `UserStore` trait, `rename!`, and a `tests:` block.\n- `src/main.hd`: an in-memory `MemoryStore` provided to `rename!` with `$.with(UserStore=...)`.\n- `tests/users.hd`: an integration test that runs the program and checks its output.\n\n**Choices I made**\n- `UserError` uses `@error` with messages `no user $id` and `name is empty`, next to `@derive(Eq, Debug)`. That gives the `error: no user 2` output through `$error`.\n- Validation order: the empty-name check runs before the store is touched. So a blank name for a missing user returns `EmptyName`, not `NotFound`. The spec didn't say which wins.\n- Because `get!` and `put!` are bang methods, `rename!` is a suspending function. Its caller `main` therefore has to be `main!`, and calls are written `rename!(...)`.\n- `main` is `pub fn main!() -> void $ Console`. Its row lists only the host capability, and the store is installed by `$.with`.\n- The unit tests use a `FakeStore` that counts `put!` calls. They check that a successful rename stores exactly once, and that empty-name and missing-user cases store nothing.\n\nI did not search the machine or the internet for hd sources; everything came from the skill's bundled references and",
+    "is_error": false
+  },
+  "agent_exit": null
+}

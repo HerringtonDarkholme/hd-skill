@@ -1,0 +1,2 @@
+# The todos library: its interface is the items of src/todos.hd.
+pub use self.todos.{Todo, TodoError, load, dump, complete, pending}

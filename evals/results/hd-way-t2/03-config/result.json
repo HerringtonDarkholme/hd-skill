@@ -1,0 +1,92 @@
+{
+  "task": "03-config",
+  "package": "config",
+  "scenario": "configuration from file and environment",
+  "selling_points": [
+    "derive Validate + field facts",
+    "env_decode",
+    "@from errors",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 15,
+      "passed": 15,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 11,
+      "passed": 11,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-validate",
+        "desc": "rules written as @derive(Validate) field facts",
+        "ok": true
+      },
+      {
+        "id": "field-facts",
+        "desc": "uses @range / @length facts",
+        "ok": true
+      },
+      {
+        "id": "from-errors",
+        "desc": "error variants convert with @from",
+        "ok": true
+      },
+      {
+        "id": "fake-fs-env",
+        "desc": "tests use MemoryFs and ScriptedEnv",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/cli/packages.md",
+      "references/std/host.md",
+      "references/language/modules.md",
+      "references/std/validate.md"
+    ],
+    "bash": 10,
+    "hd": {
+      "help": 2,
+      "new": 1,
+      "check": 3,
+      "test": 2,
+      "fmt": 1
+    },
+    "denied": [
+      "Bash: S=.claude/skills/hd-lang/references; cat $S/cli/packages.md | head -150; echo ----; grep -n \"env_as\\|fn env\\b\\|read_text\\|fn stat\" -r $S/std | head -30; echo ----; ls $S/std/api | head -50"
+    ],
+    "diagnostic_codes": {
+      "syntax-error": 1,
+      "unknown-import": 1
+    },
+    "failing_checks": 1,
+    "turns": 22,
+    "cost_usd": 0.018512659999999997,
+    "duration_s": 53,
+    "tokens": 588290,
+    "final_message": "The `config` package is written and passes both `hd check --tests` and `hd test` (15 tests, 0 failures).\n\n**Files**\n- `src/config.hd` holds `Config`, `ConfigError`, `load_config!`, and the tests.\n- `src/lib.hd` re-exports `Config`, `ConfigError`, and `load_config!` as the package's public interface.\n- `hd.toml` is the library manifest. The `hd new --lib` template's placeholder `tests/config.hd` was removed because it referenced a `greet` function that no longer exists.\n\n**How it works**\n- `Config` derives `Serialize`, `Deserialize`, `Validate`, `Eq` and `Debug`. `workers` defaults to 4, and `host` and `port` have no default, so a file without them is a `Parse` error.\n- `load_config!` reads the file, decodes it, applies `APP_PORT` via `env_as::[i32]`, then calls `validated()`. Each error variant wraps one detail value, so `?` converts each failure.\n- The rules use `@length(1, 253)` on `host`, `@range(1024, 65535)` on `port`, and `@range(1, 64)` on `workers`. The overridden port goes through the same check.\n\n**Choices to review**\n- I used the `Validate` derive rather than hand-written comparisons. A consequence is that `host` length is counted in bytes, not characters. That is the same for ASCII hostnames, which is all valid hostnames are, but say if you want a character count.\n- The `hd new` template put the code in `src/lib.hd`. I moved it to `src/config.hd` as you specified and re-exported it from `lib.hd`.\n- Tests are unit tests in `src/config.hd`, using fake `FsRead`, `FsW",
+    "is_error": false
+  },
+  "agent_exit": null
+}

@@ -1,0 +1,2 @@
+# The library root: the public interface of `calc` is re-exported from calc.hd.
+pub use self.calc.{CalcError, eval}

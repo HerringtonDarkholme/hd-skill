@@ -1,0 +1,10 @@
+use pkg.{Todo, complete, dump, load, pending}
+use std.testing.assert_equal
+
+it("a list completed and dumped reads back with the title pending removed"):
+    todos := [Todo { id: 1, title: "milk" }, Todo { id: 2, title: "eggs" }]
+    match complete(todos, 1):
+        .Ok(done) =>
+            assert_equal(pending(done), ["eggs"], reason="milk is done")
+            assert_equal(load(dump(done)), .Ok(done), reason="dump and load agree")
+        .Err(error) => panic("unexpected error: ${debug(error)}")

@@ -1,0 +1,52 @@
+use std.cli.{Args, args}
+use std.console.eprintln
+use std.fs.{FsError, FsRead, read_bytes}
+use std.path.Path
+use std.process.ExitCode
+
+# Lines in `bytes`: each newline ends one line, and text after the last
+# newline counts as a line too.
+fn count_lines(bytes: List[u8]) -> usize:
+    let newlines: usize = 0
+    for byte in bytes:
+        if byte == 10:
+            newlines = newlines + 1
+    if bytes.len() > 0 && bytes[bytes.len() - 1] != 10:
+        return newlines + 1
+    newlines
+
+fn count_file!(path: Path) -> Result[usize, FsError] $ FsRead:
+    bytes := read_bytes!(path)?
+    .Ok(count_lines(bytes))
+
+pub fn main!() -> ExitCode $ Args + Console + FsRead:
+    let total: usize = 0
+    let failed = false
+    for name in args():
+        match count_file!(Path(name)):
+            .Ok(lines) =>
+                total = total + lines
+                println("$lines $name")
+            .Err(error) =>
+                eprintln("linecount: $name: $error")
+                failed = true
+    println("$total total")
+    if failed:
+        return ExitCode(1)
+    ExitCode(0)
+
+tests:
+    it("counts newline-terminated lines"):
+        assert_equal(count_lines("a\nb\n".to_utf8()), 2)
+
+    it("counts a final line without a newline"):
+        assert_equal(count_lines("a\nb".to_utf8()), 2)
+
+    it("counts a single unterminated line"):
+        assert_equal(count_lines("abc".to_utf8()), 1)
+
+    it("an empty file has no lines"):
+        assert_equal(count_lines([]), 0)
+
+    it("blank lines count"):
+        assert_equal(count_lines("\n\n\n".to_utf8()), 3)

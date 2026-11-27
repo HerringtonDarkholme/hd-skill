@@ -1,0 +1,106 @@
+{
+  "task": "07-sandbox",
+  "package": "linecount",
+  "scenario": "sandboxed program",
+  "selling_points": [
+    "scoped capability grants",
+    "minimal capabilities"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {},
+    "runs": [
+      {
+        "args": [
+          "data/a.txt",
+          "data/b.txt"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "3 data/a.txt\n1 data/b.txt\n4 total\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "data/a.txt",
+          "hd.toml"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "3 data/a.txt\n3 total\n",
+        "stderr": "linecount: hd.toml: access to hd.toml is not granted\n"
+      },
+      {
+        "args": [
+          "data/nope.txt"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "0 total\n",
+        "stderr": "linecount: data/nope.txt: not found: data/nope.txt\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "minimal-caps",
+        "desc": "[capabilities] grants only Console, Args and FsRead",
+        "ok": true
+      },
+      {
+        "id": "scoped-fsread",
+        "desc": "FsRead scoped to data/",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/how-to/files-and-directories.md",
+      "references/cli/packages.md",
+      "references/how-to/cli-tool.md",
+      "references/testing/fakes.md",
+      "references/language/errors.md",
+      "references/language/requirements.md",
+      "references/std/host.md",
+      "references/testing/unit-tests.md",
+      "references/testing/integration.md"
+    ],
+    "bash": 14,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "file": 2,
+      "check": 5,
+      "test": 4,
+      "run": 5,
+      "fmt": 1
+    },
+    "denied": [
+      "Bash: sed -i '' 's/^use std.cli.{Args, args}$/use std.cli.{Args, args}\\nuse std.console.eprintln/' src/main.hd && cat > hd.toml <<'EOF'\n[package]\nname = \"linecount\"\n\n[capabilities]          # what `ma",
+      "Bash: mkdir -p data && printf 'alpha\\nbeta\\ngamma\\n' > data/three.txt && printf 'one line, no ending' > data/partial.txt && : > data/empty.txt && hd check --tests --format json; echo \"check=$?\"",
+      "Bash: ln -s /etc/hosts data/link-out && hd run -- data/link-out data 'data/../data/three.txt' '' ; echo \"status=$?\"; rm data/link-out"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 32,
+    "cost_usd": 0.029514029999999997,
+    "duration_s": 69,
+    "tokens": 1253484,
+    "final_message": "The `linecount` package is in the current directory, and `hd check --tests` and `hd test` both pass (6 tests).\n\n**What's there**\n- `src/main.hd`: `main!` reads each argument with `read_text!` and prints `<lines> <file>`, then `<total> total`. A file that can't be read goes to stderr as `linecount: <file>: <reason>`, is skipped, and makes the exit status 1. Unit tests cover the line counting.\n- `hd.toml`: the only grants are `Console = true`, `Args = true`, and `FsRead = [\"data/\"]`. There is no `FsWrite`, `Clock`, `Random`, `Env`, `Http` or `Process` for the program. `Process = true` is under `[dev-capabilities]`, so only tests can run the built program.\n- `tests/linecount.hd`: integration tests that run the built binary. They cover multiple files, a missing file, refused paths (including `data/../hd.toml`), a directory argument, and no arguments.\n- `data/`: sample files (`three.txt`, `partial.txt`, `empty.txt`) that the tests read.\n\n**Checked by running it**\n- Paths outside `data/` (`hd.toml`, `../x`, `data/../hd.toml`, `src/main.hd`, the empty name) are refused. Each one prints a reason to stderr, is skipped, and the status is 1. The refusal is an ordinary error, not a crash.\n\n**Choices I made**\n- A line is counted with `text.lines()`, so a last line without a newline still counts (`one\\ntwo` is 2). This differs from `wc -l`, which would count 1. If you want `wc -l` semantics, the change is one line in `count_lines`.\n- The reason text is the file system error's own message, ",
+    "is_error": false
+  },
+  "agent_exit": null
+}

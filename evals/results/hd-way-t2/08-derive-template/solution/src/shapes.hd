@@ -1,0 +1,11 @@
+use pkg.fields.FieldNames
+
+@derive(FieldNames)
+pub struct Rect:
+    pub width: i32
+    pub height: i32
+    pub label: string = ""
+
+tests:
+    it("derives field names in another module of the package"):
+        assert_equal(Rect { width: 3, height: 4 }.field_names(), ["width", "height", "label"])

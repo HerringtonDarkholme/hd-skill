@@ -1,0 +1,73 @@
+{
+  "task": "12-lru",
+  "package": "lru",
+  "scenario": "stateful data structure",
+  "selling_points": [
+    "model-based property test",
+    "commands"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 9,
+      "passed": 9,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "model-test",
+        "desc": "a generated-operations test (it_prop / it_prop_with / commands)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/language/collections.md",
+      "references/std/collections.md",
+      "references/language/data.md"
+    ],
+    "bash": 14,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 2,
+      "test": 5,
+      "fmt": 3
+    },
+    "denied": [
+      "Bash: R=.claude/skills/hd-lang/references; sed -n 1,220p $R/language/collections.md; echo ----; grep -n -i -E \"map|remove|position|find|contains|insert|pop|push\" $R/std/collections.md | head -80; echo",
+      "Bash: hd test 2>&1 | tail -60; echo \"exit=${PIPESTATUS[0]}\"",
+      "Bash: hd test > /tmp/lru_test_out.txt 2>&1; echo \"exit=$?\"; tail -60 /tmp/lru_test_out.txt"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 24,
+    "cost_usd": 0.022165690000000002,
+    "duration_s": 68,
+    "tokens": 724782,
+    "final_message": "The `lru` package is written in `src/lru.hd`, and `hd check --tests` and `hd test` both pass (9 tests). The formatter check also passes after one `hd fmt` run.\n\n**Files**\n- `src/lru.hd`: the implementation, plus example tests and two generated property tests in its `tests:` block.\n- `src/lib.hd`: the library root. It re-exports `Lru` and `new_lru` from `src/lru.hd`, because `hd new --lib` makes `src/lib.hd` the root and the public interface.\n- `tests/lru.hd`: replaced the template's greeting test with a short test of the public API.\n- `hd.toml`: created by `hd new --lib`, unchanged.\n\n**Design choices**\n- A `Map[string, i64]` holds the values, and a `List[string]` holds the keys least-recently-used first. `get` on a hit and `put` both move the key to the end. Eviction removes the front. This is O(capacity) per hit or update, because the key is found by linear search. A linked-list version would be O(1), but I chose the simpler form.\n- `put` evicts in a loop while over capacity. With capacity 0 the cache holds nothing.\n\n**Tests**\n- Examples cover: a miss changes nothing, a hit refreshes recency, updating a key does not grow the cache, overflow evicts exactly one entry, capacity 0, and an empty cache.\n- `matches the model on generated operation sequences` generates random sequences of `Get` and `Put` over four keys and small capacities. It compares every `get` result and `len`, and then the final contents. The model is a separate struct that stores a logical clock per key and ev",
+    "is_error": false
+  },
+  "agent_exit": null
+}

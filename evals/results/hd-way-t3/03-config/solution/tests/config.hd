@@ -1,0 +1,16 @@
+use pkg.{Config, ConfigError, load_config}
+use std.fs.{FsRead, FsWrite, MemoryFs, write_text}
+use std.host.{Env, ScriptedEnv}
+use std.path.Path
+use std.testing.assert_equal
+
+it("loads through the package's public API"):
+    fs := MemoryFs::new()
+    $.with(FsWrite=fs):
+        _ := write_text!(
+            Path("svc.json"),
+            "{\"host\": \"example.org\", \"port\": 8443, \"workers\": 8}",
+        )
+    $.with(FsRead=fs, Env=box(ScriptedEnv::new({ "APP_PORT": "9001" }))):
+        config := load_config!("svc.json").ok().expect("a valid config")
+        assert_equal(config, Config { host: "example.org", port: 9001, workers: 8 })

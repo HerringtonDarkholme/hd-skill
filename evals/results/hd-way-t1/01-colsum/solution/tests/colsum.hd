@@ -1,0 +1,12 @@
+use pkg.sum.summarize
+use std.process.Command
+use std.testing.{assert_equal, hd_run}
+
+it("sums a table through the library"):
+    assert_equal(summarize("a,1\na,2\n", 1, 2, false), .Ok([("a", 3)]))
+
+it("rejects a zero column before reading input"):
+    let out = hd_run!(*Command::new("colsum").arg("--key").arg("0"))
+    assert_equal(out.stdout, "", reason="nothing on standard output")
+    assert_equal(out.stderr, "colsum: column numbers start at 1\n", reason="the message")
+    assert_equal(out.status, 1, reason="an error exits with status 1")

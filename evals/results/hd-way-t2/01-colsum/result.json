@@ -1,0 +1,116 @@
+{
+  "task": "01-colsum",
+  "package": "colsum",
+  "scenario": "CLI over standard input",
+  "selling_points": [
+    "derive Cli",
+    "@error",
+    "Result"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 13,
+      "passed": 13,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [
+          "--skip-header"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "a,1\nb,7\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 2: not a number: zz\n"
+      },
+      {
+        "args": [
+          "--key",
+          "2",
+          "--value",
+          "3"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "x,-2\ny,8\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 1: missing column\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "derive-cli",
+        "desc": "options parsed with @derive(Cli)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "SumError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": false,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/how-to/cli-tool.md",
+      "references/how-to/stdin-filter.md",
+      "references/how-to/text-records.md",
+      "references/cli/packages.md",
+      "references/language/modules.md",
+      "references/language/errors.md",
+      "references/std/host.md",
+      "references/testing/unit-tests.md",
+      "references/how-to/common-operations.md",
+      "references/std/api/README.md",
+      "references/std/api/console.md"
+    ],
+    "bash": 2,
+    "hd": {},
+    "denied": [
+      "Bash: ls -la && hd --version; S=/private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t2/01-colsum/colsum/.claude/skills/hd-lang/references; cat $S/how-to/cli-tool.md; cat $S/",
+      "Bash: S=/private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t2/01-colsum/colsum/.claude/skills/hd-lang/references; cat $S/how-to/text-records.md; cat $S/cli/packages.md | he"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 20,
+    "cost_usd": 0.021092700000000002,
+    "duration_s": 65,
+    "tokens": 404497,
+    "final_message": "I wrote the `colsum` package, but I could not run `hd check --tests` or `hd test`. The shell was blocked for this session, so the code is unverified against the compiler. Please run those two commands in the package directory before relying on it.\n\nFiles created in the package directory:\n\n- `hd.toml`: package `colsum`, granting `Args`, `Console` and `ConsoleInput`.\n- `src/sum.hd`: `SumError` (`@error`, `@derive(Eq, Debug)`, public, with the two variants) and `pub fn summarize` with the signature you gave. The tests cover sorting, column choice, header skipping, blank lines, trimming, negatives, empty input, missing columns, non-integers and line numbering.\n- `src/main.hd`: `@derive(Cli)` options (`--key`, `--value`, `--skip-header`), reads stdin, prints `key,total` lines. Its tests cover the option defaults and parsing.\n\nChoices I made where the spec was silent:\n\n- **Column 0:** `--key 0` or `--value 0` is rejected in `main` with `colsum: columns are numbered from 1` and status 2. `summarize` itself treats column 0 as `MissingColumn`, so it never underflows.\n- **Stdin read failure:** prints `colsum: cannot read standard input` and exits 1. I did not use the `ConsoleError` value because the docs give it no display form.\n- **Not tested:** the stdin path in `main` has no test. I was not sure `ScriptedInput` supports `read_all!`.\n- **Overflow:** a total that overflows `i64` panics, following hd's arithmetic rules.\n\nI did not use `hd new`, because it needs the shell. There is no g",
+    "is_error": false
+  },
+  "agent_exit": null
+}

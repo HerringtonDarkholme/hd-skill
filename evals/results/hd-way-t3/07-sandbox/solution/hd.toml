@@ -1,0 +1,7 @@
+[package]
+name = "linecount"
+
+[capabilities]
+Args = true                 # the file names after `--`
+Console = true              # the report and standard error
+FsRead = ["data/"]          # only files under data/, relative to the package

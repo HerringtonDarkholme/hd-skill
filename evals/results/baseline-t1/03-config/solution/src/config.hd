@@ -1,18 +1,19 @@
 use std.encoding.Deserialize
 use std.encoding.json.{JsonError, decode}
-use std.fs.{FsError, FsRead, read_text}
-use std.host.{Env, HostError, env_as}
+use std.fs.{FsError, FsRead, FsWrite, MemoryFs, read_text, write_text}
+use std.host.{Env, HostError, ScriptedEnv, env_as}
 use std.path.Path
 use std.validate.{Validate, ValidationError, length, range}
 
+# A service's settings, read from a JSON file and overridable by APP_PORT.
 @derive(Deserialize, Validate, Eq, Debug)
 pub struct Config:
     @length(1, 253)
-    host: string
+    pub host: string
     @range(1024, 65535)
-    port: i32
+    pub port: i32
     @range(1, 64)
-    workers: i32 = 4
+    pub workers: i32 = 4
 
 @error
 pub enum ConfigError:
@@ -21,7 +22,7 @@ pub enum ConfigError:
         @from
         error: FsError,
     )
-    @error("the config file is not valid JSON for a config: $error")
+    @error("the config file is not valid JSON: $error")
     Parse(
         @from
         error: JsonError,
@@ -37,110 +38,115 @@ pub enum ConfigError:
         error: ValidationError,
     )
 
-fn read_file!(path: string) -> Result[string, ConfigError] $ FsRead:
-    .Ok(read_text!(Path(path))?)
-
-# `APP_PORT` replaces the port when it is set; a value that is not an integer is an error.
-fn apply_environment(config: Config) -> Result[Config, ConfigError] $ Env:
-    overridden := env_as::[i32]("APP_PORT")?
-    .Ok(Config { ...config, port: overridden.unwrap_or(config.port) })
-
+# Reads the JSON file at `path`, applies an `APP_PORT` override, then checks
+# the rules on the fields. The override is checked too.
 pub fn load_config!(path: string) -> Result[Config, ConfigError] $ FsRead + Env:
-    text := read_file!(path)?
+    text := read_text!(Path(path))?
     config := decode::[Config](text)?
-    merged := apply_environment(config)?
-    .Ok(merged.validated()?)
+    port := env_as::[i32]("APP_PORT")?
+    overridden := Config { ...config, port: port.unwrap_or(config.port) }
+    .Ok(overridden.validated()?)
+
+fn kind(error: ConfigError) -> string:
+    match error:
+        .Read(_) => "Read"
+        .Parse(_) => "Parse"
+        .Environment(_) => "Environment"
+        .Invalid(_) => "Invalid"
+
+# Writes `text` to config.json in a fake file system, then loads it with the
+# given environment variables.
+fn load_from!(text: string, variables: Map[string, string]) -> Result[Config, ConfigError]:
+    fs := MemoryFs::new()
+    $.with(FsWrite=fs):
+        _ := write_text!(Path("config.json"), text)
+    $.with(FsRead=fs, Env=box(ScriptedEnv::new(variables))):
+        return load_config!("config.json")
 
 tests:
-    use std.fs.{FsWrite, MemoryFs, write_text}
-    use std.host.ScriptedEnv
+    it("reads every field and defaults workers to 4"):
+        config := load_from!("{\"host\": \"example.com\", \"port\": 8080}", {})
+            .ok()
+            .expect("a valid config")
+        assert_equal(config, Config { host: "example.com", port: 8080, workers: 4 })
 
-    fn config_json(host: string, port: i32, workers: i32) -> string:
-        "{\"host\": \"$host\", \"port\": $port, \"workers\": $workers}"
-
-    # Writes `text` to a fresh in-memory file, then loads it with `vars` as the environment.
-    fn loaded!(text: string, vars: Map[string, string]) -> Result[Config, ConfigError]:
-        fs := MemoryFs::new()
-        $.with(FsWrite=fs):
-            _ := write_text!(Path("config.json"), text)
-        $.with(FsRead=fs, Env=box(ScriptedEnv::new(vars))):
-            load_config!("config.json")
-
-    it("loads a valid file and keeps the given values"):
-        result := loaded!(config_json("localhost", 8080, 8), {})
-        assert_equal(result.ok(), .Some(Config { host: "localhost", port: 8080, workers: 8 }))
-
-    it("defaults workers to 4 when the file omits it"):
-        text := "{\"host\": \"localhost\", \"port\": 8080}"
-        assert_equal(
-            loaded!(text, {}).ok(),
-            .Some(Config { host: "localhost", port: 8080, workers: 4 }),
+    it("lets APP_PORT replace the port"):
+        config := load_from!(
+            "{\"host\": \"example.com\", \"port\": 8080, \"workers\": 2}",
+            { "APP_PORT": "9000" },
         )
+            .ok()
+            .expect("a valid config")
+        assert_equal(config, Config { host: "example.com", port: 9000, workers: 2 })
 
     it("reports a missing file as Read"):
-        $.with(FsRead=MemoryFs::new(), Env=box(ScriptedEnv::new({}))):
-            match load_config!("missing.json"):
-                .Err(.Read(_)) => assert(true)
-                _ => panic("expected Read")
+        fs := MemoryFs::new()
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+            error := load_config!("missing.json").err().expect("an error")
+            assert_equal(kind(error), "Read")
 
-    it("reports text that is not JSON as Parse"):
-        match loaded!("not json", {}):
-            .Err(.Parse(_)) => assert(true)
-            _ => panic("expected Parse")
+    it("reports invalid JSON as Parse"):
+        error := load_from!("{\"host\": ", {}).err().expect("an error")
+        assert_equal(kind(error), "Parse")
 
-    it("reports a JSON value of the wrong shape as Parse"):
-        match loaded!("{\"host\": \"localhost\"}", {}):
-            .Err(.Parse(_)) => assert(true)
-            _ => panic("expected Parse")
-
-    it("replaces the port from APP_PORT"):
-        result := loaded!(config_json("localhost", 8080, 4), { "APP_PORT": "9000" })
-        assert_equal(result.ok(), .Some(Config { host: "localhost", port: 9000, workers: 4 }))
+    it("reports a missing required field as Parse"):
+        error := load_from!("{\"port\": 8080}", {}).err().expect("an error")
+        assert_equal(kind(error), "Parse")
 
     it("reports a non-integer APP_PORT as Environment"):
-        match loaded!(config_json("localhost", 8080, 4), { "APP_PORT": "http" }):
-            .Err(.Environment(_)) => assert(true)
-            _ => panic("expected Environment")
+        error := load_from!("{\"host\": \"example.com\", \"port\": 8080}", { "APP_PORT": "http" })
+            .err()
+            .expect("an error")
+        assert_equal(kind(error), "Environment")
 
-    it("checks an overridden port against the rules"):
-        match loaded!(config_json("localhost", 8080, 4), { "APP_PORT": "80" }):
-            .Err(.Invalid(_)) => assert(true)
-            _ => panic("expected Invalid")
+    it("reports a port below 1024 as Invalid"):
+        error := load_from!("{\"host\": \"example.com\", \"port\": 80}", {})
+            .err()
+            .expect("an error")
+        assert_equal(kind(error), "Invalid")
+
+    it("reports a port above 65535 as Invalid"):
+        error := load_from!("{\"host\": \"example.com\", \"port\": 65536}", {})
+            .err()
+            .expect("an error")
+        assert_equal(kind(error), "Invalid")
+
+    it("checks an overridden port too"):
+        error := load_from!("{\"host\": \"example.com\", \"port\": 8080}", { "APP_PORT": "80" })
+            .err()
+            .expect("an error")
+        assert_equal(kind(error), "Invalid")
+
+    it("accepts the port and worker bounds"):
+        config := load_from!("{\"host\": \"h\", \"port\": 1024, \"workers\": 64}", {})
+            .ok()
+            .expect("a valid config")
+        assert_equal(config, Config { host: "h", port: 1024, workers: 64 })
+
+    it("rejects workers of 0"):
+        error := load_from!("{\"host\": \"h\", \"port\": 8080, \"workers\": 0}", {})
+            .err()
+            .expect("an error")
+        assert_equal(kind(error), "Invalid")
+
+    it("rejects workers of 65"):
+        error := load_from!("{\"host\": \"h\", \"port\": 8080, \"workers\": 65}", {})
+            .err()
+            .expect("an error")
+        assert_equal(kind(error), "Invalid")
 
     it("rejects an empty host"):
-        match loaded!(config_json("", 8080, 4), {}):
-            .Err(.Invalid(_)) => assert(true)
-            _ => panic("expected Invalid")
+        error := load_from!("{\"host\": \"\", \"port\": 8080}", {}).err().expect("an error")
+        assert_equal(kind(error), "Invalid")
 
-    it("accepts a host of 253 characters and rejects 254"):
+    it("accepts a host of 253 characters"):
         long := "a".repeat(253)
-        assert_equal(loaded!(config_json(long, 8080, 4), {}).is_ok(), true)
-        too_long := "a".repeat(254)
-        match loaded!(config_json(too_long, 8080, 4), {}):
-            .Err(.Invalid(_)) => assert(true)
-            _ => panic("expected Invalid")
+        config := load_from!("{\"host\": \"${long}\", \"port\": 8080}", {})
+            .ok()
+            .expect("a valid config")
+        assert_equal(config.host.len(), 253)
 
-    it("checks the port bounds 1024 to 65535"):
-        assert_equal(loaded!(config_json("h", 1024, 4), {}).is_ok(), true)
-        assert_equal(loaded!(config_json("h", 65535, 4), {}).is_ok(), true)
-        match loaded!(config_json("h", 1023, 4), {}):
-            .Err(.Invalid(_)) => assert(true)
-            _ => panic("expected Invalid for 1023")
-        match loaded!(config_json("h", 65536, 4), {}):
-            .Err(.Invalid(_)) => assert(true)
-            _ => panic("expected Invalid for 65536")
-
-    it("checks the workers bounds 1 to 64"):
-        assert_equal(loaded!(config_json("h", 8080, 1), {}).is_ok(), true)
-        assert_equal(loaded!(config_json("h", 8080, 64), {}).is_ok(), true)
-        match loaded!(config_json("h", 8080, 0), {}):
-            .Err(.Invalid(_)) => assert(true)
-            _ => panic("expected Invalid for 0")
-        match loaded!(config_json("h", 8080, 65), {}):
-            .Err(.Invalid(_)) => assert(true)
-            _ => panic("expected Invalid for 65")
-
-    it("compares configs by value"):
-        a := Config { host: "a", port: 2000, workers: 4 }
-        assert_equal(a, Config { host: "a", port: 2000, workers: 4 })
-        assert(a != Config { host: "a", port: 2001, workers: 4 })
+    it("rejects a host of 254 characters"):
+        long := "a".repeat(254)
+        error := load_from!("{\"host\": \"${long}\", \"port\": 8080}", {}).err().expect("an error")
+        assert_equal(kind(error), "Invalid")

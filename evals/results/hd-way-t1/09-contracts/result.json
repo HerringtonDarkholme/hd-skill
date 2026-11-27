@@ -1,0 +1,84 @@
+{
+  "task": "09-contracts",
+  "package": "bank",
+  "scenario": "invariants",
+  "selling_points": [
+    "require",
+    "ensure"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 8,
+      "passed": 8,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 6,
+      "passed": 6,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "require",
+        "desc": "preconditions with require",
+        "ok": true
+      },
+      {
+        "id": "ensure",
+        "desc": "postconditions with ensure",
+        "ok": false
+      },
+      {
+        "id": "no-raw-panic",
+        "desc": "no hand-written panic( for checks",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.75
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/cli/packages.md",
+      "design/contracts.md",
+      "references/testing/unit-tests.md"
+    ],
+    "bash": 13,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 4,
+      "fmt": 3,
+      "file": 3,
+      "test": 2,
+      "run": 2
+    },
+    "denied": [
+      "Bash: sed -i 's/mut \\([a-z]*\\) := /let mut \\1 = /' src/account.hd && grep -n \"let mut\" src/account.hd && cat > src/lib.hd <<'EOF'\npub use self.account.{Account, open, transfer}\nEOF\ncat > tests/bank.hd",
+      "Write: /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-probe/probe.hd"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 27,
+    "cost_usd": 0.023187600000000003,
+    "duration_s": 75,
+    "tokens": 825078,
+    "final_message": "The `bank` package is in the current directory. `hd check --tests` and `hd test` both pass (8 tests: 7 unit tests in `src/account.hd`, 1 integration test in `tests/bank.hd`).\n\n**Files**\n- `src/account.hd`: `Account`, `open`, `transfer`, and the `impl` with `balance`, `deposit`, `withdraw`, plus the unit tests in a `tests:` block.\n- `src/lib.hd`: re-exports `Account`, `open` and `transfer`, so callers write `bank.open(...)`.\n- `tests/bank.hd`: an integration test through the public API.\n- `hd.toml`: the package manifest, created by `hd new --lib`. It declares no capabilities because the library needs none.\n\n**Design choices**\n- **Checks are `require` only.** Each bad call (non-positive amount, overdraft, negative opening balance) fails a `require`. These are stripped in release builds.\n- **Invariants are stated on entry, not with `ensure`.** I first used `ensure` for \"the balance is never negative\". A probe showed `ensure` still fires in release builds, which breaks the \"costs nothing in release\" requirement. Each method now `require`s that the balance is non-negative on entry, so the invariant is checked on the next call, at no release cost.\n- **The transfer total is a comment plus tests, not a runtime check.** Checking that the total is kept after the call would need an `ensure`, which costs in release builds. The comment documents it, and the tests check it.\n\n**Verification**\n- A probe in debug mode stops with `explicit-panic: a withdrawal does not exceed the balance`.\n- In",
+    "is_error": false
+  },
+  "agent_exit": null
+}

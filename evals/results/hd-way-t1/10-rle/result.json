@@ -1,0 +1,73 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 17,
+      "passed": 17,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/language/collections.md"
+    ],
+    "bash": 16,
+    "hd": {
+      "help": 2,
+      "new": 1,
+      "doc": 1,
+      "check": 8,
+      "file": 1,
+      "test": 6,
+      "fmt": 7,
+      "lint": 6
+    },
+    "denied": [
+      "Bash: S=.claude/skills/hd-lang/references; grep -n -i \"range\\|repeat\\|push\\|for _\\|\\.last\\|map(\" $S/language/collections.md | head -40; grep -rn \"Arbitrary\" $S/testing/unit-tests.md | head -3; grep -n",
+      "Bash: hd check --tests --format json 2>&1 | head -40; echo \"exit ${PIPESTATUS[0]}\""
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 25,
+    "cost_usd": 0.021358650000000007,
+    "duration_s": 57,
+    "tokens": 901756,
+    "final_message": "The `rle` package is in place, and `hd check --tests` and `hd test` both pass (17 cases, 0 failures).\n\n**What's there**\n\n- `src/rle.hd` holds the module:\n  - `pub struct Run` with `pub value: i32` and `pub count: usize`, derived `Eq` and `Debug`.\n  - `pub fn encode(xs: List[i32]) -> List[Run]`, which produces maximal runs. The empty list gives no runs.\n  - `pub fn decode(runs: List[Run]) -> List[i32]`.\n- `src/lib.hd` is the library root and re-exports `Run`, `encode` and `decode`, so callers can use them from the package root.\n- I removed the generated sample `greet` function and its `tests/rle.hd`, since they weren't part of the spec.\n\n**Tests**\n\n- Ten example tests cover the empty list, a single element, runs, values that differ, negatives and zero, a value that returns after a different one, decoding of empty, multi-run and long-run inputs, and round trips of example lists.\n- Seven property tests (`it_prop`) check:\n  - `decode(encode(xs)) == xs` for any list.\n  - The same round trip on lists mapped to `x % 3`, so long runs actually occur. Random full-range `i32` lists almost never repeat.\n  - Maximality (no empty runs, neighbours differ), and that run counts sum to the list length.\n  - That encode never yields more runs than elements.\n  - That `encode(decode(runs)) == runs` for runs produced from generated lists.\n\nTo check the tests have teeth, I temporarily broke `encode` (`x == value` changed to `x != value`). Ten tests failed, including the property tests, with shrunk c",
+    "is_error": false
+  },
+  "agent_exit": null
+}

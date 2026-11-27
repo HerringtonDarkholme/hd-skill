@@ -1,0 +1,12 @@
+use pkg.{Limiter, new_limiter}
+use std.time.{Clock, ManualClock, Timestamp, ms, sleep}
+
+it("limits a key through the public API"):
+    clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+    $.with(Clock=clock):
+        let mut limiter = new_limiter(2, ms(1000))
+        assert(limiter.allow("user-1"))
+        assert(limiter.allow("user-1"))
+        assert_equal(limiter.allow("user-1"), false, reason="over the limit")
+        sleep!(ms(1000))
+        assert(limiter.allow("user-1"), reason="the window has moved on")

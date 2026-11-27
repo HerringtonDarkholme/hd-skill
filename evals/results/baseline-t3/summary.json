@@ -210,18 +210,15 @@
         "codes": []
       },
       "own_tests": {
-        "cases": 15,
-        "passed": 15,
+        "cases": 13,
+        "passed": 13,
         "failed": []
       },
       "hidden": {
         "expected": 11,
-        "passed": 0,
+        "passed": 11,
         "failed": [],
-        "compile_errors": [
-          "tests/zz_hidden_eval.hd:19: private-member: `Config` has the private field `host`, so only its module can construct or copy it",
-          "tests/zz_hidden_eval.hd:22: private-member: `Config` has the private field `host`, so only its module can construct or copy it"
-        ]
+        "compile_errors": []
       },
       "runs": [],
       "idiom": [
@@ -252,32 +249,34 @@
         }
       ],
       "fmt_clean": true,
-      "pass": false,
+      "pass": true,
       "idiom_score": 1
     },
     "metrics": {
       "skill_invoked": true,
       "pages_read": [
-        "references/cli/packages.md",
-        "references/std/host.md"
+        "references/how-to/configuration.md",
+        "references/cli/packages.md"
       ],
-      "bash": 8,
+      "bash": 7,
       "hd": {
-        "check": 2,
+        "check": 4,
         "test": 2,
-        "fmt": 1,
+        "fmt": 2,
         "lint": 1
       },
-      "denied": [
-        "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/baseline-t3/03-config/config && mkdir -p src tests && printf '[package]\\nname = \"config\"\\n' > hd.toml && which hd && hd"
-      ],
-      "diagnostic_codes": {},
-      "failing_checks": 0,
-      "turns": 15,
-      "cost_usd": 0.019307189999999995,
-      "duration_s": 60,
-      "tokens": 498033,
-      "final_message": "The `config` package is in place and passes `hd check --tests` and `hd test` (15 passed, 0 failed). `hd fmt` and `hd lint` are also clean.\n\nFiles:\n- `hd.toml`: `[package] name = \"config\"`, no dependencies.\n- `src/config.hd`: `Config`, `ConfigError`, `load_config!`, and a `tests:` block.\n\nChoices I made where the spec was silent:\n- **Required fields:** `host` and `port` have no default, so a missing one is a `Parse` error. `workers` defaults to 4.\n- **Validation:** rules are `@length(1, 253)` on `host`, `@range(1024, 65535)` on `port`, and `@range(1, 64)` on `workers`, checked with `validated()` after the `APP_PORT` override.\n- **Errors:** `Read` wraps `FsError`, `Parse` wraps `JsonError`, `Environment` wraps `HostError` from `env_as`, and `Invalid` wraps `ValidationError`. The error enum and `Config` are `pub`.\n- **Layout:** the package has no `src/lib.hd`. `hd check` accepts `src/config.hd` as the module, so I did not add a re-export file. If you want a conventional library root, add `src/lib.hd` with a `pub use` line.\n\nThe tests cover each error variant, the port and workers boundaries, the host length boundaries, the `APP_PORT` override (including an overridden port that fails the rule), `==`, and debug output.\n\nOne thing to know: a Bash call that included `mkdir` was denied, so I created the files with the Write tool instead. The result is the same, and I did not run `hd new`.",
+      "denied": [],
+      "diagnostic_codes": {
+        "member-not-derivable": 2,
+        "unknown-trait": 2,
+        "type-mismatch": 2
+      },
+      "failing_checks": 1,
+      "turns": 16,
+      "cost_usd": 0.017733199999999998,
+      "duration_s": 57,
+      "tokens": 424006,
+      "final_message": "The `config` package is in place: `hd.toml` and `src/config.hd` in the current directory. `hd check --tests` passes, `hd test` passes all 13 cases, and `hd fmt --check` is clean.\n\nWhat's in it:\n\n- **`Config`** has public `host`, `port` and `workers` (default 4). It derives `Deserialize`, `Validate`, `Eq` and `Debug`. The rules are `host` 1–253 characters, `port` 1024–65535 and `workers` 1–64.\n- **`ConfigError`** has the four variants `Read`, `Parse`, `Environment` and `Invalid`, each with one `@from` field. The payloads are `FsError`, `JsonError`, `HostError` and `ValidationError`.\n- **`load_config!`** reads the file, decodes the JSON, applies `APP_PORT` via `env_decode`, then validates the merged result. So an overridden port is checked by the same rules.\n- **`hd.toml`** declares `FsRead = true` and `Env = true`.\n\nChoices I made:\n\n- **No `Debug` on `ConfigError`.** `ValidationError` doesn't implement `Debug`, so the derive fails. The tests match on variants instead of comparing errors.\n- **Library root.** I put the code at `src/config.hd` as you specified and did not create a `src/lib.hd`. The package checks without one. Under the module rules, `src/config.hd` is the module `config.config`, so consumers would import it that way. If you want `use config.load_config` instead, I can add a `src/lib.hd` that re-exports it.\n- **Tests.** They cover defaults, explicit `workers`, the `APP_PORT` override, each error variant, both edges of every range, and `==` and debug output.\n\nI hav",
       "is_error": false
     },
     "agent_exit": null
@@ -312,11 +311,6 @@
         {
           "id": "manual-clock",
           "desc": "tests control time with ManualClock",
-          "ok": true
-        },
-        {
-          "id": "virtual-sleep",
-          "desc": "tests advance virtual time with sleep!",
           "ok": true
         },
         {

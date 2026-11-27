@@ -1,2 +1,6 @@
 [package]
 name = "config"
+
+[capabilities]
+FsRead = true
+Env = true

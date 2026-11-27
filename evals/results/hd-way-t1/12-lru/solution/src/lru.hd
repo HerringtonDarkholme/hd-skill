@@ -1,0 +1,171 @@
+## A least-recently-used cache from string keys to i64 values.
+##
+## `values` holds the entries; `order` lists every key once, least recently
+## used first. A lookup or an update moves its key to the end of `order`, and
+## a put over capacity drops the key at the front.
+
+pub struct Lru:
+    capacity: usize
+    values: Map[string, i64]
+    order: List[string]
+
+## An empty cache that keeps at most `capacity` entries.
+pub fn new_lru(capacity: usize) -> Lru:
+    Lru { capacity: capacity, values: {}, order: [] }
+
+impl Lru:
+    ## The value for `key`, or `.None`. A hit makes `key` the most recently used;
+    ## a miss changes nothing.
+    pub fn get(&mut self, key: string) -> i64?:
+        let .Some(value) = self.values.get(key) else:
+            return .None
+        self.touch(key)
+        .Some(value)
+
+    ## Inserts or updates `key`, makes it the most recently used, then evicts the
+    ## least recently used entry while the cache is over capacity.
+    pub fn put(&mut self, key: string, value: i64) -> void:
+        if self.values.contains_key(key):
+            self.touch(key)
+        else:
+            self.order.push(key)
+        self.values[key] = value
+        while self.order.len() > self.capacity:
+            oldest := self.order.remove(0)
+            _ := self.values.remove(oldest)
+
+    ## The number of entries.
+    pub fn len(self) -> usize:
+        self.values.len()
+
+    ## Moves `key`, which must be stored, to the most recently used end.
+    fn touch(&mut self, key: string) -> void:
+        index := self.order.index_of(key).expect("a stored key is in the order")
+        _ := self.order.remove(index)
+        self.order.push(key)
+
+tests:
+    use std.testing.{Arbitrary, it_prop}
+
+    it("a miss returns none and changes nothing"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        assert_equal(cache.get("zzz"), .None)
+        assert_equal(cache.len(), 2)
+        cache.put("c", 3)
+        assert_equal(cache.get("a"), .None, reason="a was the least recent and is evicted")
+        assert_equal(cache.get("b"), .Some(2))
+
+    it("a hit makes the key most recently used"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        assert_equal(cache.get("a"), .Some(1))
+        cache.put("c", 3)
+        assert_equal(cache.get("b"), .None, reason="b is now the least recent")
+        assert_equal(cache.get("a"), .Some(1))
+        assert_equal(cache.get("c"), .Some(3))
+
+    it("updating a key replaces its value and makes it most recent"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        cache.put("a", 10)
+        assert_equal(cache.len(), 2, reason="an update does not add an entry")
+        cache.put("c", 3)
+        assert_equal(cache.get("b"), .None)
+        assert_equal(cache.get("a"), .Some(10))
+
+    it("evicts exactly one entry when a new key overflows"):
+        let mut cache = new_lru(3)
+        for key in ["a", "b", "c", "d"]:
+            cache.put(key, 0)
+        assert_equal(cache.len(), 3)
+        assert_equal(cache.get("a"), .None)
+        assert_equal(cache.get("d"), .Some(0))
+
+    it("capacity zero keeps nothing"):
+        let mut cache = new_lru(0)
+        cache.put("a", 1)
+        assert_equal(cache.len(), 0)
+        assert_equal(cache.get("a"), .None)
+
+    it("an empty cache has length zero"):
+        cache := new_lru(5)
+        assert_equal(cache.len(), 0)
+
+    # A plain model of the cache: each key keeps its value and the tick of its
+    # last use, and eviction removes the key with the oldest tick.
+    struct Model:
+        capacity: usize
+        clock: i64
+        slots: Map[string, (i64, i64)]
+
+    impl Model:
+        fn get(&mut self, key: string) -> i64?:
+            self.clock += 1
+            let .Some(slot) = self.slots.get(key) else:
+                return .None
+            self.slots[key] = (slot._0, self.clock)
+            .Some(slot._0)
+
+        fn put(&mut self, key: string, value: i64) -> void:
+            self.clock += 1
+            self.slots[key] = (value, self.clock)
+            if self.slots.len() > self.capacity:
+                self.evict_oldest()
+
+        fn evict_oldest(&mut self) -> void:
+            let mut victim = ""
+            let mut oldest = self.clock + 1
+            for (key, slot) in self.slots:
+                if slot._1 < oldest:
+                    oldest = slot._1
+                    victim = *key
+            _ := self.slots.remove(victim)
+
+        fn len(&self) -> usize:
+            self.slots.len()
+
+    # Keys are drawn from a small set, so sequences hit, update and evict often.
+    fn key_name(n: u8) -> string:
+        "k${n % 4}"
+
+    @derive(Arbitrary, Debug)
+    enum Op:
+        Get(key: u8)
+        Put(key: u8, value: i64)
+
+    @derive(Arbitrary, Debug)
+    struct Run:
+        capacity: u8
+        ops: List[Op]
+
+    it_prop("matches the model on generated operation sequences", prop=fn!(run: Run):
+        capacity := usize(run.capacity % 4)
+        let mut cache = new_lru(capacity)
+        let mut model = Model { capacity: capacity, clock: 0, slots: {} }
+        for op in run.ops:
+            match op:
+                .Get(key) => assert_equal(cache.get(key_name(key)), model.get(key_name(key)))
+                .Put(key, value) =>
+                    cache.put(key_name(key), value)
+                    model.put(key_name(key), value)
+            assert_equal(cache.len(), model.len())
+        for n in [0, 1, 2, 3]:
+            assert_equal(cache.get(key_name(n)), model.get(key_name(n)), reason="final contents")
+    )
+
+    it_prop("a miss never changes the length or the survivors", prop=fn!(run: Run):
+        capacity := usize(run.capacity % 4)
+        let mut cache = new_lru(capacity)
+        for op in run.ops:
+            match op:
+                .Get(key) =>
+                    before := cache.len()
+                    if cache.get(key_name(key)).is_none():
+                        assert_equal(cache.len(), before)
+                .Put(key, value) => cache.put(key_name(key), value)
+        assert(cache.len() <= capacity)
+    )

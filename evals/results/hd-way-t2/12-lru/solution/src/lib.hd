@@ -1,0 +1,2 @@
+## The least-recently-used cache: `Lru`, built by `new_lru`.
+pub use self.lru.{Lru, new_lru}

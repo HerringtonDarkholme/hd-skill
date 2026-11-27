@@ -1,0 +1,70 @@
+## Why a line failed: the line number counts from 1, header and blank lines included.
+@error
+@derive(Eq, Debug)
+pub enum SumError:
+    @error("line $line: missing column")
+    MissingColumn(line: usize)
+    @error("line $line: not a number: $text")
+    NotANumber(line: usize, text: string)
+
+# The trimmed text of 1-based `column`, or MissingColumn when the line is too short.
+fn cell(fields: List[string], column: usize, line: usize) -> Result[string, SumError]:
+    if column == 0:
+        return .Err(.MissingColumn(line))
+    match fields.get(column - 1):
+        .Some(text) => .Ok(text.trim())
+        .None => .Err(.MissingColumn(line))
+
+fn amount_of(text: string, line: usize) -> Result[i64, SumError]:
+    match text.parse::[i64]():
+        .Ok(amount) => .Ok(amount)
+        .Err(_) => .Err(.NotANumber(line, text))
+
+## Sum the `value` column grouped by the `key` column (both 1-based).
+## Returns one (key, total) pair per key, sorted by key.
+pub fn summarize(text: string, key: usize, value: usize, skip_header: bool) -> Result[List[(string, i64)], SumError]:
+    let mut totals: Map[string, i64] = {}
+    for (index, line) in text.lines().iter().enumerate():
+        number := index + 1
+        if (skip_header && index == 0) || line.trim() == "":
+            continue
+        fields := line.split(",")
+        name := cell(fields, key, number)?
+        amount := amount_of(cell(fields, value, number)?, number)?
+        *totals.get_or_insert(name, 0) += amount
+    .Ok(totals.entries().sorted_by_key(fn(entry): entry._0))
+
+tests:
+    it("sums the value column per key, sorted by key"):
+        assert_equal(summarize("b,1\na,2\nb,3\n", 1, 2, false), .Ok([("a", 2), ("b", 4)]))
+
+    it("groups by and sums any columns"):
+        assert_equal(summarize("1,a,5\n2,a,6\n", 2, 3, false), .Ok([("a", 11)]))
+
+    it("skips the first line only when asked"):
+        assert_equal(summarize("name,amount\nx,5\n", 1, 2, true), .Ok([("x", 5)]))
+        assert_equal(summarize("name,amount\nx,5\n", 1, 2, false), .Err(.NotANumber(1, "amount")))
+
+    it("ignores blank lines and trims keys and values"):
+        assert_equal(summarize(" x , 5 \n\n   \nx,-2\n", 1, 2, false), .Ok([("x", 3)]))
+
+    it("accepts negative totals"):
+        assert_equal(summarize("a,-7\n", 1, 2, false), .Ok([("a", -7)]))
+
+    it("returns no rows for empty input"):
+        assert_equal(summarize("", 1, 2, false).map(fn(rows): rows.len()), .Ok(0))
+
+    it("reports a line with too few columns"):
+        assert_equal(summarize("a,1\nb\n", 1, 2, false), .Err(.MissingColumn(2)))
+
+    it("reports a value that is not an integer, trimmed"):
+        assert_equal(summarize("a,1\nb, 7x \n", 1, 2, false), .Err(.NotANumber(2, "7x")))
+
+    it("counts header and blank lines in line numbers"):
+        assert_equal(summarize("h,v\n\na,zz\n", 1, 2, true), .Err(.NotANumber(3, "zz")))
+
+    it("treats column 0 as missing"):
+        assert_equal(summarize("a,1\n", 0, 2, false), .Err(.MissingColumn(1)))
+
+    it("reports an empty value as not a number"):
+        assert_equal(summarize("a,\n", 1, 2, false), .Err(.NotANumber(1, "")))

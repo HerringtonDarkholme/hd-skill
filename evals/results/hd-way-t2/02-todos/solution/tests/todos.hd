@@ -1,0 +1,14 @@
+use pkg.{Todo, load, dump, complete, pending}
+use std.testing.assert_equal
+
+it("round-trips a list through the package root"):
+    todos := [Todo { id: 4, title: "walk", done: false }]
+    assert_equal(load(dump(todos)), .Ok(todos))
+
+it("completes then lists pending titles"):
+    match load("[{\"id\": 1, \"title\": \"a\"}, {\"id\": 2, \"title\": \"b\"}]"):
+        .Ok(todos) =>
+            match complete(todos, 1):
+                .Ok(done) => assert_equal(pending(done), ["b"])
+                .Err(error) => assert_equal("${error}", "no error expected")
+        .Err(error) => assert_equal("${error}", "no error expected")

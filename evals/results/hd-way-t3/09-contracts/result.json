@@ -1,0 +1,83 @@
+{
+  "task": "09-contracts",
+  "package": "bank",
+  "scenario": "invariants",
+  "selling_points": [
+    "require",
+    "ensure"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 8,
+      "passed": 8,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 6,
+      "passed": 6,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "require",
+        "desc": "preconditions with require",
+        "ok": true
+      },
+      {
+        "id": "ensure",
+        "desc": "postconditions with ensure",
+        "ok": true
+      },
+      {
+        "id": "no-raw-panic",
+        "desc": "no hand-written panic( for checks",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 12,
+    "hd": {
+      "doc": 2,
+      "help": 3,
+      "new": 2,
+      "check": 8,
+      "test": 2,
+      "run": 2,
+      "fmt": 1
+    },
+    "denied": [
+      "Bash: perl -pi -e 's/^( +)mut ([a-z]+) := /$1let mut $2 = /' src/account.hd && grep -n \"let mut\" src/account.hd && hd check --tests 2>&1 | head -40",
+      "Bash: P=$(mktemp -d)/probe && hd new --app --vcs none \"$P\" >/dev/null && cd \"$P\" && hd add /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t3/09-contracts/bank 2>&1 | ta"
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "syntax-error": 14
+    },
+    "failing_checks": 1,
+    "turns": 22,
+    "cost_usd": 0.019785449999999993,
+    "duration_s": 65,
+    "tokens": 685076,
+    "final_message": "The `bank` package is in place and both `hd check --tests` and `hd test` pass (8 tests: 7 unit, 1 integration). I did not see the stopping behavior fire, though. My probe program was denied approval, so the panics are only what the contract docs say.\n\n**Files**\n- `src/account.hd`: the `Account` struct, `open`, `transfer`, and the `balance`, `deposit` and `withdraw` methods, plus a `tests:` block.\n- `src/lib.hd`: now only `pub use self.account.{Account, open, transfer}`. I replaced the template's `greet` function.\n- `tests/bank.hd`: an integration test that uses the public API through `pkg`.\n- `hd.toml`: created by `hd new --lib` and unchanged.\n\n**Choices I made**\n- **Misuse checks are `require`** (`std.contract`), with a message per rule. These are the only checks that stop the program, and per the docs they are skipped in release builds.\n- **Invariants are `ensure`.** Each mutator ensures the balance is never negative, and each `ensure` states what the call did (a deposit adds exactly its amount, a transfer keeps the total). The docs say `ensure` runs in every build, so these do cost something in release. That goes against \"cost nothing in release\" if you meant the invariants too. If so, I can gate them differently.\n- **Fields are private**, so callers can only change the balance through the API.\n- **`open(0)` is allowed.** A withdrawal may empty an account.\n- **`let mut` for mutable bindings.** `mut x := ...` is a syntax error in this hd version.\n\n**Not verified**\n- That `r",
+    "is_error": false
+  },
+  "agent_exit": null
+}

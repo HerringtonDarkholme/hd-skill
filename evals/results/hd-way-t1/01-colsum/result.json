@@ -1,0 +1,119 @@
+{
+  "task": "01-colsum",
+  "package": "colsum",
+  "scenario": "CLI over standard input",
+  "selling_points": [
+    "derive Cli",
+    "@error",
+    "Result"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 16,
+      "passed": 16,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [
+          "--skip-header"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "a,1\nb,7\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 2: not a number: zz\n"
+      },
+      {
+        "args": [
+          "--key",
+          "2",
+          "--value",
+          "3"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "x,-2\ny,8\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 1: missing column\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "derive-cli",
+        "desc": "options parsed with @derive(Cli)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "SumError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/std/collections.md",
+      "references/testing/integration.md"
+    ],
+    "bash": 13,
+    "hd": {
+      "help": 2,
+      "new": 1,
+      "file": 1,
+      "check": 5,
+      "test": 2,
+      "run": 3,
+      "fmt": 1
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t1/01-colsum/colsum/.claude/skills/hd-lang/references && grep -n \"Map\\|enumerate\\|sorted\" std/collections.md | h",
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t1/01-colsum/colsum && rm tests/colsum.hd && rmdir tests && hd check --format json --tests 2>&1 | head -40"
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 3,
+      "syntax-error": 1,
+      "unknown-name": 1
+    },
+    "failing_checks": 2,
+    "turns": 26,
+    "cost_usd": 0.025882149999999996,
+    "duration_s": 80,
+    "tokens": 874099,
+    "final_message": "The `colsum` package is in the current directory. `hd check --tests` passes and `hd test` passes all 16 tests.\n\nFiles:\n- `src/sum.hd`: `SumError` (`@derive(Eq, Debug)` and `@error`, with the two specified variants) and `summarize` with the required signature. It has 11 unit tests.\n- `src/main.hd`: `@derive(Cli)` options (`--key`, `--value`, `--skip-header`), reads stdin, and prints `key,total` lines. It has 4 tests that use fake args, input and console.\n- `tests/colsum.hd`: an integration test that calls `summarize` through `pkg.sum` and runs the built binary with `--key 0` to check the error message and exit status 1.\n- `hd.toml`: grants `Console`, `ConsoleInput` and `Args`, and `Process` under `[dev-capabilities]` for the integration test.\n\nI also ran the built program by hand. Sorted totals print with status 0. A non-numeric value prints `colsum: line 2: not a number: x` to stderr, prints nothing to stdout, and exits 1.\n\nChoices I made that the spec did not cover:\n- **Zero column numbers:** `--key 0` or `--value 0` prints `colsum: column numbers start at 1` and exits 1. `summarize` panics on zero, since that is a caller bug.\n- **Usage errors:** unknown flags or bad numbers exit 2, from the Cli derive, not 1.\n- **Whitespace-only lines** count as blank and are skipped.\n- **Line numbers** count every line, including the header and blank lines.\n- **Error messages:** `@error` text is `line N: missing column` and `line N: not a number: TEXT`, and `main` prefixes `colsum: `.\n\nTwo",
+    "is_error": false
+  },
+  "agent_exit": null
+}

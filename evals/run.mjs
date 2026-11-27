@@ -36,6 +36,8 @@ const model = flag('model', 'haiku');
 const concurrency = Number(flag('concurrency', '4'));
 const only = (flag('tasks', '') || '').split(',').filter(Boolean);
 const agentTimeoutMs = Number(flag('timeout-min', '25')) * 60_000;
+// The skill to install: this checkout's by default, or another version's.
+const skillDir = path.resolve(flag('skill', path.join(repo, 'skills', 'hd-lang')));
 
 const tasksDir = path.join(here, 'tasks');
 const resultsDir = path.join(here, 'results', label);
@@ -91,7 +93,7 @@ function readScope(ws, scope) {
 }
 
 function capabilitiesSection(toml) {
-  const m = toml.match(/^\[capabilities\]\s*\n([\s\S]*?)(?=^\[|$(?![\s\S]))/m);
+  const m = toml.match(/^\[capabilities\][^\n]*\n([\s\S]*?)(?=^\[|$(?![\s\S]))/m);
   if (!m) return [];
   return m[1].split('\n').map((l) => l.replace(/#.*/, '').trim()).filter(Boolean)
     .map((l) => { const [k, v] = l.split('=').map((s) => s.trim()); return { name: k, value: v }; })
@@ -279,7 +281,7 @@ function prepareWorkspace(task) {
     if (reference) {
       fs.cpSync(path.join(task.dir, 'reference'), ws, { recursive: true });
     } else {
-      fs.cpSync(path.join(repo, 'skills', 'hd-lang'), path.join(ws, '.claude', 'skills', 'hd-lang'), { recursive: true });
+      fs.cpSync(skillDir, path.join(ws, '.claude', 'skills', 'hd-lang'), { recursive: true });
     }
   }
   return ws;
@@ -325,8 +327,9 @@ function summarize(results) {
   const pct = (x) => (x == null ? '–' : `${Math.round(x * 100)}%`);
   const sum = (f) => results.reduce((a, r) => a + (f(r) || 0), 0);
   const lines = [];
-  const sha = sh('git', ['rev-parse', '--short', 'HEAD'], { cwd: repo }).stdout.trim();
-  const hdv = sh(HD, ['--version']).stdout.trim() || sh(HD, ['--version']).stderr.split('\n')[0];
+  const head = sh('git', ['rev-parse', '--short', 'HEAD'], { cwd: repo }).stdout.trim();
+  const dirty = sh('git', ['status', '--porcelain', '--', 'skills'], { cwd: repo }).stdout.trim() !== '';
+  const sha = dirty ? `${head} + uncommitted skill changes` : head;
   lines.push(`# Evaluation: ${label}`, '');
   lines.push(`- Skill: hd-skill ${sha}; model: \`${model}\`; date: ${new Date().toISOString().slice(0, 10)}`);
   if (!reference) {
@@ -396,6 +399,16 @@ if (reference && has('write-expected')) {
   }
 }
 
-fs.writeFileSync(path.join(resultsDir, 'summary.json'), JSON.stringify(results, null, 2) + '\n');
-fs.writeFileSync(path.join(resultsDir, 'summary.md'), summarize(results));
-process.stdout.write(summarize(results));
+// A run of some tasks replaces only their entries in an existing summary.
+const summaryPath = path.join(resultsDir, 'summary.json');
+let merged = results;
+if (only.length && fs.existsSync(summaryPath)) {
+  const fresh = new Map(results.map((r) => [r.task, r]));
+  const previous = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+  merged = previous.map((r) => fresh.get(r.task) ?? r);
+  for (const r of results) if (!previous.some((p) => p.task === r.task)) merged.push(r);
+  merged.sort((a, b) => a.task.localeCompare(b.task));
+}
+fs.writeFileSync(summaryPath, JSON.stringify(merged, null, 2) + '\n');
+fs.writeFileSync(path.join(resultsDir, 'summary.md'), summarize(merged));
+process.stdout.write(summarize(merged));

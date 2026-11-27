@@ -1,0 +1,11 @@
+use pkg.{open, transfer}
+use std.testing.assert_equal
+
+it("moves money between two accounts through the public API"):
+    let mut savings = open(+1000)
+    let mut checking = open(+0)
+    transfer(&mut savings, &mut checking, +250)
+    savings.withdraw(+50)
+    checking.deposit(+25)
+    assert_equal(savings.balance(), 700)
+    assert_equal(checking.balance(), 275)

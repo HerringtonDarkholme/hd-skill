@@ -1,0 +1,36 @@
+use std.cli.{Args, args}
+use std.console.eprintln
+use std.fs.{FsRead, read_text}
+use std.path.Path
+use std.process.ExitCode
+
+# The number of lines in a text: a last line without its ending still counts.
+pub fn count_lines(text: string) -> usize:
+    text.lines().len()
+
+# The line count of one file, or the reason it cannot be read.
+fn file_lines!(file: string) -> Result[usize, string] $ FsRead:
+    match read_text!(Path(file)):
+        .Ok(text) => .Ok(count_lines(text))
+        .Err(error) => .Err("$error")
+
+pub fn main!() -> ExitCode $ Args + Console + FsRead:
+    let mut total: usize = 0
+    let mut failed = false
+    for file in args():
+        match file_lines!(file):
+            .Ok(lines) =>
+                total += lines
+                println("$lines $file")
+            .Err(reason) =>
+                eprintln("linecount: $file: $reason")
+                failed = true
+    println("$total total")
+    if failed: ExitCode(1) else: ExitCode(0)
+
+tests:
+    it("counts the lines of a text"):
+        assert_equal(count_lines(""), 0)
+        assert_equal(count_lines("one\n"), 1)
+        assert_equal(count_lines("one\ntwo"), 2, reason="no ending on the last line")
+        assert_equal(count_lines("\n\n"), 2, reason="blank lines count")

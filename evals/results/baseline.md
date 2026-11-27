@@ -2,14 +2,14 @@
 
 12 tasks × 3 trials = 36 runs (baseline-t1, baseline-t2, baseline-t3).
 
-- Runs passed: **31 / 36** (86%)
+- Runs passed: **32 / 36** (89%)
 - Tasks passed in every trial: **10 / 12**; in at least one: 11 / 12
-- Hidden cases passed: 182 / 210
-- Mean idiom score: **81%**
+- Hidden cases passed: 193 / 210
+- Mean idiom score: **80%**
 - Package checks clean: 36 / 36; `hd fmt` clean: 33 / 36
-- Skill opened: 36 / 36; reference pages opened per run: 3.3
-- `hd check` calls per run: 4.6, of which failing: 1.2; `hd doc` invocations: 90 in all
-- Turns per run: 26.1; time per run: 74 s; total cost: $0.91
+- Skill opened: 36 / 36; reference pages opened per run: 3.1
+- `hd check` calls per run: 4.7, of which failing: 1.2; `hd doc` invocations: 91 in all
+- Turns per run: 26.0; time per run: 75 s; total cost: $0.91
 
 ## By task
 
@@ -17,7 +17,7 @@
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 01-colsum | CLI over standard input | 3/3 | 15/15 | 12/12 | 78% | 2/10 | 4.7 | 24 |
 | 02-todos | JSON in and out | 3/3 | 15/15 | – | 75% | 2/14 | 1.3 | 20 |
-| 03-config | configuration from file and environment | 1/3 | 11/33 | – | 100% | 2/9 | 4.0 | 22 |
+| 03-config | configuration from file and environment | 2/3 | 22/33 | – | 87% | 4/12 | 1.7 | 20 |
 | 04-ratelimit | time-dependent logic | 3/3 | 12/12 | – | 100% | 4/14 | 7.7 | 33 |
 | 05-users | service with a user-defined effect | 3/3 | 9/9 | 3/3 | 87% | 2/10 | 2.0 | 18 |
 | 06-quotes | concurrent calls with retries | 3/3 | 12/12 | – | 87% | 4/17 | 6.0 | 28 |
@@ -41,13 +41,12 @@ How often each design move appeared, across trials.
 | 02-todos | done defaults with a field default | 3/3 |
 | 02-todos | round trip checked with a property test | 0/3 |
 | 02-todos | writes at least 2 test cases of its own | 3/3 |
-| 03-config | rules written as @derive(Validate) field facts | 3/3 |
-| 03-config | uses @range / @length facts | 3/3 |
+| 03-config | rules written as @derive(Validate) field facts | 2/3 |
+| 03-config | uses @range / @length facts | 2/3 |
 | 03-config | error variants convert with @from | 3/3 |
 | 03-config | tests use MemoryFs and ScriptedEnv | 3/3 |
 | 03-config | writes at least 2 test cases of its own | 3/3 |
 | 04-ratelimit | tests control time with ManualClock | 3/3 |
-| 04-ratelimit | tests advance virtual time with sleep! | 3/3 |
 | 04-ratelimit | writes at least 2 test cases of its own | 3/3 |
 | 05-users | logic reaches the store with $.use(UserStore) | 3/3 |
 | 05-users | main provides a store with $.with | 3/3 |
@@ -84,26 +83,26 @@ From `hd` output in the transcripts, while the agents worked.
 | Code | Times | Runs |
 | --- | --- | --- |
 | `not-writable` | 56 | 3 |
-| `missing-requirement` | 30 | 5 |
 | `underivable-trait` | 26 | 3 |
-| `missing-capability` | 21 | 15 |
-| `unsatisfied-trait-bound` | 18 | 2 |
-| `unknown-name` | 15 | 5 |
+| `missing-capability` | 22 | 16 |
+| `unknown-name` | 12 | 4 |
+| `type-mismatch` | 11 | 6 |
+| `unknown-trait` | 10 | 6 |
+| `missing-requirement` | 10 | 4 |
 | `unknown-import` | 9 | 4 |
-| `unknown-trait` | 8 | 5 |
-| `syntax-error` | 7 | 5 |
-| `type-mismatch` | 7 | 4 |
+| `syntax-error` | 6 | 4 |
 | `unknown-type` | 6 | 2 |
 | `type-used-as-value` | 5 | 2 |
 | `non-reassignable-binding` | 5 | 2 |
 | `local-reference-escapes` | 5 | 1 |
+| `unsatisfied-trait-bound` | 4 | 1 |
 | `unknown-field` | 4 | 1 |
 | `private-member` | 4 | 1 |
+| `member-not-derivable` | 4 | 2 |
 | `cannot-infer-type` | 4 | 1 |
 | `missing-let` | 3 | 2 |
 | `unregistered-auto-closing` | 3 | 1 |
 | `refutable-let-pattern` | 2 | 1 |
-| `member-not-derivable` | 2 | 1 |
 | `prelude-name-shadow` | 1 | 1 |
 | `trait-used-as-type` | 1 | 1 |
 | `unknown-method` | 1 | 1 |
@@ -112,21 +111,21 @@ From `hd` output in the transcripts, while the agents worked.
 
 | Page | Runs |
 | --- | --- |
-| references/cli/packages.md | 21 |
-| references/testing/unit-tests.md | 14 |
-| references/language/modules.md | 13 |
+| references/cli/packages.md | 20 |
+| references/testing/unit-tests.md | 13 |
+| references/language/modules.md | 12 |
 | references/language/traits.md | 7 |
-| references/testing/fakes.md | 7 |
-| references/std/host.md | 6 |
+| references/testing/fakes.md | 6 |
 | references/language/requirements.md | 6 |
 | references/language/errors.md | 5 |
 | references/how-to/cli-tool.md | 4 |
+| references/std/host.md | 4 |
 | references/language/data.md | 4 |
 | references/language/collections.md | 3 |
 | references/how-to/stdin-filter.md | 2 |
 | references/std/text.md | 2 |
 | references/std/collections.md | 2 |
-| references/std/api/README.md | 2 |
+| references/how-to/configuration.md | 2 |
 | references/std/api/time.md | 2 |
 | references/std/api/collections-map.md | 2 |
 | references/language/suspension.md | 2 |
@@ -134,8 +133,7 @@ From `hd` output in the transcripts, while the agents worked.
 | references/how-to/files-and-directories.md | 2 |
 | references/language/basics.md | 2 |
 | references/how-to/text-records.md | 1 |
-| references/how-to/configuration.md | 1 |
-| references/std/api/validate.md | 1 |
+| references/std/api/README.md | 1 |
 | references/std/api/collections-deque.md | 1 |
 | references/how-to/shared-state.md | 1 |
 | references/std/api/meta.md | 1 |
@@ -149,14 +147,13 @@ From `hd` output in the transcripts, while the agents worked.
 | --- | --- |
 | `Bash: cd` | 16 |
 | `Bash: mkdir` | 8 |
-| `Bash: hd` | 7 |
+| `Bash: hd` | 8 |
 | `Bash: rm` | 6 |
-| `Bash: sed` | 4 |
+| `Bash: sed` | 5 |
 | `Bash: S=.claude/skills/hd-lang/references;` | 3 |
 | `Bash: cat` | 3 |
-| `Bash: H=.claude/skills/hd-lang/references;` | 2 |
 | `Bash: ln` | 2 |
-| `Bash: S=$(mktemp` | 1 |
+| `Bash: printf` | 1 |
 | `Bash: R="/private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/baseline-t2/04-ratelimit/ratelimit/.claude/skills/hd-lang/references";` | 1 |
 | `Bash: S=.claude/skills/hd-lang/references` | 1 |
 | `Write: /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/scratch-fields/probe.hd` | 1 |
@@ -170,8 +167,7 @@ From `hd` output in the transcripts, while the agents worked.
 ## Failures
 
 - **03-config**
-  - trial 1: hidden tests don't compile: tests/zz_hidden_eval.hd:19: private-member: `Config` has the private field `host`, so only its module can construct or copy it
-  - trial 3: hidden tests don't compile: tests/zz_hidden_eval.hd:19: private-member: `Config` has the private field `host`, so only its module can construct or copy it
+  - trial 2: hidden tests don't compile: tests/zz_hidden_eval.hd:19: private-member: `Config` has the private field `host`, so only its module can construct or copy it
 - **08-derive-template**
   - trial 1: hidden tests don't compile: tests/zz_hidden_eval.hd:3: underivable-trait: `FieldNames` has no template and cannot be derived
   - trial 2: hidden tests don't compile: tests/zz_hidden_eval.hd:3: underivable-trait: `FieldNames` has no template and cannot be derived

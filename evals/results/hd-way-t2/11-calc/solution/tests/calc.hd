@@ -1,0 +1,5 @@
+use pkg.{greet}
+use std.testing.assert_equal
+
+it("greets by name"):
+    assert_equal(greet("world"), "hello, world", reason="the greeting")

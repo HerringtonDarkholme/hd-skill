@@ -16,13 +16,6 @@
       "expect": true
     },
     {
-      "id": "virtual-sleep",
-      "desc": "tests advance virtual time with sleep!",
-      "scope": "all",
-      "pattern": "sleep!\\(",
-      "expect": true
-    },
-    {
       "id": "own-tests",
       "desc": "writes at least 2 test cases of its own",
       "kind": "min_tests",

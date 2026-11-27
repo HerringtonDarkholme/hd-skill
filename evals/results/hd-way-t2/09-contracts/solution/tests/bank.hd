@@ -1,0 +1,15 @@
+use pkg.{Account, open, transfer}
+use std.testing.assert_equal
+
+it("a payment moves money from one account to another"):
+    let mut payer = open(1000)
+    let mut payee = open(0)
+    transfer(&mut payer, &mut payee, 999)
+    assert_equal(payer.balance(), 1)
+    assert_equal(payee.balance(), 999)
+
+it("deposits and withdrawals through the public interface"):
+    let mut account = open(0)
+    account.deposit(500)
+    account.withdraw(200)
+    assert_equal(account.balance(), 300)

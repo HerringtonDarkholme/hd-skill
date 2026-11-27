@@ -1,0 +1,76 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 5,
+      "passed": 5,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 2,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": true
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "design/derive.md",
+      "references/cli/packages.md",
+      "references/testing/unit-tests.md"
+    ],
+    "bash": 10,
+    "hd": {
+      "check": 4,
+      "test": 3,
+      "fmt": 1
+    },
+    "denied": [
+      "Bash: ls -la && (test -f hd.toml && cat hd.toml); find . -type f -not -path './.git/*' | head -50"
+    ],
+    "diagnostic_codes": {
+      "misplaced-tests-block": 1
+    },
+    "failing_checks": 1,
+    "turns": 21,
+    "cost_usd": 0.01241764,
+    "duration_s": 31,
+    "tokens": 339730,
+    "final_message": "The `fields` package is in the current directory, and `hd check --tests` and `hd test` both pass (5 tests).\n\n- **Trait:** `pub trait FieldNames` is in `src/fields.hd`, with a derive template (`impl[T] FieldNames for T by Structure`) in the same file. Any struct can write `@derive(FieldNames)` and get its field names in declaration order, with no per-struct impl.\n- **Any module:** `src/shapes.hd` and `tests/fields.hd` both derive it via `use pkg.fields.FieldNames`, and their tests pass.\n- **Tests:** `tests:` blocks in `src/fields.hd` cover a multi-field struct, a struct with defaults and a list field, and a struct with no fields. `tests/fields.hd` is an integration-style file, so its cases sit at top level as the checker requires.\n- **Formatting:** I ran `hd fmt`, then re-ran the check and tests; both still pass.\n\nChoices to review:\n- **No `src/lib.hd`:** I didn't create one, since you asked for `src/fields.hd`. Inside the package the trait is imported as `pkg.fields`, and from another package as `dep.fields`.\n- **Enums:** the template walks struct fields only, so `@derive(FieldNames)` on an enum compiles but returns an empty list. I didn't special-case enums because the request was about structs.\n\nI also hit a permission denial on my first command, which used shell operators. I switched to simple commands and went on without retrying it.",
+    "is_error": false
+  },
+  "agent_exit": null
+}

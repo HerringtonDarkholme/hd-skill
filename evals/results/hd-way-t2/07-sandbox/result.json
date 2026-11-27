@@ -1,0 +1,101 @@
+{
+  "task": "07-sandbox",
+  "package": "linecount",
+  "scenario": "sandboxed program",
+  "selling_points": [
+    "scoped capability grants",
+    "minimal capabilities"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 10,
+      "passed": 10,
+      "failed": []
+    },
+    "hidden": {},
+    "runs": [
+      {
+        "args": [
+          "data/a.txt",
+          "data/b.txt"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "3 data/a.txt\n1 data/b.txt\n4 total\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "data/a.txt",
+          "hd.toml"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "3 data/a.txt\n3 total\n",
+        "stderr": "linecount: hd.toml: access to hd.toml is not granted\n"
+      },
+      {
+        "args": [
+          "data/nope.txt"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "0 total\n",
+        "stderr": "linecount: data/nope.txt: not found: data/nope.txt\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "minimal-caps",
+        "desc": "[capabilities] grants only Console, Args and FsRead",
+        "ok": true
+      },
+      {
+        "id": "scoped-fsread",
+        "desc": "FsRead scoped to data/",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/cli/commands.md",
+      "references/testing/unit-tests.md"
+    ],
+    "bash": 15,
+    "hd": {
+      "help": 1,
+      "new": 3,
+      "check": 6,
+      "test": 4,
+      "run": 4,
+      "fmt": 3,
+      "lint": 3
+    },
+    "denied": [
+      "Bash: grep -n -A12 \"^## \\`hd new\\|hd new\\b\" cli/commands.md | head -60; grep -n -B2 -A10 \"lines\" std/text.md | head -60; grep -n -A8 \"tests:\" testing/unit-tests.md | head -40",
+      "Bash: mkdir -p data && printf 'one\\ntwo\\nthree\\n' > data/three.txt && printf 'a\\nb' > data/nolf.txt && : > data/empty.txt && hd check --tests --format json; echo \"exit=$?\""
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "type-mismatch": 4
+    },
+    "failing_checks": 1,
+    "turns": 25,
+    "cost_usd": 0.02439531,
+    "duration_s": 69,
+    "tokens": 934855,
+    "final_message": "The `linecount` package is in the current directory and passes `hd check --tests`, `hd test` (10 passed), `hd lint` and `hd fmt --check`.\n\n**Behaviour**\n- `hd run -- FILE...` prints `<lines> <file>` per file, then `<total> total`. With no files it prints `0 total`.\n- A file that can't be read gets `linecount: <file>: <reason>` on stderr, is skipped, and the exit status is 1 after all files are processed. Otherwise it is 0.\n- Files are read as bytes, so binary or non-UTF-8 files are counted rather than rejected.\n\n**Access**\n- `hd.toml` grants only `Args = true`, `Console = true` and `FsRead = [\"data/\"]`. The scaffold's `Clock` and `Random` are removed.\n- `[dev-capabilities] Process = true` is there only so the integration tests can run the built program.\n- I checked the scoping by hand: `../hd.toml`, `/etc/hosts`, `data/../hd.toml` and `database/x` are all refused. `data/../data/three.txt` is allowed because it resolves inside `data/`.\n\n**Choices to confirm**\n- **Line count:** a final line without a trailing newline counts as a line. So `a\\nb` is 2 lines. `wc -l` would say 1. If you want `wc -l` semantics, that is a one-line change in `count_lines`.\n- **Symlinks:** the grant is checked on the path name. I did not test whether a symlink inside `data/` pointing outside is followed.\n\n**Files**\n- `src/main.hd`: the program, with unit tests for `count_lines`.\n- `tests/linecount.hd`: integration tests that run the built program. They cover totals, zero files, unreadable files, refus",
+    "is_error": false
+  },
+  "agent_exit": null
+}

@@ -1,0 +1,277 @@
+# An integer expression evaluator.
+#
+# Grammar (lowest precedence first, all binary operators left-associative):
+#   expr    := term (('+' | '-') term)*
+#   term    := unary (('*' | '/') unary)*
+#   unary   := '-' unary | primary
+#   primary := NUMBER | '(' expr ')'
+#
+# `eval` parses the source into a syntax tree and then evaluates the tree.
+
+@derive(Eq, Debug)
+pub enum CalcError:
+    DivideByZero
+    # `at` is the byte offset of the first token or character the grammar
+    # cannot accept, or the source length when the input ends too early.
+    Unexpected(at: usize)
+
+# What a token is. `Invalid` is an unrecognized character or an integer
+# literal that does not fit in i64; the parser always rejects it.
+enum Kind:
+    Number(value: i64)
+    Plus
+    Minus
+    Star
+    Slash
+    LParen
+    RParen
+    Invalid
+    End
+
+struct Token:
+    kind: Kind
+    at: usize
+
+enum Op:
+    Add
+    Sub
+    Mul
+    Div
+
+# A syntax tree. Each node that can fail at evaluation carries the byte
+# offset of its operator, so overflow can be reported there.
+enum Expr:
+    Lit(i64)
+    Neg(at: usize, operand: *Expr)
+    Bin(op: Op, at: usize, left: *Expr, right: *Expr)
+
+fn is_digit(b: u8) -> bool:
+    b >= 48 && b <= 57 # '0'..'9'; hd has no byte literals
+
+fn symbol_kind(b: u8) -> Kind?:
+    if b == 43:
+        return .Some(Kind.Plus) # '+'
+    if b == 45:
+        return .Some(Kind.Minus) # '-'
+    if b == 42:
+        return .Some(Kind.Star) # '*'
+    if b == 47:
+        return .Some(Kind.Slash) # '/'
+    if b == 40:
+        return .Some(Kind.LParen) # '('
+    if b == 41:
+        return .Some(Kind.RParen) # ')'
+    .None
+
+# Splits the source into tokens. Lexing stops at the first invalid character,
+# which becomes an `Invalid` token; the parser reports it only if it reaches it,
+# so an earlier syntax error still wins. The list always ends with `End`.
+fn tokenize(src: string) -> List[Token]:
+    let mut tokens: List[Token] = []
+    bytes := src.to_utf8()
+    let at: usize = 0
+    while at < bytes.len():
+        b := bytes[at]
+        if b == 32: # space
+            at += 1
+        else if is_digit(b):
+            start := at
+            while at < bytes.len() && is_digit(bytes[at]):
+                at += 1
+            match src.slice(start, at).parse::[i64]():
+                .Ok(value) => tokens.push(Token { kind: Kind.Number(value), at: start })
+                .Err(_) =>
+                    tokens.push(Token { kind: Kind.Invalid, at: start })
+                    break
+        else:
+            match symbol_kind(b):
+                .Some(kind) =>
+                    tokens.push(Token { kind: kind, at: at })
+                    at += 1
+                .None =>
+                    tokens.push(Token { kind: Kind.Invalid, at: at })
+                    break
+    tokens.push(Token { kind: Kind.End, at: src.len() })
+    tokens
+
+struct Parser:
+    tokens: List[Token]
+    at: usize
+
+impl Parser:
+    fn kind(&self) -> Kind:
+        self.tokens[self.at].kind
+
+    fn position(&self) -> usize:
+        self.tokens[self.at].at
+
+    fn bump(&mut self) -> void:
+        self.at += 1
+
+    fn unexpected(&self) -> CalcError:
+        CalcError.Unexpected(self.position())
+
+    fn expr(&mut self) -> Result[Expr, CalcError]:
+        let mut left = self.term()?
+        while true:
+            match self.kind():
+                .Plus =>
+                    at := self.position()
+                    self.bump()
+                    right := self.term()?
+                    left = Expr.Bin(Op.Add, at, box(left), box(right))
+                .Minus =>
+                    at := self.position()
+                    self.bump()
+                    right := self.term()?
+                    left = Expr.Bin(Op.Sub, at, box(left), box(right))
+                _ => break
+        .Ok(left)
+
+    fn term(&mut self) -> Result[Expr, CalcError]:
+        let mut left = self.unary()?
+        while true:
+            match self.kind():
+                .Star =>
+                    at := self.position()
+                    self.bump()
+                    right := self.unary()?
+                    left = Expr.Bin(Op.Mul, at, box(left), box(right))
+                .Slash =>
+                    at := self.position()
+                    self.bump()
+                    right := self.unary()?
+                    left = Expr.Bin(Op.Div, at, box(left), box(right))
+                _ => break
+        .Ok(left)
+
+    fn unary(&mut self) -> Result[Expr, CalcError]:
+        match self.kind():
+            .Minus =>
+                at := self.position()
+                self.bump()
+                operand := self.unary()?
+                .Ok(Expr.Neg(at, box(operand)))
+            _ => self.primary()
+
+    fn primary(&mut self) -> Result[Expr, CalcError]:
+        match self.kind():
+            .Number(value) =>
+                self.bump()
+                .Ok(Expr.Lit(value))
+            .LParen =>
+                self.bump()
+                inner := self.expr()?
+                match self.kind():
+                    .RParen =>
+                        self.bump()
+                        .Ok(inner)
+                    _ => .Err(self.unexpected())
+            _ => .Err(self.unexpected())
+
+fn evaluate(e: &Expr) -> Result[i64, CalcError]:
+    match e:
+        .Lit(value) => .Ok(value)
+        .Neg(at, operand) =>
+            v := evaluate(operand)?
+            let zero: i64 = 0
+            match zero.checked_sub(v):
+                .Some(n) => .Ok(n)
+                .None => .Err(CalcError.Unexpected(at))
+        .Bin(op, at, left, right) =>
+            l := evaluate(left)?
+            r := evaluate(right)?
+            match op:
+                .Add => checked(l.checked_add(r), at)
+                .Sub => checked(l.checked_sub(r), at)
+                .Mul => checked(l.checked_mul(r), at)
+                .Div =>
+                    if r == 0:
+                        return .Err(CalcError.DivideByZero)
+                    checked(l.checked_div(r), at)
+
+fn checked(result: i64?, at: usize) -> Result[i64, CalcError]:
+    match result:
+        .Some(n) => .Ok(n)
+        .None => .Err(CalcError.Unexpected(at))
+
+# Evaluates an integer expression. Division truncates toward zero.
+pub fn eval(src: string) -> Result[i64, CalcError]:
+    let mut parser = Parser { tokens: tokenize(src), at: 0 }
+    tree := parser.expr()?
+    match parser.kind():
+        .End => evaluate(&tree)
+        _ => .Err(parser.unexpected())
+
+tests:
+    it("evaluates a single number"):
+        assert_equal(eval("42"), .Ok(42))
+        assert_equal(eval("0"), .Ok(0))
+
+    it("applies the four operators"):
+        assert_equal(eval("1 + 2"), .Ok(3))
+        assert_equal(eval("7 - 10"), .Ok(-3))
+        assert_equal(eval("6 * 7"), .Ok(42))
+        assert_equal(eval("7 / 2"), .Ok(3))
+
+    it("gives * and / precedence over + and -"):
+        assert_equal(eval("1 + 2 * 3"), .Ok(7))
+        assert_equal(eval("2 * 3 + 1"), .Ok(7))
+        assert_equal(eval("10 - 6 / 2"), .Ok(7))
+
+    it("is left-associative"):
+        assert_equal(eval("10 - 3 - 2"), .Ok(5))
+        assert_equal(eval("100 / 10 / 5"), .Ok(2))
+        assert_equal(eval("2 * 3 / 4"), .Ok(1))
+
+    it("truncates division toward zero"):
+        assert_equal(eval("-7 / 2"), .Ok(-3))
+        assert_equal(eval("7 / -2"), .Ok(-3))
+        assert_equal(eval("-(7 / 2)"), .Ok(-3))
+
+    it("uses parentheses and unary minus"):
+        assert_equal(eval("(1 + 2) * 3"), .Ok(9))
+        assert_equal(eval("-(2 + 3) * 2"), .Ok(-10))
+        assert_equal(eval("- -4"), .Ok(4))
+        assert_equal(eval("2 * -3"), .Ok(-6))
+        assert_equal(eval("((((5))))"), .Ok(5))
+
+    it("ignores spaces between tokens"):
+        assert_equal(eval("  1+2*  3 "), .Ok(7))
+        assert_equal(eval("( 4 )"), .Ok(4))
+
+    it("reports division by zero"):
+        assert_equal(eval("1 / 0"), .Err(.DivideByZero))
+        assert_equal(eval("1 / (2 - 2)"), .Err(.DivideByZero))
+        assert_equal(eval("0 / 0"), .Err(.DivideByZero))
+
+    it("reports the offset where input ends too early"):
+        assert_equal(eval("1 +"), .Err(.Unexpected(3)))
+        assert_equal(eval("(1"), .Err(.Unexpected(2)))
+        assert_equal(eval("-"), .Err(.Unexpected(1)))
+        assert_equal(eval(""), .Err(.Unexpected(0)))
+        assert_equal(eval("   "), .Err(.Unexpected(3)))
+
+    it("reports the offset of the first token that does not fit"):
+        assert_equal(eval("1 2"), .Err(.Unexpected(2)))
+        assert_equal(eval("1 + * 2"), .Err(.Unexpected(4)))
+        assert_equal(eval("(1))"), .Err(.Unexpected(3)))
+        assert_equal(eval("2 3 4"), .Err(.Unexpected(2)))
+        assert_equal(eval(")"), .Err(.Unexpected(0)))
+
+    it("reports the offset of an invalid character"):
+        assert_equal(eval("1 $ 2"), .Err(.Unexpected(2)))
+        assert_equal(eval("$"), .Err(.Unexpected(0)))
+        assert_equal(eval("1.5"), .Err(.Unexpected(1)))
+        assert_equal(eval("1 + 2\t"), .Err(.Unexpected(5)))
+
+    it("reports a syntax error before an invalid character later on"):
+        assert_equal(eval("1 2 $"), .Err(.Unexpected(2)))
+
+    it("reports an integer literal that does not fit"):
+        assert_equal(eval("1 + 99999999999999999999"), .Err(.Unexpected(4)))
+        assert_equal(eval("9223372036854775807"), .Ok(9223372036854775807))
+
+    it("reports arithmetic overflow at the operator"):
+        assert_equal(eval("9223372036854775807 + 1"), .Err(.Unexpected(20)))
+        assert_equal(eval("4611686018427387904 * 2 * 2"), .Err(.Unexpected(20)))

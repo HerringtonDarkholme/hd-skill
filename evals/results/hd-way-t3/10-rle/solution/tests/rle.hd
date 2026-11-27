@@ -1,0 +1,8 @@
+use pkg.{Run, decode, encode}
+use std.testing.it_prop
+
+it_prop("the public API round-trips", prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)), xs))
+
+it("the public API exposes the run fields"):
+    runs := encode([4, 4])
+    assert_equal(runs, [Run { value: 4, count: 2 }])

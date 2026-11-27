@@ -1,0 +1,46 @@
+use std.process.Command
+use std.testing.{assert_equal, hd_run}
+
+it("prints each file's line count, then the total"):
+    let out = hd_run!(
+        *Command::new("linecount").args(["data/three.txt", "data/partial.txt", "data/empty.txt"]),
+    )
+    assert_equal(out.stdout, "3 data/three.txt\n1 data/partial.txt\n0 data/empty.txt\n4 total\n")
+    assert_equal(out.stderr, "")
+    assert_equal(out.status, 0, reason="every file was read")
+
+it("prints a zero total with no files"):
+    let out = hd_run!(*Command::new("linecount"))
+    assert_equal(out.stdout, "0 total\n")
+    assert_equal(out.status, 0)
+
+it("reports a missing file on standard error, skips it, and exits 1"):
+    let out = hd_run!(
+        *Command::new("linecount").args(["data/three.txt", "data/missing.txt", "data/partial.txt"]),
+    )
+    assert_equal(
+        out.stdout,
+        "3 data/three.txt\n1 data/partial.txt\n4 total\n",
+        reason="the rest still count",
+    )
+    assert_equal(out.stderr, "linecount: data/missing.txt: not found: data/missing.txt\n")
+    assert_equal(out.status, 1)
+
+it("refuses files outside data/, including by traversal, and exits 1"):
+    let out = hd_run!(
+        *Command::new("linecount").args(["hd.toml", "data/../hd.toml", "src/main.hd"]),
+    )
+    assert_equal(out.stdout, "0 total\n", reason="nothing outside data/ is read")
+    assert_equal(
+        out.stderr,
+        "linecount: hd.toml: access to hd.toml is not granted\n"
+        + "linecount: data/../hd.toml: access to data/../hd.toml is not granted\n"
+        + "linecount: src/main.hd: access to src/main.hd is not granted\n",
+    )
+    assert_equal(out.status, 1)
+
+it("refuses a directory and reports it"):
+    let out = hd_run!(*Command::new("linecount").args(["data"]))
+    assert_equal(out.stdout, "0 total\n")
+    assert_equal(out.stderr, "linecount: data: is a directory: data\n")
+    assert_equal(out.status, 1)

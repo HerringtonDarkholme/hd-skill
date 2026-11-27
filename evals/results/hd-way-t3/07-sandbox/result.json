@@ -1,0 +1,105 @@
+{
+  "task": "07-sandbox",
+  "package": "linecount",
+  "scenario": "sandboxed program",
+  "selling_points": [
+    "scoped capability grants",
+    "minimal capabilities"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 4,
+      "passed": 4,
+      "failed": []
+    },
+    "hidden": {},
+    "runs": [
+      {
+        "args": [
+          "data/a.txt",
+          "data/b.txt"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "3 data/a.txt\n1 data/b.txt\n4 total\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "data/a.txt",
+          "hd.toml"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "3 data/a.txt\n3 total\n",
+        "stderr": "linecount: hd.toml: access to hd.toml is not granted\n"
+      },
+      {
+        "args": [
+          "data/nope.txt"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "0 total\n",
+        "stderr": "linecount: data/nope.txt: not found: data/nope.txt\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "minimal-caps",
+        "desc": "[capabilities] grants only Console, Args and FsRead",
+        "ok": true
+      },
+      {
+        "id": "scoped-fsread",
+        "desc": "FsRead scoped to data/",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/how-to/cli-tool.md",
+      "references/cli/commands.md",
+      "references/how-to/configuration.md",
+      "references/std/host.md",
+      "references/mistakes/requirements.md",
+      "references/testing/integration.md"
+    ],
+    "bash": 15,
+    "hd": {
+      "new": 2,
+      "help": 1,
+      "check": 4,
+      "test": 4,
+      "fmt": 2,
+      "lint": 1,
+      "run": 4
+    },
+    "denied": [
+      "Bash: S=.claude/skills/hd-lang/references; grep -n -A6 \"hd new\" $S/cli/commands.md | head -60; echo ----; cat $S/how-to/cli-tool.md | head -150; echo ----; grep -n -i \"exit\\|status\" $S/language/errors",
+      "Bash: python3 -I - <<'EOF'\nimport re\np = \"src/main.hd\"\ns = open(p).read()\ns = s.replace(\"use std.fs.{FsRead, FsWrite, MemoryFs, read_text, write_text}\",\n              \"use std.fs.{FsRead, FsWrite, Mem",
+      "Bash: ln -s /etc/hosts data/link && hd run -- data/link \"$PWD/data/a.txt\" \"$PWD/hd.toml\"; echo \"status=$?\"; rm -f data/link"
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1
+    },
+    "failing_checks": 0,
+    "turns": 33,
+    "cost_usd": 0.025936200000000003,
+    "duration_s": 63,
+    "tokens": 1047784,
+    "final_message": "The `linecount` package is in the current directory and both `hd check --tests` and `hd test` pass (4 tests, 0 failures).\n\n**Sandbox:** `hd.toml` grants only what the program uses:\n- `Args = true` for the file names after `--`\n- `Console = true` for the report and standard error\n- `FsRead = [\"data/\"]` for reads\n\nNo `FsWrite`, `Env`, `Http`, `Process`, `Clock` or `Random`. I checked the real binary with a scratch `data/` folder, which I've since removed:\n- `data/a.txt` and `data/b.txt` print `2 data/a.txt`, `1 data/b.txt`, `3 total`, exit 0.\n- `/etc/hosts` and `data/../hd.toml` fail with `access to … is not granted`. A missing file reports `not found`. The total still prints, and the exit status is 1.\n- An absolute path to a file inside `data/` works. An absolute path to `hd.toml` is refused.\n\n**Choices I made:**\n- **Arguments are package-relative paths**, so the call is `hd run -- data/a.txt`. Plain `a.txt` is refused, since it is not under `data/`.\n- **Line count** is `text.lines().len()`, so an unterminated last line counts. This differs from `wc -l`, which doesn't count it.\n- **Exit status** is 1 if any file fails, 0 otherwise, after all files are processed.\n- **Generated test removed:** I deleted `tests/linecount.hd`. It expected the template's \"hello, world\" output, and running a built program would have required granting `Process` to dev-only tests. The unit tests use fakes instead.\n\n**Not verified:** a symlink inside `data/` pointing outside it. The sandbox denied my r",
+    "is_error": false
+  },
+  "agent_exit": null
+}

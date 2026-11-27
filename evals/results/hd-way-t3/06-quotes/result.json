@@ -1,0 +1,90 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 8,
+      "passed": 8,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": true
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/language/requirements.md",
+      "references/how-to/concurrent-work.md",
+      "references/testing/fakes.md"
+    ],
+    "bash": 11,
+    "hd": {
+      "new": 1,
+      "doc": 4,
+      "check": 5,
+      "test": 3,
+      "fmt": 3,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "discarded-must-use-value": 2
+    },
+    "failing_checks": 1,
+    "turns": 19,
+    "cost_usd": 0.01931636,
+    "duration_s": 56,
+    "tokens": 587873,
+    "final_message": "The `quotes` package is in place. `hd check --tests`, `hd fmt --check` and `hd test` all pass (8 tests, 0 failures).\n\n**Layout**\n- `hd.toml`: package `quotes`, a library with no capabilities.\n- `src/quotes.hd`: `QuoteError`, `Quotes`, `order_total!`, and the `tests:` block.\n- `src/lib.hd`: `pub use self.quotes.{QuoteError, Quotes, order_total}`, so callers import `quotes.order_total!` and the file layout doesn't leak.\n\n**Implementation choices**\n- `quote_one!` wraps `$.use(Quotes).quote!(sku)` in `retry(Backoff { attempts: 3, initial: 10ms, factor: 1 })`. I set `factor: 1` because the default doubles the wait, and the spec asks for about 10 ms between attempts.\n- `order_total!` calls `map_join!(skus, 4, quote_one)`, which caps in-flight calls at 4 and returns results in list order. It then sums them with `?`, so the first failing sku in list order is the error returned.\n- Every sku is quoted even after one fails, because `map_join!` doesn't cancel the others.\n- `QuoteError` derives `Eq` and `Debug`. It is not `@error`, since the spec doesn't ask for it.\n- I removed the scaffold `tests/quotes.hd` and the placeholder `greet` function.\n\n**Tests**\nThe tests cover an empty order, summing, retry counting (busy answers, then success), the 10 ms spacing via `ManualClock`, the 3-attempt cap, an unknown sku, first-failure ordering, and more than 4 skus. The concurrency cap of 4 is not verified directly. The spec's `quote!` has no clock row, so a test fake can't suspend and I couldn't o",
+    "is_error": false
+  },
+  "agent_exit": null
+}

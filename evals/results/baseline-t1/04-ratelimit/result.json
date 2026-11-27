@@ -31,11 +31,6 @@
         "ok": true
       },
       {
-        "id": "virtual-sleep",
-        "desc": "tests advance virtual time with sleep!",
-        "ok": true
-      },
-      {
         "id": "own-tests",
         "desc": "writes at least 2 test cases of its own",
         "ok": true

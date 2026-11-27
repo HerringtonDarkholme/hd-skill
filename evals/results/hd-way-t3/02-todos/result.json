@@ -1,0 +1,82 @@
+{
+  "task": "02-todos",
+  "package": "todos",
+  "scenario": "JSON in and out",
+  "selling_points": [
+    "derive Serialize/Deserialize",
+    "field defaults",
+    "property tests"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-serde",
+        "desc": "JSON through @derive(Serialize, Deserialize)",
+        "ok": true
+      },
+      {
+        "id": "field-default",
+        "desc": "done defaults with a field default",
+        "ok": true
+      },
+      {
+        "id": "prop-test",
+        "desc": "round trip checked with a property test",
+        "ok": false
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.75
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/cli/packages.md",
+      "references/std/host.md"
+    ],
+    "bash": 5,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 1,
+      "fmt": 1,
+      "file": 1,
+      "test": 1
+    },
+    "denied": [
+      "Bash: cat tests/todos.hd; echo ---; grep -n -i \"lib.hd\\|src/\" /dev/null; cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t3/02-todos/todos/.claude/skills/hd-lang && c"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 13,
+    "cost_usd": 0.01169397,
+    "duration_s": 34,
+    "tokens": 305043,
+    "final_message": "The `todos` package is in place and both `hd check --tests` and `hd test` pass (7 tests, 0 failures).\n\n**Files**\n- `src/todos.hd` has the public API and a `tests:` block at the end.\n- `hd.toml` is the scaffold's manifest, unchanged.\n- I removed the scaffold's `src/lib.hd` (a `greet` sample) and `tests/todos.hd`, since both were placeholders for the sample function.\n\n**Choices I made**\n- `Todo` derives `Serialize`, `Deserialize`, `Eq` and `Debug`. `done: bool = false` gives the \"false when absent\" behaviour.\n- `TodoError` is an `@error` enum deriving `Eq` and `Debug`. I added `@error` messages, which the spec did not ask for.\n- `load` decodes `List[Todo]` and maps any decode failure to `BadJson` with the decoder's message. Non-array input, a missing `title`, a string `id` and non-JSON input all fail this way.\n- `dump` is `encode`, so the round trip is covered by a test.\n- `complete` returns `UnknownId` when no todo has the id. Otherwise it marks every todo with that id done, so duplicate ids are not rejected.\n- `load` does not reject duplicate ids. The spec did not say to.\n\n**Not verified**\n- I did not check that another package can import this one. The scaffold's `lib.hd` root is gone and the module is `src/todos.hd`, so a consumer's import path may differ from what you expect. Tell me if you want a `src/lib.hd` root that re-exports the API.",
+    "is_error": false
+  },
+  "agent_exit": null
+}

@@ -1,0 +1,84 @@
+{
+  "task": "11-calc",
+  "package": "calc",
+  "scenario": "parser and interpreter",
+  "selling_points": [
+    "recursive enums",
+    "box",
+    "@error",
+    "match"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 13,
+      "passed": 13,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 20,
+      "passed": 20,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "tree-enum",
+        "desc": "a recursive enum for the syntax tree (boxed children)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "CalcError declared with @error",
+        "ok": false
+      },
+      {
+        "id": "table-test",
+        "desc": "table tests with it_each",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.75
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 18,
+    "hd": {
+      "help": 3,
+      "new": 3,
+      "check": 6,
+      "file": 1,
+      "test": 4,
+      "fmt": 3,
+      "lint": 4
+    },
+    "denied": [
+      "Bash: hd new --lib --vcs none . 2>&1; find . -path ./.claude -prune -o -type f -print; echo ---; cat hd.toml 2>/dev/null; echo ---; for f in $(find src tests -name '*.hd' 2>/dev/null); do echo \"== $f\"",
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t2/11-calc/calc && rm src/lib.hd tests/calc.hd && rmdir tests && hd check --format json --tests 2>&1 | head -40"
+    ],
+    "diagnostic_codes": {
+      "missing-let": 2
+    },
+    "failing_checks": 1,
+    "turns": 31,
+    "cost_usd": 0.030973190000000005,
+    "duration_s": 99,
+    "tokens": 1064195,
+    "final_message": "The `calc` package is written and passes `hd check --tests` and `hd test` (13 passed). Two template files are still in the package because I couldn't delete them.\n\n**Leftover template files:** `hd new --lib` created `src/lib.hd` (a `greet` function) and `tests/calc.hd` (a `greets by name` test). My attempt to remove them was denied, so they're still there and still compile. To finish the cleanup, run `rm src/lib.hd tests/calc.hd && rmdir tests`. The test count will drop by one afterward.\n\n**What's in `src/calc.hd`:**\n- `pub enum CalcError` with `DivideByZero` and `Unexpected(at: usize)`, derived `Eq` and `Debug`.\n- `pub fn eval(src: string) -> Result[i64, CalcError]`, which lexes, parses into a tree of `Expr` values (recursive via `*Expr`), then evaluates the tree.\n- A `tests:` block with 9 `it` blocks and one `it_each` table. It covers precedence, associativity, parentheses, unary minus, truncating division, spaces, division by zero, and every offset example from the spec plus more.\n\n**Decisions you may want to change:**\n- **Lazy invalid tokens.** The lexer doesn't fail up front. Bad characters and oversized literals become an `Invalid` token that the parser rejects only when it reaches it. So `\"1 2 $\"` reports `Unexpected(2)`, not the `$`.\n- **Only ASCII space counts as whitespace.** A tab is an invalid character, so `\"1\\t+ 2\"` gives `Unexpected(1)`.\n- **Integer literal overflow is `Unexpected(start)`.** For example, `\"99999999999999999999\"` gives `Unexpected(0)`. There's n",
+    "is_error": false
+  },
+  "agent_exit": null
+}

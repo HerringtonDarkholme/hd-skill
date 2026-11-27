@@ -1,0 +1,86 @@
+{
+  "task": "09-contracts",
+  "package": "bank",
+  "scenario": "invariants",
+  "selling_points": [
+    "require",
+    "ensure"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 10,
+      "passed": 10,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 6,
+      "passed": 6,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "require",
+        "desc": "preconditions with require",
+        "ok": true
+      },
+      {
+        "id": "ensure",
+        "desc": "postconditions with ensure",
+        "ok": false
+      },
+      {
+        "id": "no-raw-panic",
+        "desc": "no hand-written panic( for checks",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.75
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "design/contracts.md",
+      "references/cli/packages.md",
+      "references/testing/unit-tests.md",
+      "references/language/data.md",
+      "references/language/modules.md"
+    ],
+    "bash": 7,
+    "hd": {
+      "new": 2,
+      "check": 2,
+      "test": 2,
+      "run": 1,
+      "file": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: mkdir -p /tmp/hd-scratch-bank && cd /tmp/hd-scratch-bank && sed '/^tests:/,$d' /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t2/09-contracts/bank/src/account.hd ",
+      "Write: /tmp/hd-scratch-bank/overdraft.hd"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 20,
+    "cost_usd": 0.01813688,
+    "duration_s": 54,
+    "tokens": 559518,
+    "final_message": "The `bank` package is in the current directory. `hd check --tests` and `hd test` both pass (10 tests, 0 failures).\n\n**Files**\n- `hd.toml`: package `bank`, library.\n- `src/account.hd`: `Account`, `open`, `transfer`, and the `balance`/`deposit`/`withdraw` methods, with unit tests in a `tests:` block.\n- `src/lib.hd`: re-exports `Account`, `open` and `transfer` as the package's public interface.\n- `tests/bank.hd`: two integration tests that use the public interface.\n\n**Choices I made**\n- **Argument checks** use `require`, which runs in debug and test builds and is skipped in release. A negative opening balance, a non-positive deposit, withdrawal or transfer, and a withdrawal or transfer larger than the balance all stop the program.\n- **Invariants** are also `require` statements, placed after each change: the balance is never negative, and a transfer keeps the total. I used `require` rather than `ensure` because `ensure` runs in every build, including release, and you asked for zero release cost.\n- **Test coverage:** the tests check behaviour when the rules are kept. A test cannot catch a contract panic, so the failure cases are not tested.\n\n**Verification**\n- In debug, an overdraft (withdrawing 101 from 100) stops with `explicit-panic: a withdrawal is not larger than the balance`.\n- In release, the same call runs through and leaves a balance of -1. Release skips the checks, so the caller must keep the rules.\n- `hd fmt` and `hd lint` report nothing to change.\n\n**Blocked steps**\n- ",
+    "is_error": false
+  },
+  "agent_exit": null
+}

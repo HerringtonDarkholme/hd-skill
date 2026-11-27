@@ -1,0 +1,74 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 11,
+      "passed": 11,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 18,
+    "hd": {
+      "help": 3,
+      "new": 3,
+      "check": 6,
+      "test": 7,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: cd /tmp && rm -rf hdscratch && mkdir hdscratch && cd hdscratch && hd new rle --lib 2>&1; find rle -type f | xargs -I{} sh -c 'echo \"== {}\"; cat \"{}\"'; hd help new 2>&1; grep -n -A12 \"^## .*new\\|",
+      "Bash: sed -i.bak 's/fn(x: u8) -> i32: i32(x % 3)/fn(x: \\&u8) -> i32: i32(*x % 3)/; s/fn(x: u8) -> i32: i32(x % 4)/fn(x: \\&u8) -> i32: i32(*x % 4)/' src/rle.hd && rm src/rle.hd.bak && grep -n \"fn(x\" sr",
+      "Bash: hd fmt src/rle.hd; hd lint src/rle.hd; for s in 1 2 3 42 1234; do hd test --seed $s; done; hd check --tests; hd test"
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "unknown-method": 6,
+      "type-mismatch": 3
+    },
+    "failing_checks": 2,
+    "turns": 28,
+    "cost_usd": 0.019447890000000002,
+    "duration_s": 47,
+    "tokens": 722286,
+    "final_message": "The `rle` package is in place. `hd check --tests` and `hd test` both pass: 11 cases, 0 failures, with the property tests also passing under seeds 1, 2 and 42.\n\n**Layout**\n- `hd.toml`: package `rle`, a library with no capabilities.\n- `src/rle.hd`: the implementation and its `tests:` block.\n- `src/lib.hd`: `pub use self.rle.{Run, decode, encode}`, so callers write `pkg.Run`, `pkg.encode`, `pkg.decode`. Library roots must be `src/lib.hd`, so `rle.hd` is a module behind it.\n- I deleted the scaffolded `tests/rle.hd`, which only tested the placeholder `greet`.\n\n**API**\n- `pub struct Run` has `pub value: i32` and `pub count: usize`, with `@derive(Eq, Debug)`.\n- `encode` merges equal neighbours into maximal runs, so no run is empty and neighbours differ.\n- `decode` expands the runs. A run with count 0 contributes nothing.\n\n**Tests**\n- Example cases: empty list, one element, merging, non-merging, mixed runs, negative and `i32` min/max values, and a zero-count run.\n- Property tests with `it_prop`:\n  - `decode(encode(xs)) == xs` for arbitrary `List[i32]`.\n  - The same round trip on `u8` lists mapped to `0..2`, so long runs are common. Random `i32` lists rarely repeat, so this is the case that exercises merging.\n  - Encoding is maximal: no zero counts, neighbours differ, and counts sum to the input length.\n  - `encode(decode(runs)) == runs` for runs produced by `encode`.\n\n**Choices I made**\n- I ran `hd fmt` on `src/rle.hd`, which reflowed some long lines. Its contents are otherwise uncha",
+    "is_error": false
+  },
+  "agent_exit": null
+}

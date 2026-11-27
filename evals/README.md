@@ -35,12 +35,15 @@ node evals/run.mjs --reference --write-expected      # grade the references; rec
 node evals/run.mjs --label baseline-t1 --model haiku # one trial of every task
 node evals/run.mjs --label x --tasks 05,07           # only some tasks
 node evals/run.mjs --label baseline-t1 --regrade     # grade the saved workspaces again
+node evals/run.mjs --label old-t1 --skill PATH       # evaluate another version of the skill
 node evals/aggregate.mjs baseline baseline-t1 baseline-t2 baseline-t3
 ```
 
 Workspaces live under `$TMPDIR/hd-skill-evals/LABEL/`. Each run writes
 `results/LABEL/TASK/{result.json,transcript.jsonl.gz,solution/}` and
-`results/LABEL/summary.{md,json}`. `aggregate.mjs` writes `results/NAME.md`.
+`results/LABEL/summary.{md,json}`; a run with `--tasks` replaces only
+those tasks' entries in an existing summary. `aggregate.mjs` writes
+`results/NAME.md`.
 
 Run the references after changing a task: every reference must pass with a
 100% idiom score, or the task is wrong.

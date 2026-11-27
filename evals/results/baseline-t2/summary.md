@@ -1,16 +1,16 @@
 # Evaluation: baseline-t2
 
-- Skill: hd-skill 5ccaa45; model: `haiku`; date: 2026-11-27
-- Passed: **11 / 12**
-- Mean idiom score: **83%**
+- Skill: hd-skill fc82f0c + uncommitted skill changes; model: `haiku`; date: 2026-11-27
+- Passed: **10 / 12**
+- Mean idiom score: **79%**
 - Skill opened: 12 / 12
-- Total cost: $0.30; turns: 325
+- Total cost: $0.30; turns: 315
 
 | Task | Pass | Check | Hidden | Runs | Idiom | Own tests | Skill | Pages | hd check (failing) | Turns | Cost |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | 01-colsum | ✅ | ok | 5/5 | 4/4 | 100% | 13/13 | yes | 5 | 3 (1) | 22 | $0.02 |
 | 02-todos | ✅ | ok | 5/5 | – | 75% | 14/14 | yes | 0 | 5 (0) | 18 | $0.02 |
-| 03-config | ✅ | ok | 11/11 | – | 100% | 13/13 | yes | 6 | 3 (1) | 29 | $0.02 |
+| 03-config | ❌ | ok | 0/11 | – | 60% | 15/15 | yes | 0 | 5 (2) | 19 | $0.02 |
 | 04-ratelimit | ✅ | ok | 4/4 | – | 100% | 6/6 | yes | 8 | 5 (2) | 38 | $0.03 |
 | 05-users | ✅ | ok | 3/3 | 1/1 | 80% | 4/4 | yes | 0 | 4 (1) | 16 | $0.02 |
 | 06-quotes | ✅ | ok | 4/4 | – | 80% | 6/6 | yes | 9 | 4 (1) | 27 | $0.03 |
@@ -24,6 +24,7 @@
 ## Idiom checks missed
 
 - **02-todos**: round trip checked with a property test
+- **03-config**: rules written as @derive(Validate) field facts; uses @range / @length facts
 - **05-users**: UserError declared with @error
 - **06-quotes**: retries through std.task retry/Backoff
 - **08-derive-template**: a derive template: impl[T] FieldNames for T by Structure; walks members with a Walker
@@ -34,16 +35,16 @@
 
 | Code | Count |
 | --- | --- |
-| `missing-requirement` | 26 |
 | `underivable-trait` | 12 |
-| `unknown-name` | 11 |
-| `missing-capability` | 7 |
+| `missing-capability` | 8 |
+| `unknown-name` | 8 |
+| `missing-requirement` | 6 |
 | `non-reassignable-binding` | 4 |
 | `unknown-type` | 4 |
-| `syntax-error` | 3 |
-| `type-mismatch` | 2 |
+| `unknown-trait` | 3 |
+| `type-mismatch` | 3 |
 | `unknown-import` | 2 |
-| `unknown-trait` | 2 |
+| `syntax-error` | 2 |
 | `not-writable` | 2 |
 | `member-not-derivable` | 2 |
 | `prelude-name-shadow` | 1 |
@@ -54,18 +55,15 @@
 
 | Page | Tasks |
 | --- | --- |
-| references/cli/packages.md | 8 |
-| references/language/modules.md | 4 |
+| references/cli/packages.md | 7 |
 | references/testing/unit-tests.md | 3 |
-| references/testing/fakes.md | 3 |
+| references/language/modules.md | 3 |
 | references/how-to/cli-tool.md | 2 |
+| references/testing/fakes.md | 2 |
 | references/language/requirements.md | 2 |
 | references/language/traits.md | 2 |
 | references/how-to/stdin-filter.md | 1 |
 | references/how-to/text-records.md | 1 |
-| references/std/host.md | 1 |
-| references/std/api/README.md | 1 |
-| references/std/api/validate.md | 1 |
 | references/std/api/collections-map.md | 1 |
 | references/std/api/time.md | 1 |
 | references/language/collections.md | 1 |
@@ -79,5 +77,7 @@
 
 ## Failures
 
+- **03-config**
+  - hidden tests did not compile: tests/zz_hidden_eval.hd:19: private-member: `Config` has the private field `host`, so only its module can construct or copy it / tests/zz_hidden_eval.hd:22: private-member: `Config` has the private field `host`, so only its module can construct or copy it
 - **08-derive-template**
   - hidden tests did not compile: tests/zz_hidden_eval.hd:3: underivable-trait: `FieldNames` has no template and cannot be derived / tests/zz_hidden_eval.hd:10: underivable-trait: `FieldNames` has no template and cannot be derived

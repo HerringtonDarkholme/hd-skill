@@ -1,0 +1,74 @@
+{
+  "task": "12-lru",
+  "package": "lru",
+  "scenario": "stateful data structure",
+  "selling_points": [
+    "model-based property test",
+    "commands"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 12,
+      "passed": 12,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "model-test",
+        "desc": "a generated-operations test (it_prop / it_prop_with / commands)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/cli/packages.md",
+      "references/language/collections.md",
+      "references/testing/unit-tests.md",
+      "references/std/api/testing.md"
+    ],
+    "bash": 14,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "doc": 4,
+      "check": 3,
+      "test": 4,
+      "fmt": 3,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: sed -n 150,260p .claude/skills/hd-lang/references/std/api/testing.md; cd /tmp && mkdir -p /tmp/hdq && cd /tmp/hdq && hd doc std.testing.commands 2>&1 | head -60; hd doc std.testing.it_prop_with "
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 26,
+    "cost_usd": 0.02773442,
+    "duration_s": 95,
+    "tokens": 864949,
+    "final_message": "The `lru` package is written and passes `hd check --tests` and `hd test` (12 tests). The formatter then rewrote `src/lru.hd`, and the checks were re-run after that.\n\n**Files**\n- `src/lru.hd`: the `Lru` struct, `new_lru`, `get`, `put`, `len`, and the `tests:` block.\n- `src/lib.hd`: re-exports `Lru` and `new_lru`, so callers write `use pkg.{Lru, new_lru}`. Because the file is `src/lru.hd`, it is the module `pkg.lru`, and the library root has to re-export it.\n- `tests/lru.hd`: two integration tests through the package's public interface. I replaced the scaffold's `greet` sample.\n- `hd.toml`: the scaffold's manifest, with no capabilities needed.\n\n**Design**\n- The cache is a `Map[string, i64]` of values plus a `List[string]` of keys, least recently used first.\n- `get` on a hit moves the key to the end. On a miss it returns `.None` and changes nothing.\n- `put` inserts or updates and moves the key to the end. If the map is then over capacity, it removes the first key in the list.\n- Capacity 0 is handled: a put stores the key and evicts it straight away.\n\n**Tests**\n- Nine example tests cover: an empty cache, read-back, replacing a value, eviction order, a hit refreshing recency, a put refreshing recency, a missed get changing nothing, capacity 0, and capacity 1.\n- A property test (`it_prop_with`, 500 cases) generates sequences of up to 40 `get`/`put` operations over four keys and capacities 0–3. It compares each step with a simple list-based model: the returned values, `len()`, and t",
+    "is_error": false
+  },
+  "agent_exit": null
+}

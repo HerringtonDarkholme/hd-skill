@@ -1,0 +1,80 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 5,
+      "passed": 5,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 2,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": true
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "design/derive.md"
+    ],
+    "bash": 17,
+    "hd": {
+      "help": 2,
+      "new": 2,
+      "doc": 6,
+      "check": 4,
+      "test": 5,
+      "fmt": 3,
+      "file": 1
+    },
+    "denied": [
+      "Bash: hd new --lib --vcs none . ; echo \"exit $?\"; find . -path ./.claude -prune -o -type f -print; for f in hd.toml src/*.hd; do echo \"== $f\"; cat \"$f\"; done",
+      "Bash: cat > src/fields.hd <<'EOF'\nuse std.meta.{Field, Structure, Variant, Walker}\nuse std.testing.assert_equal\n\n## The field names of a struct, in declaration order.\npub trait FieldNames:\n    fn fiel"
+    ],
+    "diagnostic_codes": {
+      "syntax-error": 1,
+      "unknown-import": 1
+    },
+    "failing_checks": 1,
+    "turns": 26,
+    "cost_usd": 0.019789549999999996,
+    "duration_s": 58,
+    "tokens": 787136,
+    "final_message": "The `fields` package is in the current directory. `hd check --tests` and `hd test` both pass (5 tests, 0 failures), and `hd fmt --check` is clean on the two `.hd` files I wrote.\n\n**What's there**\n- `src/fields.hd` holds `pub trait FieldNames` and the derive template `impl[T] FieldNames for T by Structure`. The template walks the struct with a `Walker` that collects each field's name in declaration order. Users write `@derive(FieldNames)` with no per-struct impl.\n- `src/lib.hd` re-exports the trait as `pub use pkg.fields.{FieldNames}`, so other packages and modules can import it from the package root.\n- `tests/field_names.hd` derives `FieldNames` on a `pub` and a private struct in a test module, which covers the \"any module, including test modules\" requirement.\n- `src/fields.hd` also has its own `tests:` block for a struct with a `string?` field, a `List` field, a defaulted field, and an empty struct.\n- `hd.toml` is the generated `name = \"fields\"` package file.\n\n**Choices I made**\n- `hd new --lib` produced a sample `greet` function and test. I removed both, since they aren't part of the request.\n- Enums are not special-cased. The walker can't tell an enum from a struct (a struct's walk also calls `variant`), so `@derive(FieldNames)` on an enum gives the active variant's data-field names, or `[]` for a unit variant. The request said structs only, so I left it that way. Say if you want enums rejected or handled differently.\n\n**Blocked steps**\n- The sandbox denied two commands: o",
+    "is_error": false
+  },
+  "agent_exit": null
+}

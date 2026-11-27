@@ -1,0 +1,28 @@
+use pkg.FieldNames
+use std.testing.assert_equal
+
+@derive(FieldNames)
+pub struct Point:
+    pub x: i32
+    pub y: i32
+
+@derive(FieldNames)
+struct Empty:
+    pass
+
+@derive(FieldNames)
+struct Profile:
+    name: string
+    tags: List[string] = []
+    nickname: string? = .None
+    scores: Map[string, i32] = {}
+
+it("lists fields in declaration order"):
+    assert_equal(Point { x: 1, y: 2 }.field_names(), ["x", "y"])
+
+it("lists nothing for a struct without fields"):
+    assert_equal(Empty {}.field_names(), [])
+
+it("lists fields of every type, including lists and optionals"):
+    p := Profile { name: "ada" }
+    assert_equal(p.field_names(), ["name", "tags", "nickname", "scores"])

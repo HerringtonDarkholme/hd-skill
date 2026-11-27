@@ -1,0 +1,79 @@
+{
+  "task": "04-ratelimit",
+  "package": "ratelimit",
+  "scenario": "time-dependent logic",
+  "selling_points": [
+    "Clock requirement",
+    "ManualClock fake"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "manual-clock",
+        "desc": "tests control time with ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/language/requirements.md",
+      "references/testing/fakes.md",
+      "references/cli/packages.md",
+      "references/std/api/README.md",
+      "references/std/api/time.md",
+      "references/testing/unit-tests.md",
+      "references/language/data.md"
+    ],
+    "bash": 10,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 6,
+      "test": 1,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t3/04-ratelimit/ratelimit && cat > src/lib.hd <<'EOF'\npub use self.limiter.{Limiter, new_limiter}\nEOF\npython3 - "
+    ],
+    "diagnostic_codes": {
+      "not-writable": 25,
+      "unknown-import": 1
+    },
+    "failing_checks": 1,
+    "turns": 27,
+    "cost_usd": 0.024357540000000004,
+    "duration_s": 64,
+    "tokens": 724689,
+    "final_message": "The `ratelimit` package is in place. `hd check --tests`, `hd test` (7 cases, all passing), `hd fmt --check` and `hd lint` all pass.\n\n**Files**\n- `hd.toml`: library package named `ratelimit`. It declares no capabilities, since the library only takes `Clock` through its `$ Clock` row.\n- `src/limiter.hd`: the limiter and its `tests:` block.\n- `src/lib.hd`: `pub use self.limiter.{Limiter, new_limiter}`, so callers can write `ratelimit.Limiter` as well as `ratelimit.limiter.Limiter`.\n\n**Implementation**\n- `Limiter` holds `max`, the window in milliseconds, and a `Map[string, List[i64]]` of allowed event times per key.\n- `allow` reads `now()` through `$ Clock`, gets the key's list with `get_or_insert`, drops events where `now - t >= window`, and records `now` only if fewer than `max` events remain.\n- Refused events are not recorded. Keys have separate lists.\n\n**Tests** cover the limit within a window, refused events not being recorded, the exact boundary (an event at `t` still counts at `t + window - 1` and expires at `t + window`), expiry freeing room, independent keys, `max = 0` refusing everything, and per-key expiry. They drive time with `ManualClock` through `$.with(Clock=...)`.\n\n**Choices I made that you may want to change**\n- I used a `Map[string, List[i64]]` with plain millisecond timestamps, rather than storing `Timestamp` values.\n- Keys are never evicted. Memory grows with the number of distinct keys seen, even after their events expire.\n- With `max = 0`, each refused key ",
+    "is_error": false
+  },
+  "agent_exit": null
+}

@@ -1,0 +1,127 @@
+{
+  "task": "01-colsum",
+  "package": "colsum",
+  "scenario": "CLI over standard input",
+  "selling_points": [
+    "derive Cli",
+    "@error",
+    "Result"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 18,
+      "passed": 18,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [
+          "--skip-header"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "a,1\nb,7\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 2: not an integer: zz\n"
+      },
+      {
+        "args": [
+          "--key",
+          "2",
+          "--value",
+          "3"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "x,-2\ny,8\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 1: fewer columns than needed\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "derive-cli",
+        "desc": "options parsed with @derive(Cli)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "SumError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/how-to/cli-tool.md",
+      "references/how-to/stdin-filter.md",
+      "references/cli/packages.md",
+      "references/language/errors.md",
+      "references/how-to/common-operations.md",
+      "references/testing/unit-tests.md",
+      "references/language/modules.md",
+      "references/testing/fakes.md",
+      "references/testing/integration.md"
+    ],
+    "bash": 18,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "doc": 8,
+      "check": 7,
+      "test": 6,
+      "run": 7,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: ls -la && H=.claude/skills/hd-lang/references && cat $H/how-to/cli-tool.md $H/how-to/stdin-filter.md $H/cli/packages.md 2>&1 | head -700",
+      "Bash: printf 'name,amount\\n b , 2 \\n\\na,1\\nb,-5\\n' | hd run -- --skip-header; echo \"status=$?\"; printf 'a,1\\nb\\n' | hd run -- 2>/tmp/colsum_err.txt; echo \"status=$?\"; hd run -- --help"
+    ],
+    "diagnostic_codes": {
+      "unknown-trait": 4,
+      "missing-requirement": 1,
+      "type-mismatch": 6
+    },
+    "failing_checks": 3,
+    "turns": 40,
+    "cost_usd": 0.036971449999999996,
+    "duration_s": 94,
+    "tokens": 1616349,
+    "final_message": "The `colsum` package is in the current directory. `hd check --tests` and `hd test` both pass (18 tests), and `hd lint` is clean.\n\n**Files**\n- `src/sum.hd`: `pub enum SumError` with `MissingColumn(line)` and `NotANumber(line, text)`, derived `Eq` and `Debug`, and `pub fn summarize` with the signature you specified. It has 12 unit tests.\n- `src/main.hd`: `@derive(Cli)` options (`--key`, `--value`, `--skip-header`, with defaults 1, 2, and off), reads stdin, prints `key,total` lines, and prints errors as `colsum: line N: ...` to stderr with exit status 1. It has 3 unit tests.\n- `tests/colsum.hd`: 3 integration tests that run the built binary with stdin, `--key`/`--value`, and the error path.\n- `hd.toml`: grants `Console`, `ConsoleInput`, and `Args`. The template's unused `Clock` and `Random` are removed.\n\nI checked the binary by hand as well: sums with trimmed and signed values, `--skip-header`, `--help`, and the error cases all behave as specified.\n\n**Choices I made where the spec was silent**\n- A column number of 0 is treated as a missing column, so it yields `MissingColumn` instead of an underflow panic.\n- Sums use hd's `i64` arithmetic, so a total that overflows `i64` panics rather than returning an error. The spec has no variant for that, so I left it.\n- `hd fmt` reflowed some lines in the source files. The logic is unchanged.\n\nThe directory is not a git repository, so I made no commit.",
+    "is_error": false
+  },
+  "agent_exit": null
+}

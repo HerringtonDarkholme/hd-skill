@@ -1,0 +1,48 @@
+use std.cli.{Args, Cli}
+use std.console.{ConsoleInput, eprintln, read_all}
+use std.process.ExitCode
+use pkg.sum.{summarize}
+
+## Sum one CSV column grouped by another, read from standard input
+@derive(Cli)
+struct Options:
+    ## the 1-based column to group by
+    key: usize = 1
+    ## the 1-based column to sum
+    value: usize = 2
+    ## ignore the first line
+    skip_header: bool
+
+pub fn main!() -> ExitCode $ Args + Console + ConsoleInput:
+    options := match Options::parse_args():
+        .Ok(options) => options
+        .Err(error) => return error.exit()
+    if options.key == 0 || options.value == 0:
+        eprintln("colsum: columns are numbered from 1")
+        return ExitCode(2)
+    text := match read_all!():
+        .Ok(text) => text
+        .Err(_) =>
+            eprintln("colsum: cannot read standard input")
+            return ExitCode(1)
+    match summarize(text, options.key, options.value, options.skip_header):
+        .Ok(totals) =>
+            for (key, total) in totals:
+                println("$key,$total")
+            ExitCode(0)
+        .Err(error) =>
+            eprintln("colsum: $error")
+            ExitCode(1)
+
+tests:
+    it("uses column 1 as the key and column 2 as the value by default"):
+        options := Options::parse([]).expect("no arguments is valid")
+        assert_equal(options.key, 1)
+        assert_equal(options.value, 2)
+        assert(!options.skip_header)
+
+    it("parses the options"):
+        options := Options::parse(["--key", "3", "--value", "4", "--skip-header"]).expect("valid arguments")
+        assert_equal(options.key, 3)
+        assert_equal(options.value, 4)
+        assert(options.skip_header)

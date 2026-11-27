@@ -1,0 +1,83 @@
+{
+  "task": "11-calc",
+  "package": "calc",
+  "scenario": "parser and interpreter",
+  "selling_points": [
+    "recursive enums",
+    "box",
+    "@error",
+    "match"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 15,
+      "passed": 15,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 20,
+      "passed": 20,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "tree-enum",
+        "desc": "a recursive enum for the syntax tree (boxed children)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "CalcError declared with @error",
+        "ok": false
+      },
+      {
+        "id": "table-test",
+        "desc": "table tests with it_each",
+        "ok": false
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.5
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 17,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 5,
+      "test": 3,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/hd-way-t1/11-calc/calc && hd check --tests --format json 2>&1 | head -40; echo \"exit ${PIPESTATUS[0]}\""
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "missing-let": 1
+    },
+    "failing_checks": 1,
+    "turns": 26,
+    "cost_usd": 0.028975969999999993,
+    "duration_s": 96,
+    "tokens": 965402,
+    "final_message": "The `calc` library is written and both `hd check --tests` and `hd test` pass (15 tests passing, 0 failed). `hd lint` is clean.\n\n**Files**\n- `hd.toml`: package `calc`, created with `hd new --lib --vcs none .` in the current directory.\n- `src/calc.hd`: the evaluator and 14 `tests:` cases. It has `CalcError` (`@derive(Eq, Debug)`) and `eval`. The pipeline is tokenize, parse into an `Expr` tree (`box` for children), then evaluate the tree.\n- `src/lib.hd`: re-exports `CalcError` and `eval` as the package interface, so consumers write `use dep.calc.{eval}`.\n- `tests/calc.hd`: one integration test through the public API. It replaces the sample `greet` test that `hd new` generated.\n\n**Choices I made where the spec was silent**\n- **Arithmetic overflow** (e.g. `9223372036854775807 + 1`) returns `Unexpected(at)`, where `at` is the operator's offset. The enum has only the two required variants, so there was no better option that kept the API as specified. Say if you'd rather have a third variant.\n- **Integer literals too large for i64** return `Unexpected` at the start of the literal.\n- **Whitespace** means spaces only, as written. A tab is an invalid character.\n- **Error precedence:** a syntax error before an invalid character wins (`\"1 2 $\"` → `Unexpected(2)`). Division by zero is reported during evaluation, after the whole input has parsed.\n- **Limitation:** `-9223372036854775808` cannot be written, because the positive literal overflows before the unary minus applies. Fixing that mea",
+    "is_error": false
+  },
+  "agent_exit": null
+}

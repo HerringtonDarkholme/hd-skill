@@ -1,0 +1,96 @@
+use std.contract.require
+
+## A bank account holding a balance in cents.
+##
+## Invariant: the balance is never negative. Every function below keeps it so,
+## and checks it after each change.
+pub struct Account:
+    cents: i64
+
+## Opens an account with `cents`, which must not be negative.
+pub fn open(cents: i64) -> Account:
+    require("an opening balance is not negative"):
+        cents >= 0
+    Account { cents: cents }
+
+## Moves `cents` from `from` to `to`.
+## Invariant: the total of the two balances is unchanged.
+pub fn transfer(from: &mut Account, to: &mut Account, cents: i64) -> void:
+    require("a transfer is positive"):
+        cents > 0
+    require("a transfer is not larger than the source balance"):
+        cents <= from.cents
+    total := from.cents + to.cents
+    from.withdraw(cents)
+    to.deposit(cents)
+    require("a transfer keeps the total"):
+        from.cents + to.cents == total
+
+impl Account:
+    ## The current balance, in cents.
+    pub fn balance(self) -> i64:
+        self.cents
+
+    ## Adds `cents`, which must be positive.
+    pub fn deposit(&mut self, cents: i64) -> void:
+        require("a deposit is positive"):
+            cents > 0
+        self.cents += cents
+        require("the balance is never negative"):
+            self.cents >= 0
+
+    ## Removes `cents`, which must be positive and no more than the balance.
+    pub fn withdraw(&mut self, cents: i64) -> void:
+        require("a withdrawal is positive"):
+            cents > 0
+        require("a withdrawal is not larger than the balance"):
+            cents <= self.cents
+        self.cents -= cents
+        require("the balance is never negative"):
+            self.cents >= 0
+
+tests:
+    use std.testing.it_prop
+
+    it("opens with the given balance"):
+        assert_equal(open(1250).balance(), 1250)
+
+    it("opens empty"):
+        assert_equal(open(0).balance(), 0)
+
+    it("deposit adds to the balance"):
+        let mut account = open(100)
+        account.deposit(50)
+        assert_equal(account.balance(), 150)
+
+    it("withdraw takes from the balance"):
+        let mut account = open(100)
+        account.withdraw(30)
+        assert_equal(account.balance(), 70)
+
+    it("withdrawing the whole balance leaves zero"):
+        let mut account = open(100)
+        account.withdraw(100)
+        assert_equal(account.balance(), 0)
+
+    it("transfer moves money between accounts"):
+        let mut from = open(500)
+        let mut to = open(200)
+        transfer(&mut from, &mut to, 120)
+        assert_equal(from.balance(), 380)
+        assert_equal(to.balance(), 320)
+
+    it("transfer of the whole balance empties the source"):
+        let mut from = open(75)
+        let mut to = open(0)
+        transfer(&mut from, &mut to, 75)
+        assert_equal(from.balance(), 0)
+        assert_equal(to.balance(), 75)
+
+    it_prop("a transfer keeps the total", prop=fn!(cents: u16):
+        let mut from = open(70000)
+        let mut to = open(10)
+        amount := i64(cents) + 1
+        transfer(&mut from, &mut to, amount)
+        assert_equal(from.balance() + to.balance(), 70010)
+    )

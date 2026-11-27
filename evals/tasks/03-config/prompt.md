@@ -16,5 +16,5 @@ pub fn load_config!(path: string) -> Result[Config, ConfigError] $ FsRead + Env
 
 Errors: the file cannot be read → `Read`; it is not valid JSON for a
 `Config` → `Parse`; `APP_PORT` is not an integer → `Environment`; a rule
-fails, including for an overridden port → `Invalid`. Each variant carries
-whatever detail you choose. `Config` must support `==` and debug printing.
+fails, including for an overridden port → `Invalid`. Each variant has
+exactly one field, holding whatever detail you choose. `Config` must support `==` and debug printing.

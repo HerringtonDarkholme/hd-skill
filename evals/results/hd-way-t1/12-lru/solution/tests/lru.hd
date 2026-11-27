@@ -1,0 +1,10 @@
+use pkg.{Lru, new_lru}
+use std.testing.assert_equal
+
+it("serves the public API"):
+    let mut cache: Lru = new_lru(1)
+    cache.put("a", 1)
+    cache.put("b", 2)
+    assert_equal(cache.get("a"), .None)
+    assert_equal(cache.get("b"), .Some(2))
+    assert_equal(cache.len(), 1)

@@ -1,0 +1,100 @@
+{
+  "task": "05-users",
+  "package": "users",
+  "scenario": "service with a user-defined effect",
+  "selling_points": [
+    "own effect trait",
+    "$.use",
+    "$.with providers",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 5,
+      "passed": 5,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 3,
+      "passed": 3,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [],
+        "ok": true,
+        "status": 0,
+        "stdout": "renamed 1 to Ada Lovelace\nerror: no user 2\n",
+        "stderr": ""
+      }
+    ],
+    "idiom": [
+      {
+        "id": "use-effect",
+        "desc": "logic reaches the store with $.use(UserStore)",
+        "ok": true
+      },
+      {
+        "id": "provide-in-main",
+        "desc": "main provides a store with $.with",
+        "ok": true
+      },
+      {
+        "id": "fake-store",
+        "desc": "tests define their own UserStore fake",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "UserError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/cli/packages.md",
+      "references/language/requirements.md",
+      "references/testing/fakes.md",
+      "references/testing/unit-tests.md",
+      "references/language/traits.md",
+      "references/language/errors.md",
+      "references/language/modules.md",
+      "references/how-to/project-layout.md"
+    ],
+    "bash": 7,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 3,
+      "test": 2,
+      "run": 1,
+      "fmt": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 22,
+    "cost_usd": 0.02085909,
+    "duration_s": 60,
+    "tokens": 495491,
+    "final_message": "The `users` package is in the current directory, and both `hd check --tests` and `hd test` pass (5 tests: 4 unit, 1 integration).\n\n**Files**\n- `src/users.hd`: `User` and `UserError` (both `@derive(Eq, Debug)`, with `UserError` messages `no user $id` and `the name is empty`), the `UserStore` trait, and `rename!`.\n- `src/main.hd`: a `MemoryStore` implementing `UserStore`, wired in with `$.with`. Running `hd run` prints exactly:\n  ```\n  renamed 1 to Ada Lovelace\n  error: no user 2\n  ```\n- `tests/users.hd`: an integration test that runs the built program and checks that output and exit status 0.\n- `hd.toml`: grants only `Console` (plus `Process` under dev-capabilities for the integration test).\n\n**Unit tests in `src/users.hd`**\n- Renames to the trimmed name and stores exactly one write.\n- An empty or whitespace-only name returns `EmptyName` and writes nothing.\n- A missing user returns `NotFound(2)` and writes nothing.\n- The error messages render as `no user 2` and `the name is empty`.\n\n**Choices I made**\n- The empty-name check runs before the store lookup, so an empty name never touches the store. The spec didn't fix the order when both conditions hold.\n- The in-memory store lives in `main.hd`, not in the library, because the spec lists only the four items for `src/users.hd`. The unit tests use their own fake store.\n- The package was created with `hd new --app --vcs none .`, so there is no git repository.\n\nI ran `hd fmt`, which reformatted some lines in `src/users.hd` and `tests/",
+    "is_error": false
+  },
+  "agent_exit": null
+}

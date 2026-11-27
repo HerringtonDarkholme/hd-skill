@@ -1,0 +1,9 @@
+use pkg.fields.FieldNames
+
+@derive(FieldNames)
+struct Order:
+    id: string
+    cents: i32
+
+it("derives field names in a test module"):
+    assert_equal(Order { id: "A-1", cents: 5 }.field_names(), ["id", "cents"])

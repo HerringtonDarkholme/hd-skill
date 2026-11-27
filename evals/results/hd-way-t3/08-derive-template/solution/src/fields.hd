@@ -1,0 +1,63 @@
+use std.meta.{Field, Structure, Variant, Walker}
+use std.testing.assert_equal
+
+## The field names of a struct, in declaration order.
+pub trait FieldNames:
+    fn field_names(self) -> List[string]
+
+# The walker the template drives: one call per field.
+struct CollectNames:
+    names: List[string]
+
+impl[S] Walker[S] for CollectNames:
+    type Error = void
+
+    fn data_variant(&mut self, v: Variant[S]) -> Result[void, void]:
+        .Ok(())
+
+    fn variant(&mut self, v: Variant[S]) -> Result[void, void]:
+        .Ok(())
+
+    fn data_member[F](&mut self, h: Field[S, F], value: &F) -> Result[void, void]:
+        self.names.push(h.info.name)
+        .Ok(())
+
+    fn member[F](&mut self, h: Field[S, F], value: &F) -> Result[void, void]:
+        self.data_member(h, value)
+
+    fn rest[T](&mut self, h: Field[S, List[T]], items: &List[T]) -> Result[void, void]:
+        .Ok(())
+
+# The template: each `@derive(FieldNames)` instantiates it for that type.
+impl[T] FieldNames for T by Structure:
+    fn field_names(self) -> List[string]:
+        let mut collect = CollectNames { names: [] }
+        _ := Structure::walk(&self, &mut collect)
+        collect.names
+
+tests:
+    @derive(FieldNames)
+    struct Point:
+        x: i32
+        y: i32
+
+    @derive(FieldNames)
+    struct Profile:
+        name: string
+        tags: List[string]
+        nickname: string?
+        score: f64 = 0.0
+
+    @derive(FieldNames)
+    struct Empty:
+        pass
+
+    it("lists fields in declaration order"):
+        assert_equal(Point { x: 1, y: 2 }.field_names(), ["x", "y"])
+
+    it("includes optional, list and defaulted fields"):
+        p := Profile { name: "ada", tags: [], nickname: .None }
+        assert_equal(p.field_names(), ["name", "tags", "nickname", "score"])
+
+    it("is empty for a struct without fields"):
+        assert_equal(Empty {}.field_names(), [])

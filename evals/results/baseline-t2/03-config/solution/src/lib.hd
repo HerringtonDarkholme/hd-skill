@@ -1,1 +1,2 @@
+## The `config` library: load and validate a service's configuration.
 pub use self.config.{Config, ConfigError, load_config}
