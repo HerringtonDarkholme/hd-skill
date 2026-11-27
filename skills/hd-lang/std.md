@@ -1,8 +1,9 @@
 # The standard library by job
 
 This page lists the std calls by what you want to do: the `use` line, the calls agents reach for, one
-checked example, and the mistakes that cost a compile. For full signatures, `grep` the one-line-per-item
-index [reference/std-index.txt](reference/std-index.txt), as in `grep 'std.text.split' reference/std-index.txt`.
+checked example, and the mistakes that cost a compile. For full signatures, open the module's file in
+[reference/std/](reference/std/README.md), as `reference/std/text.txt`, or search them all with
+`grep -rh 'split' reference/std/`.
 Inside a package, `hd doc std.text.split` prints one item and `hd doc std.fs` a whole module.
 
 Methods of `string`, `List`, `Map`, `Option` and `Result` come with the type. Everything else is

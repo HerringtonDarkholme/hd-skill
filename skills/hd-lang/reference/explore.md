@@ -12,9 +12,9 @@ authority: when this skill and `hd` disagree, `hd` is right.
 3. **A probe.** Pipe a few lines to `hd` and see what happens:
    `echo 'println(debug([3, 1, 2].sorted()))' | hd`. A probe answers
    "does this check" and "what does this print" faster than any page.
-4. **[std-index.txt](std-index.txt)** for a std name or signature, with
-   grep: `grep -i 'trim' reference/std-index.txt`,
-   `grep '^std.fs\.' reference/std-index.txt`.
+4. **[reference/std/](std/README.md)** for a std name or signature: one
+   small file per module, so open the one you need (`reference/std/fs.txt`),
+   or search them all: `grep -rh 'trim' reference/std/`.
 5. **`hd doc`** for one item's full text and examples, inside any package:
    `hd doc std.task.retry`, `hd doc std.meta.Walker`. Outside a package,
    make a probe package once: `hd new /tmp/hd-probe --lib --vcs none`.

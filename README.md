@@ -58,7 +58,7 @@ skills/hd-lang/
     diagnostics.md    each diagnostic code, what was written, the fix
     limitations.md    what hd can't do yet, and what to do instead
     explore.md        where to look when the skill has no answer
-    std-index.txt     every std item on one line, for grep (scripts/gen-std-api.mjs)
+    std/              every std item, one small file per module (scripts/gen-std-api.mjs)
 ```
 
 The agent reads `SKILL.md` first, then `language.md`, and opens other
@@ -74,7 +74,7 @@ node scripts/check-examples.mjs                   # uses `hd` on PATH
 HD=/path/to/hd node scripts/check-examples.mjs
 node scripts/check-examples.mjs language/         # only paths that contain a word
 node scripts/check-examples.mjs --links           # only check links and anchors
-HD=/path/to/hd node scripts/gen-std-api.mjs       # regenerate reference/std-index.txt after std changes
+HD=/path/to/hd node scripts/gen-std-api.mjs       # regenerate reference/std/ after std changes
 ```
 
 - Each `hd` block in the skill must pass `hd check`. With a `tests:` block

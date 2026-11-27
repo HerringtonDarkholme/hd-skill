@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// Generates skills/hd-lang/reference/std-index.txt: one line per public std
-// item (its full name, signature and one-line summary), from `hd doc MODULE`.
-// An agent greps it to find a name or a signature. Run it after std changes:
+// Generates skills/hd-lang/reference/std/: one small file per public std
+// module, one line per item (its full name, signature and one-line summary),
+// from `hd doc MODULE`, plus a README listing the modules. An agent reads
+// the one module it needs, or greps the folder. Run it after std changes:
 //
 //   HD=/path/to/hd node scripts/gen-std-api.mjs
 //
@@ -9,14 +10,14 @@
 // directory. Cost: one `hd doc` process per module.
 
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const hd = process.env.HD ?? "hd";
-const out = join(root, "skills/hd-lang/reference/std-index.txt");
+const out = join(root, "skills/hd-lang/reference/std");
 
 // Public modules, in the order the index lists them. std.rt, std.core and
 // std.prelude are the language's runtime, not an API to call.
@@ -79,13 +80,7 @@ function condense(module, markdown) {
   return out;
 }
 
-const header = [
-  "# The hd standard library, one line per public item: NAME  SIGNATURE  -- SUMMARY",
-  "# Generated from `hd doc` by scripts/gen-std-api.mjs. Search it with grep, e.g.",
-  "#   grep -i 'split' reference/std-index.txt      grep '^std.fs\\.' reference/std-index.txt",
-  "# For one item's full text, run `hd doc std.text.split` inside any package.",
-];
-const body = [];
+const files = [];
 const failed = [];
 for (const module of modules) {
   const run = spawnSync(hd, ["doc", module], { cwd: pkg, encoding: "utf8", timeout: 120_000 });
@@ -93,12 +88,50 @@ for (const module of modules) {
     failed.push(`${module}: ${(run.stderr || run.stdout || "").split("\n")[0]}`);
     continue;
   }
-  body.push(...condense(module, run.stdout));
+  const lines = condense(module, run.stdout);
+  // A module whose page lists no items of its own gets no file.
+  if (lines.length === 0) continue;
+  // The README describes a module by its first few top-level names.
+  const names = [...new Set(lines.map((l) => l.split("  ")[0].slice(module.length + 1).split(".")[0]))];
+  const summary = names.slice(0, 8).map((n) => `\`${n}\``).join(", ") + (names.length > 8 ? ", ..." : "");
+  files.push({ module, file: `${module.replace(/^std\./, "")}.txt`, lines, summary });
 }
 rmSync(scratch, { recursive: true, force: true });
 if (failed.length > 0) {
   console.error(`hd doc failed for ${failed.length} module(s):\n  ${failed.join("\n  ")}`);
   process.exit(1);
 }
-writeFileSync(out, [...header, ...body].join("\n") + "\n");
-console.log(`wrote ${body.length} items from ${modules.length} modules to ${out}`);
+rmSync(out, { recursive: true, force: true });
+mkdirSync(out, { recursive: true });
+for (const f of files) {
+  const header = [
+    `# ${f.module}: one line per public item, NAME  SIGNATURE  -- SUMMARY`,
+    `# Generated from \`hd doc ${f.module}\` by scripts/gen-std-api.mjs. For one item's full`,
+    `# text and examples, run \`hd doc ${f.module}.NAME\` inside any package.`,
+  ];
+  writeFileSync(join(out, f.file), [...header, ...f.lines].join("\n") + "\n");
+}
+const readme = [
+  "# The Standard Library, One File Per Module",
+  "",
+  "Each file lists one module's public items, one per line: full name,",
+  "signature, and a one-line summary. Generated from `hd doc` by",
+  "`scripts/gen-std-api.mjs`; don't edit by hand.",
+  "",
+  "Open the one module you need, or search them all:",
+  "",
+  "```sh",
+  "grep -rh 'split' reference/std/          # a name in any module",
+  "grep -h 'pub fn' reference/std/time.txt  # the functions of one module",
+  "```",
+  "",
+  "For what to use for a job, read [std.md](../../std.md) first. For one",
+  "item's full text and examples, run `hd doc std.time.sleep` inside any package.",
+  "",
+  "| Module | File | Items | First names |",
+  "| --- | --- | ---: | --- |",
+  ...files.map((f) => `| \`${f.module}\` | [${f.file}](${f.file}) | ${f.lines.length} | ${f.summary} |`),
+];
+writeFileSync(join(out, "README.md"), readme.join("\n") + "\n");
+const total = files.reduce((n, f) => n + f.lines.length, 0);
+console.log(`wrote ${total} items in ${files.length} module files to ${out}`);

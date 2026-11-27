@@ -62,8 +62,9 @@ line, which `--format json` leaves out ([JSON output](#json-output-for-scripts))
   echo 'println("héllo".len())' | hd       # prints 6: len() counts bytes
   ```
 
-- **Search std by name** in [std-index.txt](reference/std-index.txt):
-  `grep -i 'split' reference/std-index.txt`.
+- **Look up a std name** in [reference/std/](reference/std/README.md), one
+  small file per module: open `reference/std/time.txt`, or search them all
+  with `grep -rh 'split' reference/std/`.
 
 ## Everyday commands
 

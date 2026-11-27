@@ -34,7 +34,7 @@ hd help                  # the commands; `hd help COMMAND` for one command's fla
 5. **Finish**: `hd fmt`, then `hd lint`.
 
 Two tries at most per error. Then find out instead of guessing: a piped
-probe, [std-index.txt](reference/std-index.txt), or `hd doc`
+probe, the [std reference](reference/std/README.md), or `hd doc`
 ([explore](reference/explore.md)).
 
 ## What hd Is
@@ -82,7 +82,7 @@ loop or `if` another language would need.
 | For | Read |
 | --- | --- |
 | the everyday language, and what differs from Python, Rust, Go | [language.md](language.md) |
-| a std function for a job: text, collections, files, time, JSON, ... | [std.md](std.md); every item, for grep: [std-index.txt](reference/std-index.txt) |
+| a std function for a job: text, collections, files, time, JSON, ... | [std.md](std.md); every item, one file per module: [reference/std/](reference/std/README.md) |
 | the `hd` command, its flags, and reading its output | [cli.md](cli.md) |
 | a diagnostic code | [diagnostics.md](reference/diagnostics.md) |
 | something hd can't do yet | [limitations.md](reference/limitations.md) |
