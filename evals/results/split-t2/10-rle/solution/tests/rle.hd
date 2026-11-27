@@ -1,0 +1,12 @@
+use pkg.{decode, encode}
+use std.testing.{assert_equal, it_prop}
+
+it("the public API round-trips"):
+    xs := [4, 4, 4, 0, -1, -1]
+    assert_equal(decode(encode(xs)), xs)
+    assert_equal(encode(xs).len(), 3)
+
+it_prop(
+    "public decode undoes public encode",
+    prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)), xs)
+)

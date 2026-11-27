@@ -1,0 +1,2 @@
+## Derive the names of a struct's fields with `@derive(FieldNames)`.
+pub use self.fields.{FieldNames}

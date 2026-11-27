@@ -1,0 +1,86 @@
+{
+  "task": "11-calc",
+  "package": "calc",
+  "scenario": "parser and interpreter",
+  "selling_points": [
+    "recursive enums",
+    "box",
+    "@error",
+    "match"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 30,
+      "passed": 30,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 20,
+      "passed": 20,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "tree-enum",
+        "desc": "a recursive enum for the syntax tree (boxed children)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "CalcError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "table-test",
+        "desc": "table tests with it_each",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/parser.md",
+      "reference/packages.md"
+    ],
+    "bash": 11,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 5,
+      "test": 3,
+      "fmt": 1,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t2/11-calc/calc && cat > src/lib.hd <<'EOF'\n## An integer expression evaluator: `+ - * /`, parentheses and unary "
+    ],
+    "diagnostic_codes": {
+      "invalid-test-statement": 2
+    },
+    "failing_checks": 1,
+    "turns": 25,
+    "cost_usd": 0.02761243,
+    "duration_s": 85,
+    "tokens": 973381,
+    "final_message": "The `calc` package is in the current directory. `hd check --tests` passes, `hd test` runs 30 tests with all passing, and `hd fmt` and `hd lint` are clean. I did not commit anything; the directory is not a git repository.\n\n**Files**\n- `src/calc.hd`: `CalcError` (`@error`, `@derive(Eq, Debug)`), `pub fn eval`, and the unit tests in a `tests:` block.\n- `src/lib.hd`: the library root, which re-exports `CalcError` and `eval` from `calc.hd`.\n- `tests/calc.hd`: an integration test through the public interface.\n\n**How it works**\n- The lexer never fails. Any character it doesn't recognise becomes a `Bad` token, so the parser reports it only when it reaches that point. That keeps `\"1 2 $\"` at `Unexpected(2)`, not at the `$`.\n- Recursive descent with `expr → term → unary → primary`. Unary minus binds tighter than `*` and `/`. The parser builds a `BinOp`/`Neg`/`Num` tree with boxed children, then a separate `evaluate` walks it.\n- On a parse error, `Unexpected` gets the start of the offending token, or `src.len()` if input ends early. Parsing finishes before evaluation, so `\"1 / 0 +\"` is a parse error, not `DivideByZero`.\n\n**Choices you may want to change**\n- **i64 overflow wraps.** The spec's enum has no overflow variant, and hd panics on overflow by default. I used `wrapping_*` ops, including a special case for `MIN / -1`.\n- **Integer literals that don't fit in i64** report `Unexpected` at their start. Because of this, `-9223372036854775808` can't be written as a literal; `-922337203685",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

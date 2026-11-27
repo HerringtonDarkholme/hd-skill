@@ -1,0 +1,19 @@
+use std.process.Command
+use std.testing.{assert_equal, hd_run}
+
+## Runs the built `colsum` program with standard input, as a shell pipeline does.
+fn run_colsum!(input: string, args: List[string]) -> (i32, string, string):
+    out := hd_run!(*Command::new("colsum").args(args).stdin(input))
+    (out.status, out.stdout, out.stderr)
+
+it("sums a piped CSV and prints sorted totals"):
+    let (status, stdout, stderr) = run_colsum!("tea,3\ncake,1\ntea,4\n", [])
+    assert_equal(status, 0, reason="a clean exit")
+    assert_equal(stdout, "cake,1\ntea,7\n", reason="sorted totals")
+    assert_equal(stderr, "", reason="no diagnostics")
+
+it("prints nothing to standard output on error"):
+    let (status, stdout, stderr) = run_colsum!("tea,1\ntea,x\n", [])
+    assert_equal(status, 1, reason="a failing exit")
+    assert_equal(stdout, "", reason="no partial output")
+    assert_equal(stderr, "colsum: line 2: not a number: x\n", reason="the message")

@@ -1,0 +1,2 @@
+## The `lru` package: a least-recently-used cache from string keys to i64 values.
+pub use self.lru.{Lru, new_lru}

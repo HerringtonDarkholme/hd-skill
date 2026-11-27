@@ -1,0 +1,13 @@
+use pkg.fields.FieldNames
+use pkg.model.new_order
+
+@derive(FieldNames)
+struct Invoice:
+    number: string
+    lines: List[string]
+
+it("derives names through the library root"):
+    assert_equal(Invoice { number: "A-1", lines: [] }.field_names(), ["number", "lines"])
+
+it("derives names for a struct from another module"):
+    assert_equal(new_order(2).field_names(), ["id", "total", "note"])

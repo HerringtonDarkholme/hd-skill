@@ -1,0 +1,2 @@
+## Sliding-window rate limiting, keyed by string.
+pub use self.limiter.{Limiter, new_limiter}

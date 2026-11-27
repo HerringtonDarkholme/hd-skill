@@ -1,0 +1,23 @@
+use pkg.users.{User, UserStore, rename}
+
+# An in-memory store: the production-style provider for this program.
+struct MemoryUsers:
+    users: Map[i64, User]
+
+impl UserStore for MemoryUsers:
+    fn get!(&mut self, id: i64) -> User?:
+        self.users.get(id)
+
+    fn put!(&mut self, user: User) -> void:
+        self.users[user.id] = user
+
+fn report!(id: i64, name: string) -> void $ UserStore + Console:
+    match rename!(id, name):
+        .Ok(user) => println("renamed ${user.id} to ${user.name}")
+        .Err(err) => println("error: $err")
+
+pub fn main!() -> void $ Console:
+    store := box(MemoryUsers { users: { 1: User { id: 1, name: "ada" } } })
+    $.with(UserStore=store):
+        report!(1, "Ada Lovelace")
+        report!(2, "Grace")

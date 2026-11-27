@@ -1,0 +1,234 @@
+use std.testing.it_each
+
+## Why an expression could not be evaluated.
+@error
+@derive(Eq, Debug)
+pub enum CalcError:
+    @error("cannot divide by zero")
+    DivideByZero
+    @error("unexpected input at byte $at")
+    Unexpected(at: usize)
+
+## A token kind. Numbers carry their value.
+@derive(Eq, Debug)
+enum Kind:
+    Num(i64)
+    Plus
+    Minus
+    Star
+    Slash
+    Open
+    Close
+    Bad # input the grammar can never accept (a bad byte or number)
+    End # the end of the input, at `src.len()`
+
+## A token and the byte offset where it starts.
+@derive(Eq, Debug)
+struct Token:
+    kind: Kind
+    at: usize
+
+## A syntax tree. Children that hold a whole tree are boxed.
+enum Expr:
+    Num(i64)
+    Neg(*Expr)
+    Bin(Op, *Expr, *Expr)
+
+@derive(Eq, Debug)
+enum Op:
+    Add
+    Sub
+    Mul
+    Div
+
+fn is_digit(b: u8) -> bool:
+    b >= 48 && b <= 57
+
+fn symbol(b: u8) -> Kind?:
+    match b:
+        43 => .Some(Kind.Plus)
+        45 => .Some(Kind.Minus)
+        42 => .Some(Kind.Star)
+        47 => .Some(Kind.Slash)
+        40 => .Some(Kind.Open)
+        41 => .Some(Kind.Close)
+        _ => .None
+
+# Splits the input into tokens. It never fails: a bad byte or an
+# out-of-range number becomes a `Bad` token, which the parser reports only
+# if it reaches it, so an earlier syntax error wins.
+fn lex(src: string) -> List[Token]:
+    bytes := src.to_utf8()
+    let mut out: List[Token] = []
+    let at: usize = 0
+    while at < bytes.len():
+        b := bytes[at]
+        if b == 32:
+            at += 1
+        else if is_digit(b):
+            start := at
+            while at < bytes.len() && is_digit(bytes[at]):
+                at += 1
+            text := string::from_utf8(bytes.slice(start, at)).expect("ASCII digits")
+            match text.parse::[i64]():
+                .Ok(n) => out.push(Token { kind: Kind.Num(n), at: start })
+                .Err(_) => out.push(Token { kind: Kind.Bad, at: start })
+        else:
+            kind := symbol(b).unwrap_or(Kind.Bad)
+            out.push(Token { kind, at })
+            at += 1
+    out.push(Token { kind: Kind.End, at: bytes.len() })
+    out
+
+struct Parser:
+    tokens: List[Token]
+    at: usize
+
+impl Parser:
+    fn peek(&self) -> Token:
+        self.tokens[self.at]
+
+    fn add_op(&self) -> Op?:
+        match self.peek().kind:
+            .Plus => .Some(Op.Add)
+            .Minus => .Some(Op.Sub)
+            _ => .None
+
+    fn mul_op(&self) -> Op?:
+        match self.peek().kind:
+            .Star => .Some(Op.Mul)
+            .Slash => .Some(Op.Div)
+            _ => .None
+
+    # expr := term (('+' | '-') term)*
+    fn expr(&mut self) -> Result[Expr, CalcError]:
+        let mut left = self.term()?
+        while true:
+            let .Some(op) = self.add_op() else:
+                break
+            self.at += 1
+            right := self.term()?
+            left = Expr.Bin(op, box(left), box(right))
+        .Ok(left)
+
+    # term := unary (('*' | '/') unary)*
+    fn term(&mut self) -> Result[Expr, CalcError]:
+        let mut left = self.unary()?
+        while true:
+            let .Some(op) = self.mul_op() else:
+                break
+            self.at += 1
+            right := self.unary()?
+            left = Expr.Bin(op, box(left), box(right))
+        .Ok(left)
+
+    # unary := '-' unary | primary
+    fn unary(&mut self) -> Result[Expr, CalcError]:
+        if self.peek().kind == Kind.Minus:
+            self.at += 1
+            inner := self.unary()?
+            return .Ok(Expr.Neg(box(inner)))
+        self.primary()
+
+    # primary := NUMBER | '(' expr ')'
+    fn primary(&mut self) -> Result[Expr, CalcError]:
+        token := self.peek()
+        match token.kind:
+            .Num(n) =>
+                self.at += 1
+                .Ok(Expr.Num(n))
+            .Open =>
+                self.at += 1
+                inner := self.expr()?
+                if self.peek().kind != Kind.Close:
+                    return .Err(CalcError.Unexpected(self.peek().at))
+                self.at += 1
+                .Ok(inner)
+            _ => .Err(CalcError.Unexpected(token.at))
+
+fn parse(src: string) -> Result[Expr, CalcError]:
+    let mut p = Parser { tokens: lex(src), at: 0 }
+    tree := p.expr()?
+    next := p.peek()
+    if next.kind != Kind.End:
+        return .Err(CalcError.Unexpected(next.at))
+    .Ok(tree)
+
+# Evaluates the tree. Division truncates toward zero. Integer overflow
+# panics, as ordinary `i64` arithmetic does in hd.
+fn eval_tree(e: &Expr) -> Result[i64, CalcError]:
+    match e:
+        .Num(n) => .Ok(n)
+        .Neg(inner) =>
+            v := eval_tree(inner)?
+            .Ok(-v)
+        .Bin(op, left, right) =>
+            a := eval_tree(left)?
+            b := eval_tree(right)?
+            match op:
+                .Add => .Ok(a + b)
+                .Sub => .Ok(a - b)
+                .Mul => .Ok(a * b)
+                .Div =>
+                    if b == 0:
+                        return .Err(CalcError.DivideByZero)
+                    .Ok(a / b)
+
+## Evaluates an integer expression: decimal numbers, `+ - * /`, parentheses,
+## unary minus, and spaces between tokens. `*` and `/` bind tighter than `+`
+## and `-`; all are left-associative.
+pub fn eval(src: string) -> Result[i64, CalcError]:
+    tree := parse(src)?
+    eval_tree(&tree)
+
+tests:
+    it_each(
+        "evaluates",
+        [
+            ("0", 0i64),
+            ("9223372036854775807", 9223372036854775807i64),
+            ("1 + 2 * 3", 7i64),
+            ("(1 + 2) * 3", 9i64),
+            ("10 - 4 - 3", 3i64),
+            ("100 / 7 / 2", 7i64),
+            ("-7 / 2", -3i64),
+            ("7 / -2", -3i64),
+            ("-(2 + 3) * 2", -10i64),
+            ("- -4", 4i64),
+            ("2 * -3", -6i64),
+            ("1 - -1", 2i64),
+            ("1-2", -1i64),
+            ("  12  +  30 ", 42i64),
+            ("((7))", 7i64),
+        ],
+        body=fn!(row: (string, i64)): assert_equal(eval(row._0), .Ok(row._1), reason=row._0)
+    )
+
+    it_each(
+        "reports the offset where parsing failed",
+        [
+            ("1 +", CalcError.Unexpected(3)),
+            ("1 2", CalcError.Unexpected(2)),
+            ("", CalcError.Unexpected(0)),
+            ("1 $ 2", CalcError.Unexpected(2)),
+            ("1 2 $", CalcError.Unexpected(2)),
+            ("(1 + 2", CalcError.Unexpected(6)),
+            ("()", CalcError.Unexpected(1)),
+            ("*2", CalcError.Unexpected(0)),
+            ("1 + ) 2", CalcError.Unexpected(4)),
+            ("1.5", CalcError.Unexpected(1)),
+            ("99999999999999999999", CalcError.Unexpected(0)),
+            ("é", CalcError.Unexpected(0)),
+        ],
+        body=fn!(row: (string, CalcError)): assert_equal(eval(row._0), .Err(row._1), reason=row._0)
+    )
+
+    it_each(
+        "divides by zero only after the whole input parses",
+        [
+            ("1 / 0", CalcError.DivideByZero),
+            ("1 / (2 - 2)", CalcError.DivideByZero),
+            ("1 / 0 +", CalcError.Unexpected(7)),
+        ],
+        body=fn!(row: (string, CalcError)): assert_equal(eval(row._0), .Err(row._1), reason=row._0)
+    )

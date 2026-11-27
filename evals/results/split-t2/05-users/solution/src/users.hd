@@ -1,0 +1,67 @@
+@derive(Eq, Debug)
+pub struct User:
+    pub id: i64
+    pub name: string
+
+@error
+@derive(Eq, Debug)
+pub enum UserError:
+    @error("no user $id")
+    NotFound(id: i64)
+    @error("a user needs a name")
+    EmptyName
+
+pub trait UserStore:
+    fn get!(&mut self, id: i64) -> User?
+    fn put!(&mut self, user: User) -> void
+
+# Renames user `id` to `name`, trimmed. Nothing is stored on error.
+pub fn rename!(id: i64, name: string) -> Result[User, UserError] $ UserStore:
+    trimmed := name.trim()
+    if trimmed == "":
+        return .Err(.EmptyName)
+    let .Some(user) = $.use(UserStore).get!(id) else:
+        return .Err(.NotFound(id))
+    renamed := User { id: user.id, name: trimmed }
+    $.use(UserStore).put!(renamed)
+    .Ok(renamed)
+
+tests:
+    use std.testing.it_each
+
+    struct FakeStore:
+        users: Map[i64, User]
+        puts: List[User]
+
+    impl UserStore for FakeStore:
+        fn get!(&mut self, id: i64) -> User?:
+            self.users.get(id)
+
+        fn put!(&mut self, user: User) -> void:
+            self.users[user.id] = user
+            self.puts.push(user)
+
+    it("trims the name, stores the user once, and returns it"):
+        store := box(FakeStore { users: { 1: User { id: 1, name: "ada" } }, puts: [] })
+        $.with(UserStore=store):
+            result := rename!(1, "  Ada Lovelace ")
+            assert_equal(result, .Ok(User { id: 1, name: "Ada Lovelace" }))
+        assert_equal(store.puts, [User { id: 1, name: "Ada Lovelace" }], reason="stored once")
+
+    it("a missing user is NotFound and stores nothing"):
+        store := box(FakeStore { users: { 1: User { id: 1, name: "ada" } }, puts: [] })
+        $.with(UserStore=store):
+            assert_equal(rename!(2, "Grace"), .Err(.NotFound(2)))
+        assert_equal(store.puts, [], reason="nothing stored")
+
+    fn check_blank_name_rejected!(name: string) -> void:
+        store := box(FakeStore { users: { 1: User { id: 1, name: "ada" } }, puts: [] })
+        $.with(UserStore=store):
+            assert_equal(rename!(1, name), .Err(.EmptyName))
+        assert_equal(store.puts, [], reason="nothing stored")
+
+    it_each(
+        "an empty or blank name is EmptyName and stores nothing",
+        ["", "   "],
+        body=fn!(name: string): check_blank_name_rejected!(name)
+    )

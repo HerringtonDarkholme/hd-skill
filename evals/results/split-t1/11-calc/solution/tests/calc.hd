@@ -1,0 +1,7 @@
+use pkg.{eval, CalcError}
+
+it("evaluates through the public API"):
+    assert_equal(eval("2 * (3 + 4) - 1"), .Ok(13), reason="precedence and parentheses")
+
+it("reports division by zero"):
+    assert_equal(eval("8 / (4 - 4)"), .Err(CalcError.DivideByZero), reason="zero divisor")

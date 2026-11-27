@@ -1,0 +1,20 @@
+use pkg.{Todo, TodoError, load, dump, complete, pending}
+use std.testing.assert_equal
+
+it("a todo file loads, completes and lists what is pending"):
+    todos := load(
+        "[{\"id\": 1, \"title\": \"buy milk\"}, {\"id\": 2, \"title\": \"write\", \"done\": false}]",
+    )
+        .expect("valid")
+    done := complete(todos, 1).expect("known id")
+    assert_equal(pending(done), ["write"])
+    assert_equal(load(dump(done)), .Ok(done))
+
+it("an unknown id is an error, not a change"):
+    todos := load("[{\"id\": 1, \"title\": \"a\"}]").expect("valid")
+    assert_equal(complete(todos, 5), .Err(.UnknownId(5)))
+
+it("bad JSON is BadJson"):
+    match load("{}"):
+        .Err(.BadJson(_)) => assert(true)
+        _ => panic("expected BadJson")

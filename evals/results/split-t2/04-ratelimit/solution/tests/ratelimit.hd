@@ -1,0 +1,12 @@
+use pkg.{Limiter, new_limiter}
+use std.time.{Clock, Duration, ManualClock, Timestamp, sleep}
+use std.testing.assert
+
+it("the public API limits a key"):
+    clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+    let mut limiter: Limiter = new_limiter(1, Duration::seconds(1))
+    $.with(Clock=clock):
+        assert(limiter.allow("user-1"))
+        assert(!limiter.allow("user-1"))
+        sleep!(Duration::seconds(1))
+        assert(limiter.allow("user-1"))

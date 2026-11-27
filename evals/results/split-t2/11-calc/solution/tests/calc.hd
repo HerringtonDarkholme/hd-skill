@@ -1,0 +1,9 @@
+use pkg.{CalcError, eval}
+use std.testing.assert_equal
+
+it("evaluates through the public interface"):
+    assert_equal(eval("(2 + 3) * -4 / 3"), .Ok(-6), reason="truncates toward zero")
+
+it("reports errors through the public interface"):
+    assert_equal(eval("1 / (2 - 2)"), .Err(CalcError.DivideByZero))
+    assert_equal(eval("1 $ 2"), .Err(CalcError.Unexpected(2)))

@@ -1,0 +1,71 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 16,
+      "passed": 16,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 10,
+    "hd": {
+      "help": 1,
+      "test": 5,
+      "new": 1,
+      "file": 1,
+      "check": 4,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: hd fmt && hd lint 2>&1 | tail -20; hd check --tests && hd test 2>&1 | tail -3; D=$(mktemp -d) && cp -R hd.toml src tests \"$D\"/ && sed -i '' 's/for _ in 0..run.count:/for _ in 0..(run.count - (if"
+    ],
+    "diagnostic_codes": {
+      "misplaced-tests-block": 1
+    },
+    "failing_checks": 1,
+    "turns": 17,
+    "cost_usd": 0.018843119999999998,
+    "duration_s": 60,
+    "tokens": 569107,
+    "final_message": "The `rle` package is in place. `hd check --tests` passes, and `hd test` runs 16 cases, all passing. `hd lint` gave no advice.\n\nFiles:\n- **`src/rle.hd`**: `pub struct Run` (public `value: i32` and `count: usize`, derives `Eq` and `Debug`), `pub fn encode`, and `pub fn decode`. `encode` builds maximal runs. `decode` expands them back.\n- **`src/lib.hd`**: re-exports `Run`, `encode` and `decode`, so callers can write `use pkg.{encode, decode, Run}`. Without this, the API would only be reachable as `pkg.rle`.\n- **`tests/rle.hd`**: one integration test that round-trips a list through the public API.\n\nTests live in the `tests:` block of `src/rle.hd`:\n- **Examples**: `it_each` tables for `encode` and `decode`, plus a 1000-element run, and `i32` extremes.\n- **Property tests**: `decode(encode(xs)) == xs` on arbitrary lists and on run-heavy lists. Also `encode(decode(runs)) == runs` on canonical run lists, and a check that `encode` output has no empty runs, no equal neighbours, and counts that sum to the input length.\n\nTwo things I did not verify:\n- I tried a mutation check (planting a bug in a scratch copy to confirm the properties catch it). That command was denied, so I have not shown that the property tests fail on broken code.\n- The package is not under git, so nothing is committed.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

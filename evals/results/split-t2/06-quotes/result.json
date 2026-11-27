@@ -1,0 +1,89 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": true
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/effects.md",
+      "design/concurrency.md",
+      "design/testing.md",
+      "design/errors.md",
+      "scenarios/concurrent-work.md"
+    ],
+    "bash": 9,
+    "hd": {
+      "help": 2,
+      "check": 2,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 19,
+    "cost_usd": 0.025321830000000004,
+    "duration_s": 66,
+    "tokens": 657714,
+    "final_message": "The `quotes` package is in place: `src/quotes.hd` plus `hd.toml`. `hd check --tests` and `hd test` both pass, and all 6 tests pass. `hd fmt` only adjusted spacing in a map literal.\n\nThe implementation:\n\n- **Errors:** `QuoteError` has `@error` messages and `@derive(Eq, Debug)`, so `==` and debug printing work.\n- **Per-sku retry:** each sku runs `retry(Backoff { attempts: 3, initial: 10ms, factor: 1, max: 10ms })` under `apply!`. `factor: 1` keeps the wait at a flat 10 ms between attempts. Every error is retried, since the spec doesn't limit retries to particular errors.\n- **Concurrency:** `map_join!(skus, 4, quote_one)` runs at most 4 skus at a time and returns results in list order.\n- **Totalling:** the loop applies `?` to each result in order, so the first failing sku's error is returned. An empty list gives `.Ok(0)`.\n\nTests cover an empty order, summing prices, an unknown sku, the first-failure-in-list-order rule, a sku that succeeds on its third attempt (checking 3 calls and 20 ms of virtual time), and a sku that fails all 3 attempts.\n\nTwo things to know:\n\n- **The 4-in-flight limit is not tested directly.** The spec's `Quotes` trait has no `$` row, and std has no yield point, so a test provider can't pause in a way that would show concurrency. The limit comes from `map_join!`'s documented behaviour.\n- **There is no `src/lib.hd`.** The hd docs suggest a library root there, but you asked for `src/quotes.hd`, and `hd check` passes without `lib.hd`. Consumers import `pkg.quote",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

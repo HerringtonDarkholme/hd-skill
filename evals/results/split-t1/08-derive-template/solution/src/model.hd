@@ -1,0 +1,14 @@
+use pkg.fields.FieldNames
+
+@derive(FieldNames)
+pub struct Order:
+    pub id: i32
+    total: i32
+    note: string = ""
+
+pub fn new_order(id: i32) -> Order:
+    Order { id, total: 0 }
+
+tests:
+    it("derives names for a struct in another module, private fields included"):
+        assert_equal(Order { id: 1, total: 5, note: "x" }.field_names(), ["id", "total", "note"])

@@ -1,0 +1,10 @@
+[package]
+name = "colsum"
+
+[capabilities]
+Args = true
+Console = true
+ConsoleInput = true
+
+[dev-capabilities]
+Process = true

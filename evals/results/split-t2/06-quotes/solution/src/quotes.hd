@@ -1,0 +1,90 @@
+use std.task.{Backoff, apply, map_join, retry}
+use std.time.{Clock, ms}
+
+## Why a quote failed.
+@error
+@derive(Eq, Debug)
+pub enum QuoteError:
+    @error("the quote service is busy")
+    Busy
+    @error("unknown sku $sku")
+    Unknown(sku: string)
+
+## A source of prices for one sku. Each call may fail.
+pub trait Quotes:
+    fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]
+
+## One sku: up to 3 attempts, about 10 ms apart.
+fn quote_one!(sku: string) -> Result[i64, QuoteError] $ Quotes + Clock:
+    apply!(retry(Backoff { attempts: 3, initial: 10ms, factor: 1, max: 10ms })):
+        $.use(Quotes).quote!(sku)
+
+## The sum of every sku's price. Quotes run at most 4 at a time. The
+## result is the error of the first failing sku in list order.
+pub fn order_total!(skus: List[string]) -> Result[i64, QuoteError] $ Quotes + Clock:
+    results := map_join!(skus, 4, quote_one)
+    let total: i64 = 0
+    for result in results:
+        total += result?
+    .Ok(total)
+
+tests:
+    use std.time.{ManualClock, Timestamp, now}
+
+    fn clock() -> *mut ManualClock:
+        ManualClock::new(Timestamp::from_unix_milliseconds(0))
+
+    struct Table:
+        prices: Map[string, i64]
+
+    impl Quotes for Table:
+        fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]:
+            match self.prices.get(sku):
+                .Some(price) => .Ok(price)
+                .None => .Err(.Unknown(sku))
+
+    struct Flaky:
+        failures_left: i64
+        price: i64
+        calls: i64
+
+    impl Quotes for Flaky:
+        fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]:
+            self.calls += 1
+            if self.failures_left > 0:
+                self.failures_left -= 1
+                return .Err(.Busy)
+            .Ok(self.price)
+
+    it("an empty order totals 0"):
+        $.with(Quotes=box(Table { prices: {} }), Clock=clock()):
+            assert_equal(order_total!([]), .Ok(0))
+
+    it("sums the price of every sku"):
+        table := Table { prices: { "tea": 300, "cake": 450 } }
+        $.with(Quotes=box(table), Clock=clock()):
+            assert_equal(order_total!(["tea", "cake", "tea"]), .Ok(1050))
+
+    it("a sku that is never quoted fails the order"):
+        $.with(Quotes=box(Table { prices: { "tea": 300 } }), Clock=clock()):
+            assert_equal(order_total!(["tea", "nope"]), .Err(.Unknown("nope")))
+
+    it("the first failing sku in list order is the error"):
+        $.with(Quotes=box(Table { prices: {} }), Clock=clock()):
+            assert_equal(order_total!(["nope", "gone", "x"]), .Err(.Unknown("nope")))
+
+    it("retries a busy sku until it succeeds, 10 ms apart"):
+        flaky := box(Flaky { failures_left: 2, price: 700, calls: 0 })
+        c := clock()
+        $.with(Quotes=flaky, Clock=c):
+            assert_equal(order_total!(["tea"]), .Ok(700))
+            assert_equal(now().unix_milliseconds(), 20)
+        assert_equal(flaky.calls, 3)
+
+    it("gives up after 3 attempts"):
+        flaky := box(Flaky { failures_left: 3, price: 700, calls: 0 })
+        c := clock()
+        $.with(Quotes=flaky, Clock=c):
+            assert_equal(order_total!(["tea"]), .Err(.Busy))
+            assert_equal(now().unix_milliseconds(), 20)
+        assert_equal(flaky.calls, 3)

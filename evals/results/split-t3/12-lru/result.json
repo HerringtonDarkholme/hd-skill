@@ -1,0 +1,74 @@
+{
+  "task": "12-lru",
+  "package": "lru",
+  "scenario": "stateful data structure",
+  "selling_points": [
+    "model-based property test",
+    "commands"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 12,
+      "passed": 12,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "model-test",
+        "desc": "a generated-operations test (it_prop / it_prop_with / commands)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 18,
+    "hd": {
+      "help": 2,
+      "new": 2,
+      "check": 5,
+      "test": 5,
+      "fmt": 4,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: S=.claude/skills/hd-lang; sed -n 400,600p /Users/hd/.claude/projects/-private-var-folders-qt--jh-5zt97cd748zcbynvz1v40000gn-T-hd-skill-evals-split-t3-12-lru-lru/192c5986-6fb0-4358-94de-2ed996b77",
+      "Bash: hd new --lib --vcs none . ; echo EXIT $?; find . -path ./.claude -prune -o -type f -print; cat hd.toml; cat src/lib.hd; cat tests/*.hd 2>/dev/null"
+    ],
+    "diagnostic_codes": {
+      "not-writable": 1
+    },
+    "failing_checks": 1,
+    "turns": 31,
+    "cost_usd": 0.033500520000000006,
+    "duration_s": 106,
+    "tokens": 1195380,
+    "final_message": "The `lru` package is in the current directory and both `hd check --tests` and `hd test` pass (12 tests). `hd lint` is clean.\n\n- **Implementation:** `src/lru.hd` holds `Lru`, `new_lru`, `get`, `put`, and `len` with the signatures you gave. It uses a hash map from key to slot plus a doubly linked list in recency order, so `get` and `put` are O(1). A full cache reuses the evicted slot, so storage never grows past capacity. A miss in `get` changes nothing. Capacity 0 stores nothing.\n- **Package root:** `hd new --lib` made `src/lib.hd` with a sample `greet` function. I replaced it with `pub use self.lru.{Lru, new_lru}` so the package exposes the cache, and removed the sample `tests/lru.hd`.\n- **Example tests (10):** an empty cache, put then get, update of an existing key, eviction of the least recent key, a get hit saving a key from eviction, a put-update counting as use, a miss leaving order unchanged, capacity 1, capacity 0, and a longer eviction sequence.\n- **Model tests (2):** `it_prop_with` generates a capacity from 0 to 4 and up to 40 get/put commands over five keys. A plain model (an ordered list of pairs, most recent first) is run alongside. Every `get` result and the length are compared after each step, then all five keys are checked at the end. A second property checks that the length never exceeds capacity.\n- **Mutation check:** I removed the recency update from `get` for one run. Three tests failed, including the model test, which shrank to a four-step history. I then ",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

@@ -1,0 +1,111 @@
+use std.encoding.{Deserialize, Serialize}
+use std.encoding.json.{decode, encode}
+use std.testing.Arbitrary
+
+## One todo item. `done` is false when the JSON omits it.
+@derive(Serialize, Deserialize, Arbitrary, Eq, Debug)
+pub struct Todo:
+    pub id: i32
+    pub title: string
+    pub done: bool = false
+
+@error
+@derive(Eq, Debug)
+pub enum TodoError:
+    @error("bad todo JSON: $message")
+    BadJson(message: string)
+    @error("no todo with id $id")
+    UnknownId(id: i32)
+
+## Reads a JSON array of objects {"id", "title", "done"}.
+pub fn load(json: string) -> Result[List[Todo], TodoError]:
+    match decode::[List[Todo]](json):
+        .Ok(todos) => .Ok(todos)
+        .Err(error) => .Err(.BadJson("$error"))
+
+## Writes the todos as a JSON array that `load` reads back unchanged.
+pub fn dump(todos: List[Todo]) -> string:
+    encode(todos)
+
+## Marks the todo with `id` as done.
+pub fn complete(todos: List[Todo], id: i32) -> Result[List[Todo], TodoError]:
+    if !todos.any(fn(t): t.id == id):
+        return .Err(.UnknownId(id))
+    .Ok(
+        todos.map(fn(t):
+            (if t.id == id: Todo { ...*t, done: true } else: *t)
+        )
+    )
+
+## The titles of the todos not yet done, in order.
+pub fn pending(todos: List[Todo]) -> List[string]:
+    todos.filter(fn(t): !t.done).map(fn(t): t.title)
+
+tests:
+    use std.testing.it_prop
+
+    it("reads objects and defaults a missing done to false"):
+        todos := load(
+            "[{\"id\": 1, \"title\": \"milk\"}, {\"id\": 2, \"title\": \"eggs\", \"done\": true}]",
+        )
+        assert_equal(
+            todos,
+            .Ok(
+                [
+                    Todo { id: 1, title: "milk", done: false },
+                    Todo { id: 2, title: "eggs", done: true },
+                ],
+            ),
+        )
+
+    it("reads an empty array"):
+        assert_equal(load("[]"), .Ok([]))
+
+    it("rejects input that is not a todo array"):
+        assert_equal(load("{\"id\": 1, \"title\": \"x\"}").is_err(), true)
+        assert_equal(load("[1, 2]").is_err(), true)
+        assert_equal(load("[{\"title\": \"no id\"}]").is_err(), true)
+        assert_equal(load("[{\"id\": 1}]").is_err(), true)
+        assert_equal(load("[{\"id\": 1.5, \"title\": \"x\"}]").is_err(), true)
+        assert_equal(load("[{\"id\": 1, \"title\": \"x\", \"done\": \"yes\"}]").is_err(), true)
+        assert_equal(load("[{\"id\": 1, \"title\": \"x\", \"done\": null}]").is_err(), true)
+        assert_equal(load("[{\"id\": 3000000000, \"title\": \"x\"}]").is_err(), true)
+        assert_equal(load("[{\"id\": 1, \"title\": 5}]").is_err(), true)
+        assert_equal(load("not json").is_err(), true)
+        assert_equal(load("").is_err(), true)
+
+    it("reports a bad input as BadJson"):
+        match load("[{\"id\": 1}]"):
+            .Err(.BadJson(message)) => assert(message.len() > 0, reason="message is given")
+            _ => panic("expected BadJson")
+
+    it("dump writes JSON that load reads back"):
+        todos := [Todo { id: 7, title: "say \"hi\"", done: true }]
+        assert_equal(load(dump(todos)), .Ok(todos))
+        assert_equal(dump([]), "[]")
+
+    it_prop(
+        "dump then load gives the same todos",
+        prop=fn!(todos: List[Todo]): assert_equal(load(dump(todos)), .Ok(todos))
+    )
+
+    it("complete marks one todo done"):
+        todos := [Todo { id: 1, title: "a" }, Todo { id: 2, title: "b" }]
+        assert_equal(
+            complete(todos, 2),
+            .Ok([Todo { id: 1, title: "a" }, Todo { id: 2, title: "b", done: true }]),
+        )
+
+    it("complete rejects an unknown id"):
+        todos := [Todo { id: 1, title: "a" }]
+        assert_equal(complete(todos, 9), .Err(.UnknownId(9)))
+        assert_equal(complete([], 1), .Err(.UnknownId(1)))
+
+    it("pending lists undone titles in order"):
+        todos := [
+            Todo { id: 1, title: "a" },
+            Todo { id: 2, title: "b", done: true },
+            Todo { id: 3, title: "c" },
+        ]
+        assert_equal(pending(todos), ["a", "c"])
+        assert_equal(pending([]), [])

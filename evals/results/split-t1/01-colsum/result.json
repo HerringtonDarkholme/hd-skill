@@ -1,0 +1,120 @@
+{
+  "task": "01-colsum",
+  "package": "colsum",
+  "scenario": "CLI over standard input",
+  "selling_points": [
+    "derive Cli",
+    "@error",
+    "Result"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 17,
+      "passed": 17,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [
+          "--skip-header"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "a,1\nb,7\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 2: not a number: zz\n"
+      },
+      {
+        "args": [
+          "--key",
+          "2",
+          "--value",
+          "3"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "x,-2\ny,8\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 1: missing column\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "derive-cli",
+        "desc": "options parsed with @derive(Cli)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "SumError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/cli-tool.md",
+      "scenarios/stdin-filter.md",
+      "reference/packages.md"
+    ],
+    "bash": 17,
+    "hd": {
+      "help": 2,
+      "new": 1,
+      "check": 8,
+      "test": 6,
+      "run": 4,
+      "fmt": 3,
+      "lint": 3
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t1/01-colsum/colsum && rm -r tests && cat > hd.toml <<'EOF'\n[package]\nname = \"colsum\"\n\n[capabilities]\nConsole = t",
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t1/01-colsum/colsum && rm tests/colsum.hd && rmdir tests && hd check --tests; echo \"check exit $?\"",
+      "Bash: hd fmt; echo \"fmt $?\"; hd lint; echo \"lint $?\"; hd check --tests; echo \"check $?\"; hd test; echo \"test $?\"; git -C . status 2>/dev/null | head -1; ls -R . | grep -v claude | head -30"
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 2
+    },
+    "failing_checks": 1,
+    "turns": 35,
+    "cost_usd": 0.03809416000000001,
+    "duration_s": 105,
+    "tokens": 1720975,
+    "final_message": "The `colsum` package is in the current directory. `hd check --tests` and `hd test` both pass (17 tests), and `hd lint` and `hd fmt` are clean.\n\n**Files**\n- `src/sum.hd`: `SumError` (`@error`, `@derive(Eq, Debug)`, with `MissingColumn(line)` and `NotANumber(line, text)`) and `summarize`. It has no effects, so its tests need no fakes.\n- `src/main.hd`: the CLI. Options come from `@derive(Cli)` (`--key`, `--value`, `--skip-header`, plus the built-in `--help`). It reads stdin with `read_all!`, and on error prints `colsum: <error>` to stderr and exits 1.\n- `hd.toml`: capabilities are `Console`, `ConsoleInput` and `Args`. I added an `[[executable]]` entry so the integration test can run the built binary.\n- `tests/colsum.hd`: runs the built program with piped stdin and checks stdout, stderr and the exit status.\n\n**Choices I made where the spec was silent**\n- Column 0 is treated as missing, so `--key 0` gives `MissingColumn` for every non-blank line rather than a panic.\n- A line that is only whitespace counts as blank and is skipped, but it still increments the line number. Line 1 is skipped under `--skip-header` even if it is blank.\n- A value that does not parse as `i64` (including `1.5`) is `NotANumber`, with the trimmed text.\n- Summing uses plain `+`, so an i64 overflow panics rather than being reported. The spec has no error for it; say if you want one.\n\n**Things to know**\n- A permission prompt blocked deleting the generated `tests/colsum.hd` placeholder, so I overwrote it with th",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

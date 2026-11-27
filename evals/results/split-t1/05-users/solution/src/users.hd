@@ -1,0 +1,62 @@
+# A user of the service.
+@derive(Eq, Debug)
+pub struct User:
+    pub id: i64
+    pub name: string
+
+# Why a rename was refused.
+@derive(Eq, Debug)
+@error
+pub enum UserError:
+    @error("no user $id")
+    NotFound(id: i64)
+    @error("name is empty")
+    EmptyName
+
+# Where users are kept. Callers provide an implementation.
+pub trait UserStore:
+    fn get!(&mut self, id: i64) -> User?
+    fn put!(&mut self, user: User) -> void
+
+# Renames user `id` to the trimmed `name` and stores the result once.
+pub fn rename!(id: i64, name: string) -> Result[User, UserError] $ UserStore:
+    trimmed := name.trim()
+    if trimmed.is_empty():
+        return .Err(.EmptyName)
+    store := $.use(UserStore)
+    let .Some(user) = store.get!(id) else:
+        return .Err(.NotFound(id))
+    renamed := User { id: user.id, name: trimmed }
+    store.put!(renamed)
+    .Ok(renamed)
+
+tests:
+    struct FakeStore:
+        users: Map[i64, User]
+        puts: List[User]
+
+    impl UserStore for FakeStore:
+        fn get!(&mut self, id: i64) -> User?:
+            self.users.get(id)
+
+        fn put!(&mut self, user: User) -> void:
+            self.puts.push(user)
+            self.users[user.id] = user
+
+    it("trims the name and stores the renamed user once"):
+        store := box(FakeStore { users: { 1: User { id: 1, name: "ada" } }, puts: [] })
+        $.with(UserStore=store):
+            assert_equal(rename!(1, "  Ada Lovelace "), .Ok(User { id: 1, name: "Ada Lovelace" }))
+        assert_equal(store.puts, [User { id: 1, name: "Ada Lovelace" }])
+
+    it("an empty name is refused and nothing is stored"):
+        store := box(FakeStore { users: { 1: User { id: 1, name: "ada" } }, puts: [] })
+        $.with(UserStore=store):
+            assert_equal(rename!(1, "   "), .Err(.EmptyName))
+        assert_equal(store.puts.len(), 0)
+
+    it("a missing user is NotFound and nothing is stored"):
+        store := box(FakeStore { users: { 1: User { id: 1, name: "ada" } }, puts: [] })
+        $.with(UserStore=store):
+            assert_equal(rename!(2, "Grace"), .Err(.NotFound(2)))
+        assert_equal(store.puts.len(), 0)

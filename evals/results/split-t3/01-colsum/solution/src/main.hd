@@ -1,0 +1,109 @@
+use std.cli.{Args, ScriptedArgs, args}
+use std.console.{Console, ConsoleInput, MemoryConsole, ScriptedInput, eprintln, read_all}
+use std.process.ExitCode
+use std.testing.assert_equal
+use pkg.sum.{summarize}
+
+struct Options:
+    key: usize
+    value: usize
+    skip_header: bool
+
+# A 1-based column number from the command line.
+fn column_option(flag: string, text: string) -> Result[usize, string]:
+    match text.parse::[usize]():
+        .Ok(n) if n >= 1 => .Ok(n)
+        _ => .Err("$flag needs a column number from 1, got $text")
+
+fn parse_options(arguments: List[string]) -> Result[Options, string]:
+    let key: usize = 1
+    let value: usize = 2
+    let skip_header = false
+    let i = 0
+    while i < arguments.len():
+        flag := arguments[i]
+        if flag == "--skip-header":
+            skip_header = true
+        else if flag == "--key" || flag == "--value":
+            if i + 1 >= arguments.len():
+                return .Err("$flag needs a column number")
+            column := column_option(flag, arguments[i + 1])?
+            if flag == "--key":
+                key = column
+            else:
+                value = column
+            i += 1
+        else:
+            return .Err("unknown argument $flag")
+        i += 1
+    .Ok(Options { key, value, skip_header })
+
+pub fn main!() -> ExitCode $ Args + Console + ConsoleInput:
+    options := match parse_options(args()):
+        .Ok(options) => options
+        .Err(message) =>
+            eprintln("colsum: $message")
+            return ExitCode(2)
+    text := match read_all!():
+        .Ok(text) => text
+        .Err(error) =>
+            eprintln("colsum: $error")
+            return ExitCode(1)
+    match summarize(text, options.key, options.value, options.skip_header):
+        .Ok(rows) =>
+            for (key, total) in rows:
+                println("$key,$total")
+            ExitCode(0)
+        .Err(error) =>
+            eprintln("colsum: $error")
+            ExitCode(1)
+
+tests:
+    it("prints one total per key"):
+        input := ScriptedInput::new(["k,1", "j,2", "k,3"])
+        console := MemoryConsole::new()
+        arguments := box(ScriptedArgs::new("colsum", []))
+        $.with(Args=arguments, Console=console, ConsoleInput=input):
+            assert_equal(main!(), ExitCode(0))
+        assert_equal(console.output().join(""), "j,2\nk,4\n")
+
+    it("honours the options"):
+        input := ScriptedInput::new(["id,x,9", "id,y,1"])
+        console := MemoryConsole::new()
+        arguments := box(
+            ScriptedArgs::new("colsum", ["--key", "1", "--value", "3", "--skip-header"]),
+        )
+        $.with(Args=arguments, Console=console, ConsoleInput=input):
+            assert_equal(main!(), ExitCode(0))
+        assert_equal(console.output().join(""), "id,1\n")
+
+    it("writes a bad line to standard error and exits 1"):
+        input := ScriptedInput::new(["a,1", "b,oops"])
+        console := MemoryConsole::new()
+        arguments := box(ScriptedArgs::new("colsum", []))
+        $.with(Args=arguments, Console=console, ConsoleInput=input):
+            assert_equal(main!(), ExitCode(1))
+        assert_equal(console.output().join(""), "")
+        assert_equal(console.error_output().join(""), "colsum: line 2: not a number: oops\n")
+
+    it("exits 2 on a bad option"):
+        input := ScriptedInput::new([])
+        console := MemoryConsole::new()
+        arguments := box(ScriptedArgs::new("colsum", ["--key", "0"]))
+        $.with(Args=arguments, Console=console, ConsoleInput=input):
+            assert_equal(main!(), ExitCode(2))
+        assert_equal(console.output().join(""), "")
+
+    it("parses the options"):
+        assert_equal(
+            parse_options([]).map(fn(o): (o.key, o.value, o.skip_header)),
+            .Ok((1, 2, false)),
+        )
+        assert_equal(
+            parse_options(["--value", "5", "--key", "3", "--skip-header"])
+                .map(fn(o): (o.key, o.value, o.skip_header)),
+            .Ok((3, 5, true)),
+        )
+        assert_equal(parse_options(["--key"]).is_err(), true)
+        assert_equal(parse_options(["--value", "x"]).is_err(), true)
+        assert_equal(parse_options(["--bogus"]).is_err(), true)

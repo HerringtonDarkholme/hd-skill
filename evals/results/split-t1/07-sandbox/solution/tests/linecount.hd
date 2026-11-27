@@ -1,0 +1,17 @@
+use std.process.Command
+use std.testing.hd_run
+
+it("counts files under data/"):
+    let out = hd_run!(
+        *Command::new("linecount").args(["data/a.txt", "data/empty.txt", "data/tail.txt"]),
+    )
+    assert_equal(out.stdout, "3 data/a.txt\n0 data/empty.txt\n2 data/tail.txt\n5 total\n")
+    assert_equal(out.stderr, "")
+    assert_equal(out.status, 0)
+
+it("refuses to read outside data/"):
+    let out = hd_run!(*Command::new("linecount").args(["hd.toml", "data/../hd.toml", "data/a.txt"]))
+    assert_equal(out.stdout, "3 data/a.txt\n3 total\n")
+    assert(out.stderr.contains("linecount: hd.toml: "), reason=out.stderr)
+    assert(out.stderr.contains("linecount: data/../hd.toml: "), reason=out.stderr)
+    assert_equal(out.status, 1)

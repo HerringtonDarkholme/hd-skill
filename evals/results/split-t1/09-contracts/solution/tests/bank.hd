@@ -1,0 +1,10 @@
+use pkg.{Account, open, transfer}
+use std.testing.assert_equal
+
+it("a customer can open, deposit, and transfer through the public interface"):
+    let mut checking = open(1000)
+    let mut savings = open(0)
+    checking.deposit(500)
+    transfer(&mut checking, &mut savings, 700)
+    assert_equal(checking.balance(), 800)
+    assert_equal(savings.balance(), 700)

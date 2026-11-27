@@ -1,0 +1,14 @@
+use pkg.{FieldNames}
+use std.testing.assert_equal
+
+@derive(FieldNames)
+struct Config:
+    host: string
+    port: u16 = 8080
+    debug: bool
+
+it("derives field names in an integration test"):
+    assert_equal(
+        Config { host: "localhost", debug: false }.field_names(),
+        ["host", "port", "debug"],
+    )

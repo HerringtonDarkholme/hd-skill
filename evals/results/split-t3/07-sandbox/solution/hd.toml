@@ -1,0 +1,24 @@
+[package]
+name = "linecount"
+
+# Only what `main` uses, and only files under data/. Everything else is
+# denied outright, so untrusted code paths cannot reach the network, the
+# environment, the clock or any file write.
+[capabilities]
+Console = true
+Args = true
+FsRead = ["data/"]
+FsWrite = false
+Env = false
+Http = false
+Net = false
+Sys = false
+Clock = false
+Random = false
+ConsoleInput = false
+Signals = false
+Workers = false
+
+# Integration tests run the built program, so they need to spawn it.
+[dev-capabilities]
+Process = true

@@ -1,0 +1,70 @@
+use std.meta.{Field, Structure, Variant, Walker}
+
+## The names of a struct's fields, in declaration order.
+## Derive it with `@derive(FieldNames)`; no per-struct `impl` is needed.
+pub trait FieldNames:
+    fn field_names(self) -> List[string]
+
+# The walker the template drives: one call per field, in order.
+struct CollectNames:
+    names: List[string]
+
+impl[S] Walker[S] for CollectNames:
+    type Error = void
+
+    fn data_variant(&mut self, v: Variant[S]) -> Result[void, void]:
+        .Ok(())
+
+    fn variant(&mut self, v: Variant[S]) -> Result[void, void]:
+        .Ok(())
+
+    fn data_member[F](&mut self, h: Field[S, F], value: &F) -> Result[void, void]:
+        self.names.push(h.info.name)
+        .Ok(())
+
+    fn member[F](&mut self, h: Field[S, F], value: &F) -> Result[void, void]:
+        self.data_member(h, value)
+
+    fn rest[T](&mut self, h: Field[S, List[T]], items: &List[T]) -> Result[void, void]:
+        .Ok(())
+
+# The template: each `@derive(FieldNames)` instantiates it for that type.
+impl[T] FieldNames for T by Structure:
+    fn field_names(self) -> List[string]:
+        let mut collect = CollectNames { names: [] }
+        _ := Structure::walk(&self, &mut collect)
+        collect.names
+
+tests:
+    @derive(FieldNames)
+    struct Person:
+        name: string
+        age: i32
+        email: string?
+
+    @derive(FieldNames)
+    struct Empty:
+        pass
+
+    @derive(FieldNames)
+    struct Wide:
+        a: i32
+        b: i32
+        c: i32
+        d: i32
+        e: List[i32]
+
+    it("lists field names in declaration order"):
+        assert_equal(
+            Person { name: "a", age: 1, email: .None }.field_names(),
+            ["name", "age", "email"],
+        )
+
+    it("lists nothing for a struct with no fields"):
+        assert_equal(Empty {}.field_names(), [])
+
+    it("keeps order across many fields, including a list field"):
+        assert_equal(
+            Wide { a: 1, b: 2, c: 3, d: 4, e: [] }.field_names(),
+            ["a", "b", "c", "d", "e"],
+        )

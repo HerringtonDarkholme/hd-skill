@@ -1,0 +1,100 @@
+{
+  "task": "07-sandbox",
+  "package": "linecount",
+  "scenario": "sandboxed program",
+  "selling_points": [
+    "scoped capability grants",
+    "minimal capabilities"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {},
+    "runs": [
+      {
+        "args": [
+          "data/a.txt",
+          "data/b.txt"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "3 data/a.txt\n1 data/b.txt\n4 total\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "data/a.txt",
+          "hd.toml"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "3 data/a.txt\n3 total\n",
+        "stderr": "linecount: hd.toml: access to hd.toml is not granted\n"
+      },
+      {
+        "args": [
+          "data/nope.txt"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "0 total\n",
+        "stderr": "linecount: data/nope.txt: not found: data/nope.txt\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "minimal-caps",
+        "desc": "[capabilities] grants only Console, Args and FsRead",
+        "ok": true
+      },
+      {
+        "id": "scoped-fsread",
+        "desc": "FsRead scoped to data/",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "cli.md",
+      "scenarios/files-and-directories.md",
+      "design/capabilities.md",
+      "scenarios/cli-tool.md"
+    ],
+    "bash": 13,
+    "hd": {
+      "new": 1,
+      "check": 2,
+      "test": 2,
+      "run": 5,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: ls -la && S=.claude/skills/hd-lang && cat $S/language.md && echo ---- && cat $S/cli.md && echo ---- && cat $S/scenarios/cli-tool.md && echo ---- && cat $S/design/capabilities.md && echo ---- && ",
+      "Bash: printf 'one\\ntwo\\n' > data/a.txt && printf 'tail' > data/b.txt && : > data/empty.txt && printf '\\377\\376\\n\\n' > data/binary.bin && mkdir -p data/sub && echo \"--- run\"; hd run -- data/a.txt data/"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 23,
+    "cost_usd": 0.025072340000000002,
+    "duration_s": 63,
+    "tokens": 889517,
+    "final_message": "The `linecount` package is in the current directory. `hd check --tests`, `hd test` (6 passed), `hd fmt` and `hd lint` all pass.\n\n**Files**\n- `hd.toml`: grants only `Console = true`, `Args = true` and `FsRead = [\"data/\"]`. The generated defaults for `Clock`, `Random` and the dev-only `Process` are removed, so the program has no network, clock, environment or process access.\n- `src/main.hd`: `line_count` counts newline bytes and adds one when the last byte is not a newline. `main!` reads each argument with `read_bytes!`, so non-UTF-8 files are counted too. It prints `<lines> <file>` in order, reports failures to standard error, skips them, prints `<total> total`, and exits 1 if any file failed.\n- `data/`: an empty directory, so the grant has a target.\n- `tests/linecount.hd`: deleted. It spawned the binary with `Process`, which the locked-down grants no longer allow.\n\n**Tests** (in `src/main.hd`, `tests:` block): line counting for an unterminated last line, a trailing newline, empty input and blank lines; output and status for two files; zero files; and an unreadable file that is reported, skipped, and gives exit 1. They use in-memory file system and console fakes.\n\n**Manual check** with real files: scoped paths were read and counted, and `data/../../secrets.txt` and `/etc/hosts` were refused with the \"not granted\" error. Running with no arguments prints `0 total` and exits 0.\n\n**Choices to review**\n- File arguments are passed through as given. The `data/` grant decides what can",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

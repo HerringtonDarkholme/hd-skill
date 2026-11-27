@@ -1,0 +1,265 @@
+## A least-recently-used cache from string keys to i64 values.
+##
+## Each entry is a node in a doubly linked list, ordered from most to least
+## recently used. `index` maps a key to its node's slot in `nodes`, so `get`
+## and `put` take constant time. A node evicted to make room is reused for
+## the new entry, so `nodes` never grows past `capacity`.
+
+struct Node:
+    key: string
+    value: i64
+    prev: usize?
+    next: usize?
+
+pub struct Lru:
+    capacity: usize
+    nodes: List[Node]
+    index: Map[string, usize]
+    head: usize?
+    tail: usize?
+
+## An empty cache that holds at most `capacity` entries.
+pub fn new_lru(capacity: usize) -> Lru:
+    Lru { capacity, nodes: [], index: {}, head: .None, tail: .None }
+
+impl Lru:
+    ## The value for `key`. A hit makes the key most recently used; a miss changes nothing.
+    pub fn get(&mut self, key: string) -> i64?:
+        let .Some(slot) = self.index.get(key) else:
+            return .None
+        self.touch(slot)
+        .Some(self.nodes[slot].value)
+
+    ## Inserts or updates `key`, makes it most recently used, then evicts the least
+    ## recently used entry if the cache is over capacity.
+    pub fn put(&mut self, key: string, value: i64) -> void:
+        if self.capacity == 0:
+            return
+        match self.index.get(key):
+            .Some(slot) =>
+                self.nodes[slot].value = value
+                self.touch(slot)
+            .None =>
+                let slot: usize = 0
+                if self.index.len() == self.capacity:
+                    slot = self.evict_tail()
+                    self.nodes[slot] = Node { key, value, prev: .None, next: .None }
+                else:
+                    self.nodes.push(Node { key, value, prev: .None, next: .None })
+                    slot = self.nodes.len() - 1
+                self.index[key] = slot
+                self.link_front(slot)
+
+    pub fn len(self) -> usize:
+        self.index.len()
+
+    ## Moves a linked node to the front. Its slot must be in use.
+    fn touch(&mut self, slot: usize) -> void:
+        let .Some(head) = self.head else:
+            return
+        if head == slot:
+            return
+        self.unlink(slot)
+        self.link_front(slot)
+
+    ## Removes a node from the list; its slot stays allocated.
+    fn unlink(&mut self, slot: usize) -> void:
+        let prev = self.nodes[slot].prev
+        let next = self.nodes[slot].next
+        match prev:
+            .Some(p) => self.nodes[p].next = next
+            .None => self.head = next
+        match next:
+            .Some(n) => self.nodes[n].prev = prev
+            .None => self.tail = prev
+
+    ## Puts an unlinked node at the front of the list.
+    fn link_front(&mut self, slot: usize) -> void:
+        let old_head = self.head
+        self.nodes[slot].prev = .None
+        self.nodes[slot].next = old_head
+        match old_head:
+            .Some(h) => self.nodes[h].prev = .Some(slot)
+            .None => self.tail = .Some(slot)
+        self.head = .Some(slot)
+
+    ## Unlinks the least recently used node, drops its key, and returns its slot.
+    fn evict_tail(&mut self) -> usize:
+        let .Some(slot) = self.tail else:
+            panic("evict from an empty cache")
+        self.unlink(slot)
+        _ := self.index.remove(self.nodes[slot].key)
+        slot
+
+tests:
+    use std.testing.{Choices, commands, it_prop_with}
+
+    it("a new cache is empty"):
+        let mut cache = new_lru(3)
+        assert_equal(cache.len(), 0)
+        assert_equal(cache.get("a"), .None)
+
+    it("a put value is returned by get"):
+        let mut cache = new_lru(3)
+        cache.put("a", 1)
+        assert_equal(cache.get("a"), .Some(1))
+        assert_equal(cache.len(), 1)
+
+    it("a put over a stored key replaces its value"):
+        let mut cache = new_lru(3)
+        cache.put("a", 1)
+        cache.put("a", 10)
+        assert_equal(cache.get("a"), .Some(10))
+        assert_equal(cache.len(), 1)
+
+    it("the least recently put key is evicted"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        cache.put("c", 3)
+        assert_equal(cache.get("a"), .None)
+        assert_equal(cache.get("b"), .Some(2))
+        assert_equal(cache.get("c"), .Some(3))
+        assert_equal(cache.len(), 2)
+
+    it("a get hit makes its key most recently used"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        assert_equal(cache.get("a"), .Some(1))
+        cache.put("c", 3)
+        assert_equal(cache.get("b"), .None)
+        assert_equal(cache.get("a"), .Some(1))
+
+    it("a put over a stored key makes it most recently used"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        cache.put("a", 5)
+        cache.put("c", 3)
+        assert_equal(cache.get("b"), .None)
+        assert_equal(cache.get("a"), .Some(5))
+
+    it("a get miss changes nothing"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        assert_equal(cache.get("z"), .None)
+        assert_equal(cache.len(), 2)
+        cache.put("c", 3)
+        assert_equal(cache.get("a"), .None)
+        assert_equal(cache.get("b"), .Some(2))
+
+    it("capacity one keeps only the latest key"):
+        let mut cache = new_lru(1)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        assert_equal(cache.len(), 1)
+        assert_equal(cache.get("a"), .None)
+        assert_equal(cache.get("b"), .Some(2))
+
+    it("capacity zero stores nothing"):
+        let mut cache = new_lru(0)
+        cache.put("a", 1)
+        assert_equal(cache.len(), 0)
+        assert_equal(cache.get("a"), .None)
+
+    it("evicts in recency order over a longer run"):
+        let mut cache = new_lru(3)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        cache.put("c", 3)
+        _ := cache.get("a")
+        cache.put("d", 4)
+        cache.put("e", 5)
+        assert_equal(cache.get("c"), .None)
+        assert_equal(cache.get("b"), .None)
+        assert_equal(cache.get("a"), .Some(1))
+        assert_equal(cache.get("d"), .Some(4))
+        assert_equal(cache.get("e"), .Some(5))
+        assert_equal(cache.len(), 3)
+
+    # The model: entries as (key, value) pairs, most recently used first,
+    # holding at most `capacity` of them.
+    struct Model:
+        capacity: usize
+        order: List[(string, i64)]
+
+    @derive(Debug)
+    enum Cmd:
+        Get(string)
+        Put(string, i64)
+
+    fn lookup(order: &List[(string, i64)], key: string) -> i64?:
+        for entry in order:
+            if entry._0 == key:
+                return .Some(entry._1)
+        .None
+
+    # The model after `key` is put (or touched) with `value` at the front.
+    fn to_front(model: &Model, key: string, value: i64) -> Model:
+        let mut order: List[(string, i64)] = [(key, value)]
+        for entry in model.order:
+            if entry._0 != key:
+                order.push(entry)
+        if order.len() > model.capacity:
+            order = order.slice(0, model.capacity)
+        Model { capacity: model.capacity, order }
+
+    fn advance(model: &Model, cmd: &Cmd) -> Model:
+        match cmd:
+            .Get(key) =>
+                match lookup(&model.order, key):
+                    .Some(value) => to_front(model, key, value)
+                    .None => Model { capacity: model.capacity, order: model.order }
+            .Put(key, value) => to_front(model, key, value)
+
+    fn next_cmd(c: &mut Choices, model: &Model) -> Cmd?:
+        key := "k${c.int(0..=4)}"
+        if c.bool(): .Some(.Get(key)) else: .Some(.Put(key, c.int(-9..=9)))
+
+    fn history(c: &mut Choices) -> (usize, List[Cmd]):
+        capacity := usize(c.int(0..=4))
+        (
+            capacity,
+            commands(
+                c,
+                max=40,
+                initial=Model { capacity, order: [] },
+                next=next_cmd,
+                advance=advance,
+            ),
+        )
+
+    it_prop_with("the cache agrees with the model", gen=history, prop=fn!(
+        input: (usize, List[Cmd]),
+    ):
+        let mut cache = new_lru(input._0)
+        let mut model = Model { capacity: input._0, order: [] }
+        for cmd in input._1:
+            match cmd:
+                .Get(key) =>
+                    assert_equal(
+                        cache.get(key),
+                        lookup(&model.order, key),
+                        reason="get ${debug(cmd)}",
+                    )
+                .Put(key, value) => cache.put(key, value)
+            model = advance(&model, &cmd)
+            assert_equal(cache.len(), model.order.len(), reason="len after ${debug(cmd)}")
+        for i in 0..5:
+            key := "k$i"
+            assert_equal(cache.get(key), lookup(&model.order, key), reason="final get of $key")
+            model = advance(&model, &.Get(key))
+    )
+
+    it_prop_with("the cache never holds more than its capacity", gen=history, prop=fn!(
+        input: (usize, List[Cmd]),
+    ):
+        let mut cache = new_lru(input._0)
+        for cmd in input._1:
+            match cmd:
+                .Get(key) => _ := cache.get(key)
+                .Put(key, value) => cache.put(key, value)
+            assert(cache.len() <= input._0, reason="len ${cache.len()} over capacity ${input._0}")
+    )

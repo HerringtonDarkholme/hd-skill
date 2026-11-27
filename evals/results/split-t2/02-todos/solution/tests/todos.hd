@@ -1,0 +1,12 @@
+use pkg.{Todo, TodoError, load, dump, complete, pending}
+use std.testing.assert_equal
+
+it("round-trips a list through JSON and completes one item"):
+    todos := load("[{\"id\": 1, \"title\": \"tea\"}, {\"id\": 2, \"title\": \"jam\"}]")
+        .expect("valid list")
+    done := complete(todos, 1).expect("id 1 exists")
+    assert_equal(pending(done), ["jam"])
+    assert_equal(load(dump(done)), .Ok(done))
+
+it("reports an unknown id"):
+    assert_equal(complete([], 5), .Err(TodoError.UnknownId(5)))

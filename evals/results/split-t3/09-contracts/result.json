@@ -1,0 +1,83 @@
+{
+  "task": "09-contracts",
+  "package": "bank",
+  "scenario": "invariants",
+  "selling_points": [
+    "require",
+    "ensure"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 15,
+      "passed": 15,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 6,
+      "passed": 6,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "require",
+        "desc": "preconditions with require",
+        "ok": true
+      },
+      {
+        "id": "ensure",
+        "desc": "postconditions with ensure",
+        "ok": true
+      },
+      {
+        "id": "no-raw-panic",
+        "desc": "no hand-written panic( for checks",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/contracts.md",
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 6,
+    "hd": {
+      "new": 1,
+      "file": 1,
+      "check": 2,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: d=$(mktemp -d) && cd \"$d\" && hd new bank --lib && cd bank && find . -type f | sort && for f in hd.toml src/lib.hd tests/bank.hd; do echo \"== $f\"; cat \"$f\"; done; echo \"$d\""
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 17,
+    "cost_usd": 0.01746549,
+    "duration_s": 45,
+    "tokens": 435938,
+    "final_message": "The `bank` package is in the current directory. `hd check --tests`, `hd test` (15 passed, 0 failed), `hd fmt` and `hd lint` all pass.\n\n**Files**\n- `src/account.hd`: the `Account` struct, `open`, `transfer`, and the `balance`, `deposit` and `withdraw` methods, plus the tests in a `tests:` block.\n- `src/lib.hd`: re-exports `Account`, `open` and `transfer` as the package interface.\n- `hd.toml`: package manifest, `name = \"bank\"`.\n\n**Checks**\n- Preconditions use `require`: a non-negative opening balance, a positive deposit, a positive withdrawal, a withdrawal no larger than the balance, and a positive transfer no larger than the source balance. These panic in debug and test builds and are skipped in release.\n- Postconditions use `ensure`: the balance changes by exactly the amount, the balance is never negative, and a transfer keeps the total.\n- Tests cover the normal paths and each rejected call with `expect_panic=\"explicit-panic\"`. A property test runs random transfers and checks that the total is kept and no account overdraws.\n\n**Choices to check**\n- **Release cost of `ensure`:** `ensure` is checked in every build, including release, so the postcondition lines cost something there. Only the `require` checks are free in release. If you want the postconditions gone from release too, I can remove them and keep the invariants as comments.\n- **Transfer amount:** I made a non-positive transfer a programming error, the same as a non-positive deposit or withdrawal. The spec only named t",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

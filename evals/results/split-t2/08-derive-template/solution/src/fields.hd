@@ -1,0 +1,67 @@
+use std.meta.{Field, Structure, Variant, Walker}
+
+## The names of a struct's fields, in declaration order.
+##
+## Put `@derive(FieldNames)` on any struct to get its implementation;
+## `value.field_names()` then returns the field names, outermost fields only.
+pub trait FieldNames:
+    fn field_names(self) -> List[string]
+
+# The walker the template drives: one call per struct field.
+struct CollectNames:
+    names: List[string]
+
+impl[S] Walker[S] for CollectNames:
+    type Error = void
+
+    fn data_variant(&mut self, v: Variant[S]) -> Result[void, void]:
+        .Ok(())
+
+    fn variant(&mut self, v: Variant[S]) -> Result[void, void]:
+        .Ok(())
+
+    fn data_member[F](&mut self, h: Field[S, F], value: &F) -> Result[void, void]:
+        self.names.push(h.info.name)
+        .Ok(())
+
+    fn member[F](&mut self, h: Field[S, F], value: &F) -> Result[void, void]:
+        self.data_member(h, value)
+
+    fn rest[T](&mut self, h: Field[S, List[T]], items: &List[T]) -> Result[void, void]:
+        .Ok(())
+
+# The template: each `@derive(FieldNames)` instantiates it for that type.
+impl[T] FieldNames for T by Structure:
+    fn field_names(self) -> List[string]:
+        let mut collect = CollectNames { names: [] }
+        _ := Structure::walk(&self, &mut collect)
+        collect.names
+
+tests:
+    @derive(FieldNames)
+    struct Empty:
+        pass
+
+    @derive(FieldNames)
+    struct Person:
+        name: string
+        age: i32
+        tags: List[string]
+
+    @derive(FieldNames)
+    struct Wrapper:
+        inner: Person
+        id: u64
+
+    it("lists fields in declaration order"):
+        assert_equal(
+            Person { name: "ada", age: 36, tags: [] }.field_names(),
+            ["name", "age", "tags"],
+        )
+
+    it("lists nothing for a struct with no fields"):
+        assert_equal(Empty {}.field_names(), [])
+
+    it("lists only the outer fields of a nested struct"):
+        w := Wrapper { inner: Person { name: "a", age: 1, tags: [] }, id: 7 }
+        assert_equal(w.field_names(), ["inner", "id"])

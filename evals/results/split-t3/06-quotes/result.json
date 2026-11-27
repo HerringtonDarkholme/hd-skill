@@ -1,0 +1,95 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": true
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 12,
+    "hd": {
+      "help": 2,
+      "new": 1,
+      "file": 1,
+      "check": 4,
+      "test": 4,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t3/06-quotes/quotes && which hd && hd --version; hd help new; S=.claude/skills/hd-lang; grep -n \"map_join\\|Manual",
+      "Bash: grep -n \"^tests:\" src/quotes.hd && head -n $(( $(grep -n \"^tests:\" src/quotes.hd | cut -d: -f1) - 1 )) src/quotes.hd > /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/spl"
+    ],
+    "diagnostic_codes": {
+      "missing-let": 2,
+      "syntax-error": 2,
+      "unknown-trait": 2,
+      "unknown-name": 2,
+      "missing-requirement": 2,
+      "missing-contextual-enum-type": 12,
+      "not-writable": 2
+    },
+    "failing_checks": 2,
+    "turns": 21,
+    "cost_usd": 0.02489991,
+    "duration_s": 66,
+    "tokens": 857052,
+    "final_message": "The `quotes` package is written and passes both `hd check --tests` and `hd test` (7 tests, all passing). `hd fmt` and `hd lint` are clean.\n\n**Files**\n- `src/quotes.hd`: `QuoteError` (`@error`, `@derive(Eq, Debug)`), the `Quotes` trait, `order_total!`, and the `tests:` block.\n- `src/lib.hd`: re-exports `QuoteError`, `Quotes` and `order_total` as the package's public interface. `hd new` generated this file, and I replaced its sample `greet` function.\n- `tests/quotes.hd`: one integration test that calls the public API through a small fake.\n- `hd.toml`: unchanged from `hd new --lib`.\n\n**Implementation choices**\n- Each sku is wrapped in `retry(Backoff { attempts: 3, initial: 10ms, factor: 1 })`. `factor: 1` keeps the wait at a constant 10 ms; the default factor of 2 would give 10 ms, then 20 ms.\n- `map_join!(skus, 4, ...)` runs the quotes with at most 4 in flight. Its results come back in list order.\n- The total is summed with `result?` over those results, so the first failing sku in list order is the error. An empty list gives `.Ok(0)`.\n\n**Not covered**\n- The \"at most 4 in flight\" limit is not tested. The `quote!` signature in the spec has no `Clock` in its row, so a fake cannot sleep to make overlapping calls visible. The limit comes from `map_join!`, not from a test.\n- The 10 ms spacing between attempts is also untested. The retry tests check call counts (3 calls on success and on give-up), not elapsed clock time.\n\n**Permissions**\nTwo shell commands were denied because they nee",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

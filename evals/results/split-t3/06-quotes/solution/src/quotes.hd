@@ -1,0 +1,98 @@
+use std.task.{Backoff, apply, map_join, retry}
+use std.time.{Clock, ManualClock, Timestamp, ms}
+
+@error
+@derive(Eq, Debug)
+pub enum QuoteError:
+    @error("the quote service is busy")
+    Busy
+    @error("unknown sku $sku")
+    Unknown(sku: string)
+
+pub trait Quotes:
+    fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]
+
+## Quotes one sku, making up to 3 attempts in all, about 10 ms apart.
+fn quote_one!(sku: string) -> Result[i64, QuoteError] $ Quotes + Clock:
+    policy := retry(Backoff { attempts: 3, initial: 10ms, factor: 1 })
+    apply!(policy):
+        $.use(Quotes).quote!(sku)
+
+## Prices an order: every sku is quoted, at most 4 at a time, and the
+## prices are summed. The first failing sku in list order is the error.
+pub fn order_total!(skus: List[string]) -> Result[i64, QuoteError] $ Quotes + Clock:
+    results := map_join!(
+        skus,
+        4,
+        fn!(sku: string) -> Result[i64, QuoteError] $ Quotes + Clock: quote_one!(sku)
+    )
+    let total: i64 = 0
+    for result in results:
+        total += result?
+    .Ok(total)
+
+tests:
+    type Outcomes = Map[string, List[Result[i64, QuoteError]]]
+
+    # Hands out each sku's scripted outcomes in order; the last one repeats.
+    struct Script:
+        outcomes: Outcomes
+        calls: Map[string, i64]
+
+    impl Quotes for Script:
+        fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]:
+            n := self.calls.get(sku).unwrap_or(0)
+            self.calls[sku] = n + 1
+            let steps: List[Result[i64, QuoteError]] = self.outcomes.get(sku)
+                .unwrap_or([.Err(.Unknown(sku))])
+            let index = if n < i64(steps.len()): n else: i64(steps.len()) - 1
+            steps[usize(index)]
+
+    fn script(outcomes: Outcomes) -> *mut Script:
+        box(Script { outcomes: outcomes, calls: {} })
+
+    fn clock() -> *mut ManualClock:
+        ManualClock::new(Timestamp::from_unix_milliseconds(0))
+
+    it("an empty order totals 0"):
+        $.with(Quotes=script({}), Clock=clock()):
+            assert_equal(order_total!([]), .Ok(0))
+
+    it("sums every price"):
+        let prices: Outcomes = { "tea": [.Ok(300)], "cake": [.Ok(450)], "jam": [.Ok(120)] }
+        $.with(Quotes=script(prices), Clock=clock()):
+            assert_equal(order_total!(["tea", "cake", "jam"]), .Ok(870))
+
+    it("retries a busy sku and then counts its price"):
+        let prices: Outcomes = { "tea": [.Err(.Busy), .Err(.Busy), .Ok(300)] }
+        quotes := script(prices)
+        $.with(Quotes=quotes, Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Ok(300))
+        assert_equal(quotes.calls.get("tea"), .Some(3))
+
+    it("gives up after 3 attempts"):
+        let prices: Outcomes = { "tea": [.Err(.Busy)] }
+        quotes := script(prices)
+        $.with(Quotes=quotes, Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Err(.Busy))
+        assert_equal(quotes.calls.get("tea"), .Some(3))
+
+    it("reports the first failing sku in list order"):
+        let prices: Outcomes = {
+            "tea": [.Ok(300)],
+            "gum": [.Err(.Unknown("gum"))],
+            "fig": [.Err(.Busy)],
+        }
+        $.with(Quotes=script(prices), Clock=clock()):
+            assert_equal(order_total!(["tea", "gum", "fig"]), .Err(.Unknown("gum")))
+            assert_equal(order_total!(["fig", "gum"]), .Err(.Busy))
+
+    it("prices a long order"):
+        let mut prices: Outcomes = {}
+        let mut skus: List[string] = []
+        for i in 0..10:
+            sku := "s${i}"
+            skus.push(sku)
+            prices[sku] = [.Ok(10)]
+        $.with(Quotes=script(prices), Clock=clock()):
+            assert_equal(order_total!(skus), .Ok(100))

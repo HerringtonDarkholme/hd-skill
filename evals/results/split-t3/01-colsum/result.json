@@ -1,0 +1,121 @@
+{
+  "task": "01-colsum",
+  "package": "colsum",
+  "scenario": "CLI over standard input",
+  "selling_points": [
+    "derive Cli",
+    "@error",
+    "Result"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 16,
+      "passed": 16,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [
+          "--skip-header"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "a,1\nb,7\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 2: not a number: zz\n"
+      },
+      {
+        "args": [
+          "--key",
+          "2",
+          "--value",
+          "3"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "x,-2\ny,8\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 1: missing column\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "derive-cli",
+        "desc": "options parsed with @derive(Cli)",
+        "ok": false
+      },
+      {
+        "id": "error-enum",
+        "desc": "SumError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.6666666666666666
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/cli-tool.md",
+      "scenarios/text-records.md",
+      "reference/packages.md"
+    ],
+    "bash": 17,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 8,
+      "test": 6,
+      "run": 8,
+      "fmt": 3,
+      "lint": 3
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t3/01-colsum/colsum && rm tests/colsum.hd && rmdir tests && cat > hd.toml <<'EOF'\n[package]\nname = \"colsum\"\n\n[cap",
+      "Bash: sed -i '' -e '19,22s/let mut /let /' src/main.hd && sed -n 17,23p src/main.hd && hd fmt && hd lint && hd check --tests && hd test | tail -2"
+    ],
+    "diagnostic_codes": {
+      "unknown-trait": 5,
+      "missing-requirement": 1,
+      "missing-capability": 1
+    },
+    "failing_checks": 1,
+    "turns": 37,
+    "cost_usd": 0.03529635000000001,
+    "duration_s": 101,
+    "tokens": 1419454,
+    "final_message": "The `colsum` package is in the current directory. `hd check --tests` passes, `hd test` passes (16 tests), and `hd lint` is clean.\n\n**Files**\n- `hd.toml`: package `colsum`. Grants `Args`, `Console`, `ConsoleInput`, and `Process` under `[dev-capabilities]` for the integration test.\n- `src/sum.hd`: `pub enum SumError` (`@error`, `@derive(Eq, Debug)`) with `MissingColumn(line)` and `NotANumber(line, text)`, plus `pub fn summarize(...)` with the signature you specified. It has unit tests in a `tests:` block.\n- `src/main.hd`: `main!` reads stdin, parses options, and prints results. `parse_options` is pure and tested, and so is `main!` through scripted input and recorded output.\n- `tests/colsum.hd`: an integration test that runs the `colsum` executable on piped stdin.\n\n**Behaviour I checked by running the tool**\n- Totals print as `key,total`, sorted by key.\n- A bad value prints `colsum: line 2: not a number: x` to stderr and exits 1, with nothing on stdout.\n- A short line prints `colsum: line 1: missing column` and exits 1.\n- `--skip-header` and `--key`/`--value` work as specified.\n\n**Choices I made that you didn't specify**\n- A bad option (`--key 0`, `--key` with no number, an unknown flag) prints `colsum: ...` to stderr and exits 2, to keep it separate from data errors (exit 1).\n- Keys and values are trimmed. Blank or whitespace-only lines are skipped but still counted in line numbers.\n- Totals use `i64` addition, so a sum that overflows panics rather than returning an error.\n- `s",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

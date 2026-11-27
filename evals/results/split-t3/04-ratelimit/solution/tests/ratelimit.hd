@@ -1,0 +1,19 @@
+use pkg.{new_limiter}
+use std.time.{Clock, ManualClock, Timestamp, ms, s, sleep}
+
+it("allows through the public API, then refuses"):
+    clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+    $.with(Clock=clock):
+        let mut limiter = new_limiter(1, 5s)
+        assert(limiter.allow("user-1"))
+        assert(!limiter.allow("user-1"))
+        sleep!(5s)
+        assert(limiter.allow("user-1"), reason="the old event has left the window")
+
+it("counts keys separately"):
+    clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+    $.with(Clock=clock):
+        let mut limiter = new_limiter(1, 250ms)
+        assert(limiter.allow("x"))
+        assert(limiter.allow("y"))
+        assert(!limiter.allow("x"))

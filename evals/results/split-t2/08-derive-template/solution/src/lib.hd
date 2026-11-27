@@ -1,0 +1,2 @@
+## The `FieldNames` trait, derivable on any struct with `@derive(FieldNames)`.
+pub use self.fields.{FieldNames}

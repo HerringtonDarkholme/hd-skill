@@ -1,0 +1,70 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 20,
+      "passed": 20,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md"
+    ],
+    "bash": 11,
+    "hd": {
+      "help": 3,
+      "new": 1,
+      "check": 4,
+      "test": 3,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t2/10-rle/rle && rm tests/rle.hd && printf 'pub use self.rle.{Run, encode, decode}\\n' > src/lib.hd && hd check --"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 25,
+    "cost_usd": 0.02066585,
+    "duration_s": 64,
+    "tokens": 696958,
+    "final_message": "The `rle` package is in the current directory. `hd check --tests` and `hd test` both pass (20 tests), and `hd fmt` and `hd lint` are clean.\n\n**Files**\n- `src/rle.hd` has `pub struct Run` (public `value: i32` and `count: usize`, with `@derive(Eq, Debug)`), `pub fn encode`, and `pub fn decode`, plus the unit tests in a `tests:` block.\n- `src/lib.hd` re-exports `Run`, `encode` and `decode`, so the public API is reachable from the package root. I replaced the scaffold's `greet` function with this.\n- `tests/rle.hd` is an integration test over the public API. I replaced the scaffold's `greet` test with it.\n\n**How the encoding works**\n- `encode` extends the last run when the value matches, and otherwise starts a new one. That keeps runs maximal: no empty run, and no two neighbouring runs with the same value.\n- `decode` pushes each value `count` times, so a run with count 0 adds nothing.\n\n**What is tested**\n- Example cases: the empty list, one value, a stretch of one value, mixed runs, equal values that are not neighbours, a count-0 run, and extreme `i32` values.\n- `Run` equality and its derived debug text.\n- A table of `encode` expectations with `it_each`.\n- Round-trip properties with `it_prop`, which checks `decode(encode(xs)) == xs`. There are three variants:\n  - the default generator for any `List[i32]`;\n  - a generator for lists full of repeats, so long runs come up often;\n  - a generator for lists built from short runs of random values.\n- Properties that the output is maximal, ",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

@@ -1,0 +1,90 @@
+{
+  "task": "03-config",
+  "package": "config",
+  "scenario": "configuration from file and environment",
+  "selling_points": [
+    "derive Validate + field facts",
+    "env_decode",
+    "@from errors",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 16,
+      "passed": 16,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 11,
+      "passed": 11,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-validate",
+        "desc": "rules written as @derive(Validate) field facts",
+        "ok": true
+      },
+      {
+        "id": "field-facts",
+        "desc": "uses @range / @length facts",
+        "ok": true
+      },
+      {
+        "id": "from-errors",
+        "desc": "error variants convert with @from",
+        "ok": true
+      },
+      {
+        "id": "fake-fs-env",
+        "desc": "tests use MemoryFs and ScriptedEnv",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/configuration.md",
+      "reference/packages.md"
+    ],
+    "bash": 12,
+    "hd": {
+      "new": 1,
+      "check": 3,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: ls -la && which hd && hd --version; D=.claude/skills/hd-lang/reference/std; ls $D | head -80"
+    ],
+    "diagnostic_codes": {
+      "unknown-trait": 2
+    },
+    "failing_checks": 1,
+    "turns": 22,
+    "cost_usd": 0.025325189999999997,
+    "duration_s": 78,
+    "tokens": 741667,
+    "final_message": "The `config` package is in place. `hd check --tests` passes, `hd test` passes (16 cases), and `hd fmt` and `hd lint` report nothing.\n\n**Files**\n- `hd.toml`: created with `hd new --lib --vcs none .`, so the package is named `config`.\n- `src/config.hd`: `Config`, `ConfigError`, and `load_config!`, plus a `tests:` block with 15 cases.\n- `src/lib.hd`: the generated `greet` placeholder is replaced with `pub use self.config.{Config, ConfigError, load_config}`, so the package's public interface is those three names.\n- `tests/config.hd`: the generated integration test now exercises `load_config` through the package interface.\n\n**Choices I made**\n- `load_config!` takes `path: string` as specified and wraps it in `Path(...)` for `read_text!`.\n- `Config` derives `Deserialize`, `Validate`, `Eq` and `Debug`. `host` is `@length(1, 253)`, `port` is `@range(1024, 65535)`, and `workers` is `@range(1, 64)` with default 4.\n- Validation runs after the `APP_PORT` override, so an overridden port is checked against the same rule.\n- Each `ConfigError` variant holds one `@from` field, so `?` converts the underlying error. The messages are my own wording.\n- A missing file is a `Read` error, as the spec says. The scenario in the skill treats a missing file as \"use defaults\", which I did not follow.\n- `ConfigError` does not derive `Eq` or `Debug`, since the spec only asks for that on `Config`. The tests classify errors with a `match` helper.\n\n**Not done**\n- No git repository exists here, so nothing is c",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

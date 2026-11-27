@@ -1,0 +1,86 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 4,
+      "passed": 4,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 2,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": true
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/derive.md"
+    ],
+    "bash": 13,
+    "hd": {
+      "help": 1,
+      "doc": 1,
+      "new": 1,
+      "check": 7,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cat > src/fields.hd <<'EOF'\nuse std.meta.{Field, Structure, Variant, Walker}\n\n## The names of a struct's fields, in declaration order.\npub trait FieldNames:\n    fn field_names(self) -> List[stri",
+      "Write: /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-scratch-probe/probe.hd",
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-scratch-probe && hd check --tests probe.hd 2>&1 | head -30"
+    ],
+    "diagnostic_codes": {
+      "decorator-not-top-level": 3,
+      "syntax-error": 1,
+      "unknown-method": 3,
+      "marker-template": 1,
+      "unknown-trait": 1,
+      "unsatisfied-trait-bound": 1
+    },
+    "failing_checks": 3,
+    "turns": 25,
+    "cost_usd": 0.023170990000000002,
+    "duration_s": 69,
+    "tokens": 701457,
+    "final_message": "The `fields` package is in place, and `hd check --tests` and `hd test` both pass (4 tests). `@derive(FieldNames)` works on any struct, in any module, and returns field names in declaration order.\n\n**Files**\n- `src/fields.hd` declares `pub trait FieldNames` and a derive template, `impl[T] FieldNames for T by Structure`. The template walks the struct's fields and collects their names, so users never write a per-struct impl. It also holds unit tests for a plain struct, an empty struct, and a generic struct.\n- `src/lib.hd` re-exports the trait (`pub use self.fields.{FieldNames}`), so users can write `use pkg.{FieldNames}`. I replaced the `hd new` sample `greet` function with this.\n- `tests/fields.hd` is an integration test that derives `FieldNames` in a separate test module.\n- `hd.toml` is the library manifest that `hd new --lib` created.\n\n**Choices and limits**\n- Deriving on a generic struct adds a `FieldNames` bound on each type parameter. `Pair[usize, bool]` failed with `unknown-method`, so the generic test instantiates `Pair` with types that derive `FieldNames`. This is inferred from the failure, not from documentation.\n- Enums are not covered. I did not test `@derive(FieldNames)` on an enum, so its output is unknown.\n- The package is not a git repository (`--vcs none`), so I made no commit.\n- Shell commands writing files outside the package were denied in this session. I wrote the files with the Write tool, and I ran `hd fmt`, which reformatted the test files.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

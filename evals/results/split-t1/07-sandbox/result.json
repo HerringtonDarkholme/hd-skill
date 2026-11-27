@@ -1,0 +1,102 @@
+{
+  "task": "07-sandbox",
+  "package": "linecount",
+  "scenario": "sandboxed program",
+  "selling_points": [
+    "scoped capability grants",
+    "minimal capabilities"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 11,
+      "passed": 11,
+      "failed": []
+    },
+    "hidden": {},
+    "runs": [
+      {
+        "args": [
+          "data/a.txt",
+          "data/b.txt"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "3 data/a.txt\n1 data/b.txt\n4 total\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "data/a.txt",
+          "hd.toml"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "3 data/a.txt\n3 total\n",
+        "stderr": "linecount: hd.toml: access to hd.toml is not granted\n"
+      },
+      {
+        "args": [
+          "data/nope.txt"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "0 total\n",
+        "stderr": "linecount: data/nope.txt: not found: data/nope.txt\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "minimal-caps",
+        "desc": "[capabilities] grants only Console, Args and FsRead",
+        "ok": true
+      },
+      {
+        "id": "scoped-fsread",
+        "desc": "FsRead scoped to data/",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/files-and-directories.md",
+      "scenarios/cli-tool.md",
+      "design/capabilities.md",
+      "design/testing.md"
+    ],
+    "bash": 9,
+    "hd": {
+      "help": 1,
+      "check": 4,
+      "test": 4,
+      "run": 3,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: S=/private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t1/07-sandbox/linecount/.claude/skills/hd-lang/reference/std; cat $S/fs.txt | head -120; echo ----; cat $S/cli.txt"
+    ],
+    "diagnostic_codes": {
+      "unknown-trait": 8,
+      "missing-requirement": 2
+    },
+    "failing_checks": 1,
+    "turns": 29,
+    "cost_usd": 0.02949194,
+    "duration_s": 85,
+    "tokens": 787637,
+    "final_message": "The `linecount` package is in this directory. `hd check --tests` and `hd test` both pass (11 tests), and `hd fmt` and `hd lint` are clean.\n\n**What it does**\n- `hd run -- FILE...` prints `<lines> <file>` for each argument, then `<total> total`.\n- Lines are counted from raw bytes: each newline ends a line, and a final line without a newline still counts. An empty file counts as 0.\n- An unreadable file prints `linecount: <file>: <reason>` to stderr, is skipped, and the exit status becomes 1 after all files are processed.\n\n**Sandboxing (`hd.toml`)**\n- `FsRead = [\"data/\"]` is the only file access. The `..` case, `data/../hd.toml`, is refused, and so is a plain `hd.toml`.\n- `Args` and `Console` are granted, since the program needs them.\n- `FsWrite`, `Env`, `Sys`, `Http`, `Net`, `Clock`, `Random`, `ConsoleInput`, `Signals` and `Workers` are set to `false`.\n- `Process` is not listed in `[capabilities]`. A `false` there would also block the integration test, because `false` in either table denies. Main's row doesn't name `Process`, so the program can't call it. The integration test gets `Process = true` under `[dev-capabilities]`.\n\n**Files**\n- `src/main.hd`: the program and its unit tests. The tests use `MemoryFs` and `MemoryConsole` fakes, covering a table of line-count cases, the normal output, an unreadable file, and no arguments.\n- `tests/linecount.hd`: two integration tests that run the built binary against the real `data/` folder. One checks counting; the other checks that paths",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

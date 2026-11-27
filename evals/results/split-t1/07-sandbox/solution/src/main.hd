@@ -1,0 +1,81 @@
+use std.cli.{Args, args}
+use std.console.eprintln
+use std.fs.{FsRead, read_bytes}
+use std.path.Path
+use std.process.ExitCode
+
+## Counts the lines in a file's bytes. Each newline ends a line, and a last
+## line with no newline still counts.
+fn count_lines(bytes: List[u8]) -> usize:
+    let lines: usize = 0
+    for byte in bytes:
+        if byte == 10:
+            lines += 1
+    if !bytes.is_empty() && bytes[bytes.len() - 1] != 10:
+        lines += 1
+    lines
+
+## Prints `<lines> <file>` for each file argument, then `<total> total`.
+## An unreadable file is reported on standard error and skipped; the exit
+## status is 1 when any file failed.
+pub fn main!() -> ExitCode $ Args + Console + FsRead:
+    let total: usize = 0
+    let failed = false
+    for file in args():
+        match read_bytes!(Path(file)):
+            .Ok(bytes) =>
+                lines := count_lines(bytes)
+                total += lines
+                println("$lines $file")
+            .Err(error) =>
+                eprintln("linecount: $file: $error")
+                failed = true
+    println("$total total")
+    if failed: ExitCode(1) else: ExitCode(0)
+
+tests:
+    use std.cli.ScriptedArgs
+    use std.console.MemoryConsole
+    use std.fs.{FsWrite, MemoryFs, create_dir_all, write_text}
+    use std.testing.it_each
+
+    it_each(
+        "counts the lines of a text",
+        [("", 0), ("a", 1), ("a\n", 1), ("\n", 1), ("a\nb", 2), ("a\n\nb\n", 3)],
+        body=fn!(row: (string, usize)): assert_equal(count_lines(row._0.to_utf8()), row._1)
+    )
+
+    it("prints each count, then the total"):
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := create_dir_all!(Path("data"))
+            _ := write_text!(Path("data/a.txt"), "one\ntwo\nthree\n")
+            _ := write_text!(Path("data/b.txt"), "x")
+        console := MemoryConsole::new()
+        arguments := box(ScriptedArgs::new("linecount", ["data/a.txt", "data/b.txt"]))
+        $.with(Args=arguments, FsRead=fs, Console=console):
+            assert_equal(main!(), ExitCode(0))
+        assert_equal(console.output().join(""), "3 data/a.txt\n1 data/b.txt\n4 total\n")
+        assert_equal(console.error_output().join(""), "")
+
+    it("reports an unreadable file and still counts the rest"):
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := create_dir_all!(Path("data"))
+            _ := write_text!(Path("data/a.txt"), "one\n")
+        console := MemoryConsole::new()
+        arguments := box(ScriptedArgs::new("linecount", ["data/missing.txt", "data/a.txt"]))
+        $.with(Args=arguments, FsRead=fs, Console=console):
+            assert_equal(main!(), ExitCode(1))
+        assert_equal(console.output().join(""), "1 data/a.txt\n1 total\n")
+        assert_equal(
+            console.error_output().join(""),
+            "linecount: data/missing.txt: not found: data/missing.txt\n",
+        )
+
+    it("prints a zero total with no files"):
+        console := MemoryConsole::new()
+        arguments := box(ScriptedArgs::new("linecount", []))
+        $.with(Args=arguments, FsRead=MemoryFs::new(), Console=console):
+            assert_equal(main!(), ExitCode(0))
+        assert_equal(console.output().join(""), "0 total\n")

@@ -1,0 +1,98 @@
+use std.task.{Backoff, apply, map_join, retry}
+use std.time.{Clock, ms}
+
+## Why one sku could not be priced.
+@derive(Eq, Debug)
+@error
+pub enum QuoteError:
+    @error("the quote service is busy")
+    Busy
+    @error("unknown sku $sku")
+    Unknown(sku: string)
+
+## A quote service the caller provides.
+pub trait Quotes:
+    fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]
+
+## Quotes one sku: up to 3 attempts, about 10 ms apart.
+fn quote_one!(sku: string) -> Result[i64, QuoteError] $ Quotes + Clock:
+    apply!(retry(Backoff { attempts: 3, initial: 10ms, factor: 1, max: 10ms })):
+        quotes := $.use(Quotes)
+        quotes.quote!(sku)
+
+## Prices every sku, at most 4 in flight, and sums the prices.
+## The first failing sku in list order decides an error.
+pub fn order_total!(skus: List[string]) -> Result[i64, QuoteError] $ Quotes + Clock:
+    results := map_join!(
+        skus,
+        4,
+        fn!(sku: string) -> Result[i64, QuoteError] $ Quotes + Clock: quote_one!(sku)
+    )
+    let total: i64 = 0
+    for result in results:
+        total += result?
+    .Ok(total)
+
+tests:
+    use std.time.{ManualClock, Timestamp}
+
+    struct Shop:
+        prices: Map[string, i64]
+        busy_answers: Map[string, i64]
+        asked: List[string]
+
+    impl Quotes for Shop:
+        fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]:
+            self.asked.push(sku)
+            if self.busy_answers.get(sku).unwrap_or(0) > 0:
+                self.busy_answers[sku] -= 1
+                return .Err(.Busy)
+            match self.prices.get(sku):
+                .Some(price) => .Ok(price)
+                .None => .Err(.Unknown(sku))
+
+    fn clock() -> *mut ManualClock:
+        ManualClock::new(Timestamp::from_unix_milliseconds(0))
+
+    fn shop(prices: Map[string, i64], busy: Map[string, i64]) -> *mut Shop:
+        box(Shop { prices, busy_answers: busy, asked: [] })
+
+    it("sums the prices"):
+        s := shop({ "tea": 3, "jam": 12 }, {})
+        $.with(Quotes=s, Clock=clock()):
+            assert_equal(order_total!(["tea", "jam", "tea"]), .Ok(18))
+
+    it("totals an empty order to 0"):
+        s := shop({}, {})
+        $.with(Quotes=s, Clock=clock()):
+            assert_equal(order_total!([]), .Ok(0))
+        assert_equal(s.asked.len(), 0)
+
+    it("retries a busy sku and then counts its price"):
+        s := shop({ "tea": 3 }, { "tea": 2 })
+        $.with(Quotes=s, Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Ok(3))
+        assert_equal(s.asked.len(), 3)
+
+    it("gives up after 3 attempts"):
+        s := shop({ "tea": 3 }, { "tea": 5 })
+        $.with(Quotes=s, Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Err(.Busy))
+        assert_equal(s.asked.len(), 3)
+
+    it("reports the first failing sku in list order"):
+        s := shop({ "tea": 3 }, {})
+        $.with(Quotes=s, Clock=clock()):
+            assert_equal(order_total!(["nope", "tea", "gone"]), .Err(.Unknown("nope")))
+
+    it("prices a batch larger than the 4-quote limit"):
+        let mut prices: Map[string, i64] = {}
+        let mut skus: List[string] = []
+        for i in 0..10:
+            sku := "s$i"
+            prices[sku] = i64(i)
+            skus.push(sku)
+        s := shop(prices, {})
+        $.with(Quotes=s, Clock=clock()):
+            assert_equal(order_total!(skus), .Ok(45))
+        assert_equal(s.asked.len(), 10)

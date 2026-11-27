@@ -1,0 +1,16 @@
+use pkg.{QuoteError, Quotes, order_total}
+use std.testing.assert_equal
+use std.time.{Clock, ManualClock, Timestamp}
+
+struct Flat:
+    price: i64
+
+impl Quotes for Flat:
+    fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]:
+        if sku == "bad": .Err(.Unknown(sku)) else: .Ok(self.price)
+
+it("prices a public order through a caller's service"):
+    clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+    $.with(Quotes=box(Flat { price: 5 }), Clock=clock):
+        assert_equal(order_total!(["a", "b"]), .Ok(10))
+        assert_equal(order_total!(["a", "bad"]), .Err(.Unknown("bad")))

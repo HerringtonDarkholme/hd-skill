@@ -1,0 +1,78 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 2,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": true
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/derive.md",
+      "reference/packages.md",
+      "design/testing.md"
+    ],
+    "bash": 7,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 3,
+      "test": 2,
+      "fmt": 3,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {
+      "decorator-not-top-level": 1
+    },
+    "failing_checks": 1,
+    "turns": 23,
+    "cost_usd": 0.02019989,
+    "duration_s": 49,
+    "tokens": 700780,
+    "final_message": "The `fields` library is in place. `hd check --tests` and `hd test` both pass (7 tests), and `hd fmt --check` and `hd lint` are clean.\n\n**What's there**\n\n- **`src/fields.hd`** holds `pub trait FieldNames: fn field_names(self) -> List[string]`, a small `Walker` that pushes each field's name in declaration order, and the template `impl[T] FieldNames for T by Structure`. That template is what lets `@derive(FieldNames)` work on any struct without a per-struct impl. The template has to sit in the trait's module (or a re-exporting module of the same package), so it lives here.\n- **`src/lib.hd`** re-exports the trait (`pub use self.fields.{FieldNames}`), so other modules and other packages can write `use pkg.{FieldNames}` or `use dep.fields.{FieldNames}`. I replaced the scaffold's `greet` with this.\n- **`src/shapes.hd`** is a second module that derives the trait on a `pub struct`, plus a `tests:` block that derives it on a local struct. This covers the \"any module, including test modules\" requirement.\n- **`tests/fields.hd`** is an integration test that derives on a struct from the test file itself and calls the derive on the `shapes` type.\n- **Tests cover:** declaration order, an empty struct, a nested struct (only the outer fields are listed), and derives in a library module, a `tests:` block, and an integration test.\n\n**Choices and notes**\n\n- The package is a library created with `hd new --lib --vcs none .` in the current directory (no git repo was initialized). No commit was made.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

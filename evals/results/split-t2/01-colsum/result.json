@@ -1,0 +1,121 @@
+{
+  "task": "01-colsum",
+  "package": "colsum",
+  "scenario": "CLI over standard input",
+  "selling_points": [
+    "derive Cli",
+    "@error",
+    "Result"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 14,
+      "passed": 14,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [
+          "--skip-header"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "a,1\nb,7\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 2: not a number: zz\n"
+      },
+      {
+        "args": [
+          "--key",
+          "2",
+          "--value",
+          "3"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "x,-2\ny,8\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 1: fewer columns than needed\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "derive-cli",
+        "desc": "options parsed with @derive(Cli)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "SumError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/stdin-filter.md",
+      "scenarios/cli-tool.md",
+      "scenarios/text-records.md",
+      "reference/packages.md"
+    ],
+    "bash": 15,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 4,
+      "test": 4,
+      "run": 7,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cat > hd.toml <<'EOF'\n[package]\nname = \"colsum\"\n\n[capabilities]\nArgs = true\nConsole = true\nConsoleInput = true\nEOF\npython3 - <<'EOF'\nimport re\np = \"/private/var/folders/qt/_jh_5zt97cd748zcbynvz1",
+      "Bash: printf 'name,amount\\nada, 3\\ngrace,5\\n\\nada,-1\\n' | hd run -- --skip-header; echo \"exit $?\"; echo ---; printf 'a,1\\nb,x\\n' | hd run -- > /tmp/colsum_out.txt 2>/tmp/colsum_err.txt; echo \"exit $?\""
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "missing-requirement": 6
+    },
+    "failing_checks": 1,
+    "turns": 30,
+    "cost_usd": 0.030089030000000003,
+    "duration_s": 89,
+    "tokens": 1095489,
+    "final_message": "The `colsum` package is in the current directory. `hd check --tests` and `hd test` both pass (14 tests), and `hd fmt` and `hd lint` are clean.\n\n**Files**\n- `hd.toml`: the package manifest. It grants `Args`, `Console` and `ConsoleInput`.\n- `src/sum.hd`: the public `SumError` enum (`@derive(Eq, Debug)` and `@error` messages) and `pub fn summarize(...)` with the signature you specified. It has 10 tests.\n- `src/main.hd`: the CLI. Options are derived with `@derive(Cli)`, giving `--key N` (default 1), `--value N` (default 2) and `--skip-header`. It has 4 tests that use scripted stdin and args.\n\n**Behaviour checked by running the binary**\n- `printf 'name,amount\\nada, 3\\ngrace,5\\n\\nada,-1\\n' | hd run -- --skip-header` prints `ada,2` and `grace,5`.\n- `printf 'a,1\\nb,x\\n' | hd run --` prints `colsum: line 2: not a number: x` to stderr, nothing to stdout, and exits 1.\n- A row with too few columns gives `colsum: line 2: fewer columns than needed` with exit 1.\n\n**Choices I made that the spec didn't cover**\n- Column `0` (from `--key 0` or `--value 0`) makes `summarize` return `MissingColumn` for the first line. Column 0 never exists, so this fits the existing variant and avoids a `usize` underflow panic.\n- A blank line is one whose trimmed text is empty, and it still counts toward line numbers. With `--skip-header`, line 1 is skipped even if it is blank.\n- Usage errors, such as a non-numeric `--key`, exit with status 2 through the derived CLI parser, not status 1.\n- `--help` is generated f",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

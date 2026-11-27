@@ -1,0 +1,82 @@
+{
+  "task": "02-todos",
+  "package": "todos",
+  "scenario": "JSON in and out",
+  "selling_points": [
+    "derive Serialize/Deserialize",
+    "field defaults",
+    "property tests"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 13,
+      "passed": 13,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-serde",
+        "desc": "JSON through @derive(Serialize, Deserialize)",
+        "ok": true
+      },
+      {
+        "id": "field-default",
+        "desc": "done defaults with a field default",
+        "ok": true
+      },
+      {
+        "id": "prop-test",
+        "desc": "round trip checked with a property test",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "reference/packages.md"
+    ],
+    "bash": 12,
+    "hd": {
+      "help": 7,
+      "new": 1,
+      "check": 3,
+      "test": 3,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: hd help new; hd help test; hd help check; S=.claude/skills/hd-lang; ls $S $S/reference/std; sed -n 1,200p $S/reference/packages.md | head -150"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 21,
+    "cost_usd": 0.018963280000000002,
+    "duration_s": 54,
+    "tokens": 654174,
+    "final_message": "The `todos` library package is in place, and `hd check --tests`, `hd test` and `hd lint` all pass. `hd test` reports 13 passed, 0 failed.\n\nWhat's in the directory:\n\n- **`src/todos.hd`** has the public API as specified. `Todo` and `TodoError` derive `Eq` and `Debug`, and `TodoError` is an `@error` enum.\n  - `Todo` also derives `Serialize`, `Deserialize` and `Arbitrary`. An absent `done` falls back to `false` through the field default, and a test confirms this.\n  - `load` maps any JSON decode failure to `BadJson`, with the decoder's debug text as the message.\n  - `dump` is `encode` on the list.\n  - `complete` returns `UnknownId` when no todo has that id.\n  - `pending` keeps the order of the list.\n- **`src/lib.hd`** re-exports the public items. The `hd new --lib` sample `greet` function is gone.\n- **`tests/todos.hd`** is an integration test that loads, completes, lists pending titles and round-trips through `dump`. I replaced the `greet` sample test.\n- **`hd.toml`** holds only the package name `todos`.\n\nThe unit tests in `src/todos.hd` cover:\n\n- loading, including an absent `done`, extra fields and an empty array;\n- rejection of non-array input, wrong types, missing `id` or `title`, truncated JSON and empty input;\n- `complete` for a valid id, an unknown id and an empty list;\n- `pending` ordering;\n- exact `dump` output with escaped quotes;\n- a property test that `load(dump(todos))` returns the same todos.\n\nI ran `hd fmt`, which reformatted both files. I also changed one `let mut`",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

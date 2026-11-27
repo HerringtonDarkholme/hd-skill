@@ -1,0 +1,83 @@
+{
+  "task": "11-calc",
+  "package": "calc",
+  "scenario": "parser and interpreter",
+  "selling_points": [
+    "recursive enums",
+    "box",
+    "@error",
+    "match"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 31,
+      "passed": 31,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 20,
+      "passed": 20,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "tree-enum",
+        "desc": "a recursive enum for the syntax tree (boxed children)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "CalcError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "table-test",
+        "desc": "table tests with it_each",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/parser.md",
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 7,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 3,
+      "test": 3,
+      "fmt": 1,
+      "lint": 2
+    },
+    "denied": [],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 17,
+    "cost_usd": 0.028733350000000005,
+    "duration_s": 107,
+    "tokens": 533538,
+    "final_message": "The `calc` library is in place. `hd check --tests`, `hd test` (31 passed), and `hd lint` are all clean.\n\n**Files**\n- `src/calc.hd` holds the evaluator and its `tests:` block.\n- `src/lib.hd` re-exports `CalcError` and `eval`. hd reads a library's public interface from `src/lib.hd`, so `calc.hd` can't be the root on its own.\n- `hd.toml` is the scaffold's manifest, unchanged.\n\n**Design**\n- Lexing produces a token list ending in an `End` token at `src.len()`. Unknown bytes become `Bad` tokens, so the parser reports them only when the grammar reaches them. That is what makes `\"1 $ 2\"` give `Unexpected(2)` and not an earlier error.\n- The parser is recursive descent with one method per precedence level: `expr` (`+ -`), `term` (`* /`), `unary` (`-`), `primary` (integer or parenthesised expression). All levels are left-associative.\n- The syntax tree is `Expr` with `Num`, `Neg` and `Bin(op, *Expr, *Expr)`. `eval` parses, then `evaluate` walks the tree. `DivideByZero` is raised only when the right operand is zero.\n\n**Tests (31)**\n- Value table covering precedence, associativity, truncation toward zero, unary minus, and spaces.\n- Error table with exact offsets, including all four examples from the spec.\n- Divide-by-zero cases.\n- Two property tests comparing `eval` with integer arithmetic on generated `i32` pairs.\n\n**Choices you may want to change**\n- An integer literal that doesn't fit in `i64` is reported as `Unexpected` at its first digit. This also rejects `-9223372036854775808`, whic",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

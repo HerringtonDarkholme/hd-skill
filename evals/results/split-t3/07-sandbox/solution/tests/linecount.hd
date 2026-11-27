@@ -1,0 +1,23 @@
+use std.process.Command
+use std.testing.{assert_equal, hd_run}
+
+it("counts the files it is given, in order"):
+    let out = hd_run!(*Command::new("linecount").args(["data/three.txt", "data/three.txt"]))
+    assert_equal(
+        out.stdout,
+        "3 data/three.txt\n3 data/three.txt\n6 total\n",
+        reason="each file, then the total",
+    )
+    assert_equal(out.stderr, "", reason="nothing unreadable")
+    assert_equal(out.status, 0, reason="a clean run")
+
+it("refuses to read outside data/ and reports it"):
+    let out = hd_run!(
+        *Command::new("linecount").args(["data/three.txt", "../hd.toml", "data/../hd.toml"]),
+    )
+    assert_equal(out.stdout, "3 data/three.txt\n3 total\n", reason="the refused files are skipped")
+    assert(
+        out.stderr.starts_with("linecount: ../hd.toml: "),
+        reason="the refusal is named on stderr",
+    )
+    assert_equal(out.status, 1, reason="an unreadable file makes the status 1")

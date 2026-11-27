@@ -1,0 +1,22 @@
+use pkg.users.{User, UserError, UserStore, rename}
+
+## An in-memory store: user ids map to users.
+struct MemoryStore:
+    users: Map[i64, User]
+
+impl UserStore for MemoryStore:
+    fn get!(&mut self, id: i64) -> User?:
+        self.users.get(id)
+    fn put!(&mut self, user: User) -> void:
+        self.users[user.id] = user
+
+fn show(result: Result[User, UserError]) -> void $ Console:
+    match result:
+        .Ok(user) => println("renamed ${user.id} to ${user.name}")
+        .Err(error) => println("error: $error")
+
+pub fn main!() -> void $ Console:
+    store := box(MemoryStore { users: { 1: User { id: 1, name: "ada" } } })
+    $.with(UserStore=store):
+        show(rename!(1, "Ada Lovelace"))
+        show(rename!(2, "Grace"))

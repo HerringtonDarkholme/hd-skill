@@ -1,0 +1,26 @@
+use pkg.{FieldNames}
+
+@derive(FieldNames)
+pub struct Circle:
+    pub center_x: f64
+    pub center_y: f64
+    pub radius: f64
+
+## The field names of a circle, for a diagnostic report.
+pub fn circle_fields(c: Circle) -> string:
+    c.field_names().join(", ")
+
+tests:
+    @derive(FieldNames)
+    struct Label:
+        text: string
+        width: i32
+
+    it("derives in a non-root module"):
+        assert_equal(
+            circle_fields(Circle { center_x: 0.0, center_y: 0.0, radius: 1.0 }),
+            "center_x, center_y, radius",
+        )
+
+    it("derives inside a test module"):
+        assert_equal(Label { text: "hi", width: 2 }.field_names(), ["text", "width"])

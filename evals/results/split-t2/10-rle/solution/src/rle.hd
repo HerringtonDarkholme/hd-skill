@@ -1,0 +1,131 @@
+use std.testing.Choices
+
+## A maximal run: `count` copies of `value` in a row.
+@derive(Eq, Debug)
+pub struct Run:
+    pub value: i32
+    pub count: usize
+
+## Encodes `xs` as maximal runs: no run is empty, and neighbouring runs differ.
+pub fn encode(xs: List[i32]) -> List[Run]:
+    let mut runs: List[Run] = []
+    for x in xs:
+        let n = runs.len()
+        if n > 0 && runs[n - 1].value == x:
+            runs[n - 1].count += 1
+        else:
+            runs.push(Run { value: x, count: 1 })
+    runs
+
+## Expands `runs` back into the list they encode. A run with count 0 adds nothing.
+pub fn decode(runs: List[Run]) -> List[i32]:
+    let mut out: List[i32] = []
+    for run in runs:
+        for _ in 0..run.count:
+            out.push(run.value)
+    out
+
+## A short list with many repeats, so runs of every length come up.
+fn repetitive(c: &mut Choices) -> List[i32]:
+    c.list(60, fn(c: &mut Choices) -> i32: c.int(-2..=2))
+
+## A list of values, each a short run, so long runs and distinct neighbours both occur.
+fn runny(c: &mut Choices) -> List[i32]:
+    let mut out: List[i32] = []
+    for _ in 0..c.int(0..=8):
+        let v = c.int(-3..=3)
+        for _ in 0..c.int(1..=6):
+            out.push(v)
+    out
+
+fn maximal(runs: List[Run]) -> bool:
+    for i in 0..runs.len():
+        if runs[i].count == 0:
+            return false
+        if i > 0 && runs[i - 1].value == runs[i].value:
+            return false
+    true
+
+fn total_count(runs: List[Run]) -> usize:
+    runs.map(fn(r): r.count).sum()
+
+tests:
+    use std.testing.{it_each, it_prop, it_prop_with}
+
+    it("the empty list has no runs"):
+        assert_equal(encode([]), [])
+        assert_equal(decode([]), [])
+
+    it("one value is one run"):
+        assert_equal(encode([5]), [Run { value: 5, count: 1 }])
+
+    it("a stretch of one value is one run"):
+        assert_equal(encode([7, 7, 7]), [Run { value: 7, count: 3 }])
+
+    it("neighbouring runs have different values"):
+        assert_equal(
+            encode([1, 1, 2, 2, 2, 1]),
+            [Run { value: 1, count: 2 }, Run { value: 2, count: 3 }, Run { value: 1, count: 1 }],
+        )
+
+    it("equal values that are not neighbours stay separate"):
+        assert_equal(encode([1, 2, 1]).len(), 3)
+
+    it("a run with count 0 decodes to nothing"):
+        assert_equal(decode([Run { value: 4, count: 0 }, Run { value: 3, count: 2 }]), [3, 3])
+
+    it("negative values and extremes survive"):
+        xs := [-2147483648, -2147483648, 2147483647, 0, 0]
+        assert_equal(decode(encode(xs)), xs)
+
+    it("a run has value and count equality, and debug text"):
+        a := Run { value: 1, count: 2 }
+        assert(a == Run { value: 1, count: 2 }, reason="equal runs compare equal")
+        assert(a != Run { value: 1, count: 3 }, reason="a different count differs")
+        assert(a != Run { value: 2, count: 2 }, reason="a different value differs")
+        assert_equal(debug(a), "Run { value: 1, count: 2 }")
+
+    it_each(
+        "encode gives the expected runs",
+        [
+            ([], []),
+            ([0], [Run { value: 0, count: 1 }]),
+            ([1, 2], [Run { value: 1, count: 1 }, Run { value: 2, count: 1 }]),
+            ([-1, -1, -1, 4], [Run { value: -1, count: 3 }, Run { value: 4, count: 1 }]),
+        ],
+        body=fn!(row: (List[i32], List[Run])): assert_equal(encode(row._0), row._1)
+    )
+
+    it_prop(
+        "decode undoes encode for any list",
+        prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)), xs)
+    )
+
+    it_prop_with(
+        "decode undoes encode for lists full of repeats",
+        gen=repetitive,
+        prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)), xs)
+    )
+
+    it_prop_with(
+        "decode undoes encode for long runs",
+        gen=runny,
+        prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)), xs)
+    )
+
+    it_prop("encode gives maximal runs covering every element", prop=fn!(xs: List[i32]):
+        runs := encode(xs)
+        assert(maximal(runs), reason="no empty run, neighbours differ")
+        assert_equal(total_count(runs), xs.len())
+    )
+
+    it_prop_with("encode of decoded runs gives the same runs", gen=runny, prop=fn!(xs: List[i32]):
+        runs := encode(xs)
+        assert_equal(encode(decode(runs)), runs)
+    )
+
+    it_prop(
+        "the runs of a list are never longer than it",
+        prop=fn!(xs: List[i32]):
+            assert(encode(xs).len() <= xs.len(), reason="at most one run per element")
+    )

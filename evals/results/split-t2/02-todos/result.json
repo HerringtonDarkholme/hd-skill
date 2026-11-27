@@ -1,0 +1,92 @@
+{
+  "task": "02-todos",
+  "package": "todos",
+  "scenario": "JSON in and out",
+  "selling_points": [
+    "derive Serialize/Deserialize",
+    "field defaults",
+    "property tests"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 10,
+      "passed": 10,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 0,
+      "failed": [],
+      "compile_errors": [
+        "tests/zz_hidden_eval.hd:6: missing-required-field: `done` is required in `Todo`",
+        "tests/zz_hidden_eval.hd:17: missing-required-field: `done` is required in `Todo`",
+        "tests/zz_hidden_eval.hd:17: missing-required-field: `done` is required in `Todo`",
+        "tests/zz_hidden_eval.hd:18: missing-required-field: `done` is required in `Todo`",
+        "tests/zz_hidden_eval.hd:22: missing-required-field: `done` is required in `Todo`",
+        "tests/zz_hidden_eval.hd:22: missing-required-field: `done` is required in `Todo`"
+      ]
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-serde",
+        "desc": "JSON through @derive(Serialize, Deserialize)",
+        "ok": false
+      },
+      {
+        "id": "field-default",
+        "desc": "done defaults with a field default",
+        "ok": false
+      },
+      {
+        "id": "prop-test",
+        "desc": "round trip checked with a property test",
+        "ok": false
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": false,
+    "idiom_score": 0.25
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 11,
+    "hd": {
+      "help": 3,
+      "doc": 6,
+      "new": 1,
+      "check": 4,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: mkdir -p /tmp/hdprobe && cd /tmp/hdprobe && hd doc std.encoding.json.Json 2>&1 | head -80; hd doc std.encoding.json.JsonError 2>&1 | head -60; hd doc std.encoding.json.parse 2>&1 | head -40",
+      "Bash: printf 'pub use self.todos.{Todo, TodoError, load, dump, complete, pending}\\n' > src/lib.hd && cat > tests/todos.hd <<'EOF'\nuse pkg.{Todo, TodoError, load, dump, complete, pending}\nuse std.testi"
+    ],
+    "diagnostic_codes": {
+      "type-mismatch": 4,
+      "local-reference-escapes": 1,
+      "unknown-variant": 1
+    },
+    "failing_checks": 1,
+    "turns": 23,
+    "cost_usd": 0.02382674,
+    "duration_s": 74,
+    "tokens": 810649,
+    "final_message": "The `todos` package is in place: `src/todos.hd` holds the library, and `hd check --tests` and `hd test` both pass (10 tests).\n\nFiles:\n- **`src/todos.hd`**: `Todo` and `TodoError` (both `@derive(Eq, Debug)`), plus `load`, `dump`, `complete` and `pending`. It has a `tests:` block with 8 unit tests.\n- **`src/lib.hd`**: replaced the generated `greet` sample with a re-export of the public API, so `dep.todos.load` works from other packages.\n- **`tests/todos.hd`**: replaced the generated sample with 2 integration tests.\n- **`hd.toml`**: unchanged from `hd new --lib`; the package uses no capabilities.\n\nDecisions you may want to change:\n- **Parsing**: built on `std.encoding.json`. Any parse error, a non-array top level, a non-object item, a missing or wrongly typed field, or an `id` outside the `i32` range becomes `BadJson` with a message.\n- **Extra keys** on an item are ignored rather than rejected.\n- **`\"done\": null`** is `BadJson`; only an absent `done` means `false`.\n- **Duplicate ids** are accepted. `complete` marks every todo with that id.\n- **`dump`** writes compact JSON through `encode`, so `load(dump(x))` returns `x`. A test covers quotes, newlines, non-ASCII text and the `i32` bounds.\n\nTwo blocked actions, neither needed for the result:\n- A probe to read the JSON type docs was denied because it wrote a scratch directory outside the project. I read the signatures from the skill's reference files instead.\n- A shell command using a heredoc to write the test file was denied. I w",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

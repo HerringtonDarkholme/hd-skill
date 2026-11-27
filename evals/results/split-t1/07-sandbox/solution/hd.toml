@@ -1,0 +1,23 @@
+[package]
+name = "linecount"
+
+# Only what `main` uses is granted; the rest is refused outright.
+# Reads are limited to the data/ folder, relative to this package.
+[capabilities]
+Args = true
+Console = true
+FsRead = ["data/"]
+ConsoleInput = false
+FsWrite = false
+Env = false
+Sys = false
+Http = false
+Net = false
+Clock = false
+Random = false
+Signals = false
+Workers = false
+
+# Integration tests run the built program, so they need to spawn it.
+[dev-capabilities]
+Process = true

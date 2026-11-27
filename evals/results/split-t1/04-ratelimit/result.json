@@ -1,0 +1,72 @@
+{
+  "task": "04-ratelimit",
+  "package": "ratelimit",
+  "scenario": "time-dependent logic",
+  "selling_points": [
+    "Clock requirement",
+    "ManualClock fake"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 5,
+      "passed": 5,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "manual-clock",
+        "desc": "tests control time with ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 16,
+    "hd": {
+      "help": 1,
+      "check": 6,
+      "new": 1,
+      "doc": 8,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: mkdir -p /tmp/hdprobe && cd /tmp/hdprobe && cat > p.hd <<'EOF'\nuse std.time.{ManualClock, Timestamp, s}\npub fn main() -> void:\n    c := ManualClock::new(Timestamp::from_unix_milliseconds(0))\n   "
+    ],
+    "diagnostic_codes": {
+      "not-writable": 14,
+      "unknown-method": 5
+    },
+    "failing_checks": 1,
+    "turns": 24,
+    "cost_usd": 0.025425169999999997,
+    "duration_s": 65,
+    "tokens": 924008,
+    "final_message": "The `ratelimit` package is in the current directory. `hd check --tests`, `hd test` (5 passed), `hd fmt` and `hd lint` all pass.\n\n**Files**\n- `hd.toml`: package `ratelimit`, a library with no capability grants.\n- `src/limiter.hd`: `Limiter`, `new_limiter`, and `allow`, plus the `tests:` block.\n- `src/lib.hd`: re-exports `Limiter` and `new_limiter` as the library's public interface.\n\n**Design**\n- `Limiter` keeps `max`, the window in milliseconds, and a `Map[string, List[i64]]` of allowed-event times per key. The fields are private.\n- `allow` reads the time with `now()` under `$ Clock`, so callers and tests control it through a provider.\n- On each call it drops events that are no longer inside the window (`now - t < window`). If fewer than `max` remain, it records the new event and returns true. Otherwise it stores the pruned list and returns false, so a refused event is never recorded.\n- Keys are independent because each has its own list.\n\n**Tests** (5 cases, run with `$.with(Clock=ManualClock::new(...))`)\n- Up to `max` events are allowed, then the next is refused.\n- A slot frees exactly when an event is a full window old: 9s is still counted, 10s is not.\n- A refused event is not recorded. Only the t=1s event still counts at t=10, so a slot opens then.\n- Keys are independent.\n- A `max` of 0 refuses everything.\n\n**Things to know**\n- A probe command I ran to find `ManualClock`'s method names was denied by the approval system, so I didn't retry it. The checker then showed `ManualC",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

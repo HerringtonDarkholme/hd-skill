@@ -1,0 +1,75 @@
+{
+  "task": "12-lru",
+  "package": "lru",
+  "scenario": "stateful data structure",
+  "selling_points": [
+    "model-based property test",
+    "commands"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 11,
+      "passed": 11,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "model-test",
+        "desc": "a generated-operations test (it_prop / it_prop_with / commands)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "reference/packages.md",
+      "design/testing.md"
+    ],
+    "bash": 17,
+    "hd": {
+      "check": 5,
+      "test": 4,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: wc -l collections.map.txt && grep -n \"std.collections.map.Map\\.\" collections.map.txt | awk -F'  ' '{print $1}' | sed 's/.*Map\\.//' | tr '\\n' ' '"
+    ],
+    "diagnostic_codes": {
+      "invalid-test-statement": 1,
+      "unknown-name": 2,
+      "discarded-must-use-value": 1,
+      "unknown-type": 2
+    },
+    "failing_checks": 2,
+    "turns": 33,
+    "cost_usd": 0.038116330000000004,
+    "duration_s": 118,
+    "tokens": 1391726,
+    "final_message": "The `lru` package is in place, and `hd check --tests`, `hd test`, `hd fmt` and `hd lint` all pass. `hd test` reports 11 passing: 10 example cases and one generated-history property.\n\n**Layout**\n- `hd.toml`: package `lru`.\n- `src/lru.hd`: the implementation, the example tests, and the property test.\n- `src/lib.hd`: `pub use self.lru.{Lru, new_lru}`. I put the code in `src/lru.hd` as you asked. The library root has to be `src/lib.hd`, so it re-exports from there.\n- I wrote the manifest and files by hand instead of running `hd new`. That command would have created a nested `lru/lru/` folder.\n\n**Implementation**\n- `Lru` holds a `Map[string, i64]` for values and a `List[string]` for recency, least recent first.\n- `get` on a miss returns `.None` and changes nothing. On a hit it moves the key to the end.\n- `put` moves an existing key to the end or appends a new one, then evicts the front key if the cache is over capacity.\n- Recency updates are O(n) because they search and shift the list. That's fine for a small cache but would matter at scale.\n\n**Tests**\n- Ten example cases cover empty caches, round trips, eviction order, hits refreshing recency, misses changing nothing, updates, capacity 0 and 1, and case sensitivity.\n- The property test is a `commands` history of up to 60 `get`/`put` operations over keys `a`–`d`, with capacity 0–4. It compares the cache with a plain list-based model after every step: each `get` result, plus the length.\n- I broke `get` on purpose by removing the re",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

@@ -1,0 +1,74 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 2,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": true
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/derive.md",
+      "reference/packages.md",
+      "design/testing.md"
+    ],
+    "bash": 4,
+    "hd": {
+      "check": 3,
+      "test": 3,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 19,
+    "cost_usd": 0.01608726,
+    "duration_s": 39,
+    "tokens": 436315,
+    "final_message": "The `fields` package is in place and `hd check --tests` and `hd test` both pass (6 tests, 0 failed).\n\n`@derive(FieldNames)` works on any struct in any module, including `tests:` blocks and `tests/` files, and returns the field names in declaration order. There's no per-struct `impl`.\n\nFiles:\n- `hd.toml`: package `fields`, no capabilities.\n- `src/fields.hd`: the `pub trait FieldNames`, a `Walker` that collects names, and the template `impl[T] FieldNames for T by Structure`. It has its own `tests:` block covering ordering, an empty struct, and a struct with a list field.\n- `src/lib.hd`: `pub use self.fields.{FieldNames}`, so other packages can import it as `dep.fields.FieldNames`. The template lives in `fields.hd`, the trait's own module, which satisfies the template placement rule.\n- `src/model.hd`: a `pub struct` with one private field and one defaulted field, derived from another module. Its `tests:` block checks the names.\n- `tests/fields.hd`: an integration-style test that derives on a struct defined in the test file and checks the struct from `model.hd`.\n\nChoices I made:\n- The library root is `src/lib.hd`, so the trait is importable as `fields.FieldNames` and the derive works there. You asked for the code in `src/fields.hd`; the re-export is the only addition.\n- `hd fmt` reformatted the test block in `fields.hd`. The post-format check and test runs still pass.\n- `build/` holds generated test records from `hd test`. I did not add a `.gitignore`, since the repo isn't initia",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

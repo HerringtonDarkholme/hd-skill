@@ -1,0 +1,84 @@
+{
+  "task": "11-calc",
+  "package": "calc",
+  "scenario": "parser and interpreter",
+  "selling_points": [
+    "recursive enums",
+    "box",
+    "@error",
+    "match"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 32,
+      "passed": 32,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 20,
+      "passed": 20,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "tree-enum",
+        "desc": "a recursive enum for the syntax tree (boxed children)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "CalcError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "table-test",
+        "desc": "table tests with it_each",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/parser.md",
+      "reference/packages.md"
+    ],
+    "bash": 8,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 4,
+      "test": 4,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t1/11-calc/calc && sed -i 's/(\"\\\\u00e9\"/(\"é\"/' src/calc.hd && grep -n 'é' src/calc.hd && printf 'pub use self.cal"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 20,
+    "cost_usd": 0.026049450000000002,
+    "duration_s": 92,
+    "tokens": 719580,
+    "final_message": "The `calc` package is in the current directory. `hd check --tests` passes, `hd test` runs 32 tests with all passing, and `hd fmt` and `hd lint` are clean.\n\n**Files**\n- `src/calc.hd` holds `CalcError` (`DivideByZero`, `Unexpected(at: usize)`, both `Eq` and `Debug`) and `pub fn eval`. Its `tests:` block has 30 table cases covering values, precedence, associativity, truncation, error offsets, and divide-by-zero.\n- `src/lib.hd` re-exports `eval` and `CalcError`, so the package root exposes them.\n- `tests/calc.hd` is an integration test that calls the public API.\n\n**Design**\n- The lexer produces tokens with byte offsets and ends with an `End` token at `src.len()`. An invalid byte or an out-of-range number becomes a `Bad` token instead of an immediate error. The parser reports it only when it reaches it, so `\"1 2 $\"` gives `Unexpected(2)`, not the later `$`.\n- The parser is recursive descent (`expr` → `term` → `unary` → `primary`) and builds a tree with boxed children. Evaluation is a separate walk over that tree. Parsing runs fully before evaluating, so `\"1 / 0 +\"` reports the syntax error at 7 rather than dividing by zero.\n\n**Decisions to confirm**\n- Integer overflow is not covered by the spec's two error variants, so `+ - * /` use hd's normal arithmetic and panic on overflow. Division by zero is the only checked error. If you want overflow reported as an error, the enum needs a third variant.\n- A decimal literal that does not fit in `i64` is `Unexpected` at its start. That makes",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

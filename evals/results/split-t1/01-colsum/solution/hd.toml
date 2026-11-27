@@ -1,0 +1,14 @@
+[package]
+name = "colsum"
+
+[[executable]]
+name = "colsum"
+module = "main"
+
+[capabilities]
+Console = true
+ConsoleInput = true
+Args = true
+
+[dev-capabilities]
+Process = true

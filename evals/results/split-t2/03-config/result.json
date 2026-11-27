@@ -1,0 +1,92 @@
+{
+  "task": "03-config",
+  "package": "config",
+  "scenario": "configuration from file and environment",
+  "selling_points": [
+    "derive Validate + field facts",
+    "env_decode",
+    "@from errors",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 14,
+      "passed": 14,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 11,
+      "passed": 11,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-validate",
+        "desc": "rules written as @derive(Validate) field facts",
+        "ok": true
+      },
+      {
+        "id": "field-facts",
+        "desc": "uses @range / @length facts",
+        "ok": true
+      },
+      {
+        "id": "from-errors",
+        "desc": "error variants convert with @from",
+        "ok": true
+      },
+      {
+        "id": "fake-fs-env",
+        "desc": "tests use MemoryFs and ScriptedEnv",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/configuration.md",
+      "scenarios/project-layout.md",
+      "reference/packages.md"
+    ],
+    "bash": 10,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 4,
+      "test": 3,
+      "fmt": 1,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t2/03-config/config/.claude/skills/hd-lang/reference/std && grep -E \"^std.testing.(assert|fail|it|pass)\" testing."
+    ],
+    "diagnostic_codes": {
+      "unknown-trait": 12
+    },
+    "failing_checks": 1,
+    "turns": 21,
+    "cost_usd": 0.026338530000000002,
+    "duration_s": 71,
+    "tokens": 893060,
+    "final_message": "The `config` library package is written, and `hd check --tests`, `hd test` (14 passed), `hd fmt` and `hd lint` all pass.\n\n**Files**\n- `src/config.hd` holds the implementation and its unit tests.\n- `src/lib.hd` re-exports `Config`, `ConfigError` and `load_config`, since `hd new --lib` requires a library root.\n- `hd.toml` is the scaffold's manifest, unchanged.\n- I deleted the scaffold's `tests/config.hd`, because it only tested the placeholder `greet` function.\n\n**Choices I made**\n- `Config` derives `Deserialize`, `Validate`, `Eq` and `Debug`. The rules are field facts: `@length(1, 253)` on `host`, `@range(1024, 65535)` on `port`, and `@range(1, 64)` on `workers`, which defaults to 4.\n- Loading order: read the file, decode it, apply `APP_PORT` through `env_as::[i32]`, then call `validated()`. An overridden port is therefore checked by the same rule as a file port.\n- `host` and `port` have no default, so a file missing either one is a `Parse` error. The spec was silent on this.\n- `ConfigError` derives no `Eq` or `Debug`. The spec only required them on `Config`, and the tests check error variants through a small `outcome` helper instead.\n\n**Tests:** the 14 cases cover defaults, the `workers` default and explicit values, `APP_PORT` override, each of the four error variants, the port and workers bounds, the host length bounds, the overridden port, and `==` and debug printing. They use `MemoryFs` and `ScriptedEnv` fakes, so no real files or environment are touched.\n\n**Notice:** afte",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

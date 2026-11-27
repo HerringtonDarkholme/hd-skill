@@ -1,0 +1,72 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 13,
+      "passed": 13,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md"
+    ],
+    "bash": 11,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 4,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: rm tests/rle.hd && rmdir tests && cat > src/lib.hd <<'EOF'\npub use self.rle.{Run, encode, decode}\nEOF\ncat > src/rle.hd <<'EOF'\n## One maximal run of equal integers: `count` copies of `value`.\n@d"
+    ],
+    "diagnostic_codes": {
+      "syntax-error": 1
+    },
+    "failing_checks": 1,
+    "turns": 19,
+    "cost_usd": 0.018808340000000003,
+    "duration_s": 51,
+    "tokens": 603358,
+    "final_message": "The `rle` package is written and both `hd check --tests` and `hd test` pass: 13 cases, 0 failed.\n\n**Files**\n- `src/rle.hd` has `pub struct Run` (`pub value: i32`, `pub count: usize`, `@derive(Eq, Debug)`), `pub fn encode`, `pub fn decode`, and the `tests:` block.\n- `src/lib.hd` re-exports `Run`, `encode` and `decode`, so consumers can import them from the package root.\n- I deleted the `greet` scaffold and `tests/rle.hd` that `hd new --lib` generated. `hd.toml` is unchanged.\n\n**Implementation**\n- `encode` extends the last run when the value matches, otherwise it starts a new run. The result has no empty runs and no equal neighbours.\n- `decode` pushes each value `count` times.\n\n**Tests**\n- Example table for `encode`, covering empty input, singletons, alternating values, negatives and a return to an earlier value.\n- A 1000-element run encodes to one run; decoding examples, including a zero-count run.\n- `it_prop(\"decode undoes encode\")` over the default `List[i32]` generator.\n- `it_prop_with` over a tiny alphabet (-2..=2), so that repeated runs are common, checking the round trip.\n- Encoded output is maximal: counts sum to the input length, every count is at least 1, and neighbours differ.\n- `encode(decode(runs)) == runs` over generated valid run lists.\n- The `debug` check only asserts that the output contains `\"value\"`. It is a weak check.\n\n**Notes**\n- `hd fmt` reformatted `src/rle.hd` after I wrote it. The checks and tests were re-run after formatting and still pass. `hd lint` ",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

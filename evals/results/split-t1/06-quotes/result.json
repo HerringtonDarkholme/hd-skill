@@ -1,0 +1,91 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": true
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 17,
+    "hd": {
+      "doc": 1,
+      "help": 2,
+      "check": 5,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cat reference/std/task.txt | head -80; echo ----; grep -n \"map_join\" -A6 reference/std/task.txt | head -30; echo ----; cat ../../../../../../../../../../../dev/null 2>/dev/null; cat design/deriv",
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t1/06-quotes/quotes && mkdir -p src tests && printf '[package]\\nname = \"quotes\"\\n' > hd.toml && hd help 2>&1 | he"
+    ],
+    "diagnostic_codes": {
+      "missing-requirement": 1,
+      "missing-let": 2,
+      "type-mismatch": 8,
+      "not-writable": 2
+    },
+    "failing_checks": 3,
+    "turns": 29,
+    "cost_usd": 0.0284193,
+    "duration_s": 70,
+    "tokens": 1086408,
+    "final_message": "The `quotes` package is in place and both `hd check --tests` and `hd test` pass (6 tests, 0 failures).\n\nFiles created in the current directory:\n- `hd.toml`: `[package] name = \"quotes\"`, no grants, since the library only uses capabilities its caller provides.\n- `src/quotes.hd`: the implementation and its `tests:` block.\n\n**What the code does**\n- `QuoteError` is `@derive(Eq, Debug)` and `@error`, with messages for `Busy` and `Unknown(sku)`.\n- `Quotes` is the trait exactly as specified.\n- `quote_one!` wraps each sku in `apply!(retry(Backoff { attempts: 3, initial: 10ms, factor: 1, max: 10ms }))`. That gives 3 total attempts with a 10 ms wait between them.\n- `order_total!` runs `map_join!(skus, 4, ...)`, so at most 4 quotes are in flight. It then sums the results in list order and returns the first `Err` it meets, so the first failing sku in list order wins. An empty list gives `Ok(0)`.\n\n**Tests**\n- Sums prices, including a repeated sku.\n- Empty order totals 0 and makes no calls.\n- A busy sku is retried and then priced.\n- A sku that stays busy gives up after exactly 3 attempts with `Busy`.\n- With several failing skus, the first one in list order is reported.\n- A 10-sku batch prices correctly.\n\n**Not covered by tests**\n- The 4-in-flight limit is not verified. The `quote!` trait method has no `$ Clock` row, so a fake cannot sleep to make tasks overlap, and every fake call finishes without yielding. The limit comes from the `4` argument to `map_join!`, which I did not observe at run",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

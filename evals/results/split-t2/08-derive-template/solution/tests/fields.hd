@@ -1,0 +1,21 @@
+use pkg.{FieldNames}
+use pkg.shapes.{Circle}
+use std.testing.assert_equal
+
+@derive(FieldNames)
+struct Config:
+    host: string
+    port: u16
+    debug: bool
+
+it("derives in an integration test"):
+    assert_equal(
+        Config { host: "localhost", port: 8080, debug: false }.field_names(),
+        ["host", "port", "debug"],
+    )
+
+it("works across modules"):
+    assert_equal(
+        Circle { center_x: 1.0, center_y: 2.0, radius: 3.0 }.field_names(),
+        ["center_x", "center_y", "radius"],
+    )

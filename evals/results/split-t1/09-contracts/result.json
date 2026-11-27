@@ -1,0 +1,81 @@
+{
+  "task": "09-contracts",
+  "package": "bank",
+  "scenario": "invariants",
+  "selling_points": [
+    "require",
+    "ensure"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 16,
+      "passed": 16,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 6,
+      "passed": 6,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "require",
+        "desc": "preconditions with require",
+        "ok": true
+      },
+      {
+        "id": "ensure",
+        "desc": "postconditions with ensure",
+        "ok": true
+      },
+      {
+        "id": "no-raw-panic",
+        "desc": "no hand-written panic( for checks",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/contracts.md",
+      "reference/packages.md",
+      "design/testing.md"
+    ],
+    "bash": 4,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 2,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 18,
+    "cost_usd": 0.01765623,
+    "duration_s": 39,
+    "tokens": 565631,
+    "final_message": "The `bank` library is in place in this directory. `hd check --tests` passes, `hd test` passes (16 cases: 15 in `src/account.hd`, 1 integration test in `tests/bank.hd`), and `hd fmt` and `hd lint` are clean.\n\n**Files**\n- `hd.toml`: package `bank`, a library with no capabilities granted.\n- `src/account.hd`: `Account`, `open`, `transfer`, and the `balance`, `deposit` and `withdraw` methods, with the tests in a `tests:` block.\n- `src/lib.hd`: re-exports `Account`, `open` and `transfer`, so the public interface is `pkg.Account`, etc., and `src/account.hd` holds the implementation.\n- `tests/bank.hd`: one integration test that uses the public interface.\n\n**How the rules are enforced**\n- Misuse checks use `require`, which panics with `explicit-panic` in debug and test builds and is skipped in release builds: a negative opening balance, a non-positive deposit or withdrawal, a withdrawal above the balance, and a transfer above the source balance.\n- Invariants use `ensure`: the balance is never negative after a deposit or withdrawal, a deposit adds exactly its amount, and a transfer keeps the total of the two accounts.\n\n**Choices I made where the spec was open**\n- `transfer` also requires a positive amount. The spec only listed the balance check for transfers, but a negative transfer would silently move money backwards.\n- The balance field is private, so callers can only change it through the three methods.\n\n**One thing to decide:** `ensure` is checked in every build, including release,",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

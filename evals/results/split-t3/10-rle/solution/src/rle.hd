@@ -1,0 +1,139 @@
+## One maximal run: `count` copies of `value` in a row.
+@derive(Eq, Debug)
+pub struct Run:
+    pub value: i32
+    pub count: usize
+
+## The maximal runs of `xs`, in order. No run is empty, and neighbouring runs differ.
+pub fn encode(xs: List[i32]) -> List[Run]:
+    let mut runs: List[Run] = []
+    for x in xs:
+        match runs.pop():
+            .Some(run) if run.value == x => runs.push(Run { value: x, count: run.count + 1 })
+            .Some(run) =>
+                runs.push(run)
+                runs.push(Run { value: x, count: 1 })
+            .None => runs.push(Run { value: x, count: 1 })
+    runs
+
+## The list that `runs` stands for: each run written out `count` times.
+pub fn decode(runs: List[Run]) -> List[i32]:
+    let mut xs: List[i32] = []
+    for run in runs:
+        for _ in 0..run.count:
+            xs.push(run.value)
+    xs
+
+tests:
+    use std.testing.{it_each, it_prop, it_prop_with, Choices}
+
+    # A list of short runs over a few values, so that runs of length > 1 are common.
+    fn runny(c: &mut Choices) -> List[i32]:
+        let mut xs: List[i32] = []
+        let pieces: usize = c.int(0usize..=8usize)
+        for _ in 0..pieces:
+            let value: i32 = c.int(-2i32..=2i32)
+            let n: usize = c.int(1usize..=6usize)
+            for _ in 0..n:
+                xs.push(value)
+        xs
+
+    # Canonical run lists: neighbours differ by construction and no count is 0.
+    fn canonical(c: &mut Choices) -> List[Run]:
+        let mut runs: List[Run] = []
+        let pieces: usize = c.int(0usize..=8usize)
+        let mut value: i32 = c.int(-5i32..=5i32)
+        for _ in 0..pieces:
+            let n: usize = c.int(1usize..=6usize)
+            runs.push(Run { value: value, count: n })
+            value = value + c.int(1i32..=4i32)
+        runs
+
+    fn maximal(runs: List[Run]) -> bool:
+        for run in runs:
+            if run.count == 0:
+                return false
+        for i in 1..runs.len():
+            if runs[i - 1].value == runs[i].value:
+                return false
+        true
+
+    fn total(runs: List[Run]) -> usize:
+        runs.map(fn(r): r.count).sum()
+
+    it_each(
+        "encode gives the expected runs",
+        [
+            ([], []),
+            ([7], [Run { value: 7, count: 1 }]),
+            (
+                [1, 1, 2, 2, 2, 1],
+                [
+                    Run { value: 1, count: 2 },
+                    Run { value: 2, count: 3 },
+                    Run { value: 1, count: 1 },
+                ],
+            ),
+            (
+                [4, 5, 6],
+                [
+                    Run { value: 4, count: 1 },
+                    Run { value: 5, count: 1 },
+                    Run { value: 6, count: 1 },
+                ],
+            ),
+            ([-1, -1, -1, -1], [Run { value: -1, count: 4 }]),
+        ],
+        body=fn!(row: (List[i32], List[Run])): assert_equal(encode(row._0), row._1)
+    )
+
+    it_each(
+        "decode expands the runs",
+        [
+            ([], []),
+            ([Run { value: 3, count: 2 }], [3, 3]),
+            ([Run { value: 1, count: 2 }, Run { value: 9, count: 1 }], [1, 1, 9]),
+            ([Run { value: 0, count: 0 }, Run { value: 8, count: 1 }], [8]),
+        ],
+        body=fn!(row: (List[Run], List[i32])): assert_equal(decode(row._0), row._1)
+    )
+
+    it("a long run is one run"):
+        let mut xs: List[i32] = []
+        for _ in 0..1000:
+            xs.push(42)
+        assert_equal(encode(xs), [Run { value: 42, count: 1000 }])
+        assert_equal(decode(encode(xs)).len(), 1000)
+
+    it("extreme values are kept"):
+        xs := [-2147483648, -2147483648, 2147483647]
+        assert_equal(
+            encode(xs),
+            [Run { value: -2147483648, count: 2 }, Run { value: 2147483647, count: 1 }],
+        )
+        assert_equal(decode(encode(xs)), xs)
+
+    it_prop(
+        "decode undoes encode for any list",
+        prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)), xs)
+    )
+
+    it_prop_with(
+        "decode undoes encode for run-heavy lists",
+        gen=runny,
+        prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)), xs)
+    )
+
+    it_prop_with(
+        "encode of a decoded canonical list gives it back",
+        gen=canonical,
+        prop=fn!(runs: List[Run]): assert_equal(encode(decode(runs)), runs)
+    )
+
+    it_prop_with("encode output is maximal and covers the input", gen=runny, prop=fn!(
+        xs: List[i32],
+    ):
+        runs := encode(xs)
+        assert(maximal(runs), reason="no empty run, neighbours differ")
+        assert_equal(total(runs), xs.len())
+    )

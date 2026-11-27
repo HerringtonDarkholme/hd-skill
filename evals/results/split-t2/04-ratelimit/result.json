@@ -1,0 +1,78 @@
+{
+  "task": "04-ratelimit",
+  "package": "ratelimit",
+  "scenario": "time-dependent logic",
+  "selling_points": [
+    "Clock requirement",
+    "ManualClock fake"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 8,
+      "passed": 8,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "manual-clock",
+        "desc": "tests control time with ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/effects.md",
+      "design/testing.md",
+      "reference/packages.md",
+      "reference/std/time.md",
+      "reference/std/README.md",
+      "cli.md"
+    ],
+    "bash": 17,
+    "hd": {
+      "new": 1,
+      "doc": 4,
+      "check": 4,
+      "test": 3,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: ls -la && (test -f hd.toml && cat hd.toml); ls src tests 2>/dev/null; which hd && hd --version"
+    ],
+    "diagnostic_codes": {
+      "unknown-trait": 2
+    },
+    "failing_checks": 1,
+    "turns": 36,
+    "cost_usd": 0.027816799999999996,
+    "duration_s": 59,
+    "tokens": 1019348,
+    "final_message": "The `ratelimit` package is written and both `hd check --tests` and `hd test` pass (8 passed, 0 failed).\n\n**What's in place**\n\n- **`src/limiter.hd`**: `pub struct Limiter`, `pub fn new_limiter(max: usize, window: Duration) -> Limiter`, and `pub fn allow(&mut self, key: string) -> bool $ Clock`. `allow` reads the time from `now()`, so tests control it through a `ManualClock` provider. It keeps each key's timestamps in milliseconds, drops those with `now - t >= window`, and records the event only if fewer than `max` remain.\n- **`src/lib.hd`**: now re-exports `Limiter` and `new_limiter` from the module. I replaced the template's `greet` function because it was unrelated to the task.\n- **`tests/ratelimit.hd`**: an integration test of the public API through `pkg`. It replaces the template's greeting test.\n\n**Test coverage (in `src/limiter.hd`'s `tests:` block)**\n\n- Up to `max` events allowed per key, then refused.\n- A refused event is not recorded: a refusal at 5s does not keep the window full at 10s.\n- Events leave the window as it slides.\n- The window boundary is exclusive: an event exactly one window old no longer counts, and one 9999 ms old still does.\n- Keys are independent.\n- A max of 0 refuses everything.\n- A property test: a burst of calls at one instant allows exactly `min(max, calls)`.\n\n**Choices to review**\n\n- A refused event still rewrites the key's pruned list. Keys are never removed from the map, so memory grows with the number of distinct keys ever seen. Removing emp",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

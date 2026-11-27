@@ -1,0 +1,1073 @@
+[
+  {
+    "task": "01-colsum",
+    "package": "colsum",
+    "scenario": "CLI over standard input",
+    "selling_points": [
+      "derive Cli",
+      "@error",
+      "Result"
+    ],
+    "grade": {
+      "check": {
+        "ok": true,
+        "errors": 0,
+        "codes": []
+      },
+      "own_tests": {
+        "cases": 16,
+        "passed": 16,
+        "failed": []
+      },
+      "hidden": {
+        "expected": 5,
+        "passed": 5,
+        "failed": [],
+        "compile_errors": []
+      },
+      "runs": [
+        {
+          "args": [
+            "--skip-header"
+          ],
+          "ok": true,
+          "status": 0,
+          "stdout": "a,1\nb,7\n",
+          "stderr": ""
+        },
+        {
+          "args": [],
+          "ok": true,
+          "status": 1,
+          "stdout": "",
+          "stderr": "colsum: line 2: not a number: zz\n"
+        },
+        {
+          "args": [
+            "--key",
+            "2",
+            "--value",
+            "3"
+          ],
+          "ok": true,
+          "status": 0,
+          "stdout": "x,-2\ny,8\n",
+          "stderr": ""
+        },
+        {
+          "args": [],
+          "ok": true,
+          "status": 1,
+          "stdout": "",
+          "stderr": "colsum: line 1: missing column\n"
+        }
+      ],
+      "idiom": [
+        {
+          "id": "derive-cli",
+          "desc": "options parsed with @derive(Cli)",
+          "ok": false
+        },
+        {
+          "id": "error-enum",
+          "desc": "SumError declared with @error",
+          "ok": true
+        },
+        {
+          "id": "own-tests",
+          "desc": "writes at least 2 test cases of its own",
+          "ok": true
+        }
+      ],
+      "fmt_clean": true,
+      "pass": true,
+      "idiom_score": 0.6666666666666666
+    },
+    "metrics": {
+      "skill_invoked": true,
+      "pages_read": [
+        "language.md",
+        "scenarios/cli-tool.md",
+        "scenarios/text-records.md",
+        "reference/packages.md"
+      ],
+      "bash": 17,
+      "hd": {
+        "help": 4,
+        "new": 1,
+        "check": 8,
+        "test": 6,
+        "run": 8,
+        "fmt": 3,
+        "lint": 3
+      },
+      "denied": [
+        "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t3/01-colsum/colsum && rm tests/colsum.hd && rmdir tests && cat > hd.toml <<'EOF'\n[package]\nname = \"colsum\"\n\n[cap",
+        "Bash: sed -i '' -e '19,22s/let mut /let /' src/main.hd && sed -n 17,23p src/main.hd && hd fmt && hd lint && hd check --tests && hd test | tail -2"
+      ],
+      "diagnostic_codes": {
+        "unknown-trait": 5,
+        "missing-requirement": 1,
+        "missing-capability": 1
+      },
+      "failing_checks": 1,
+      "turns": 37,
+      "cost_usd": 0.03529635000000001,
+      "duration_s": 101,
+      "tokens": 1419454,
+      "final_message": "The `colsum` package is in the current directory. `hd check --tests` passes, `hd test` passes (16 tests), and `hd lint` is clean.\n\n**Files**\n- `hd.toml`: package `colsum`. Grants `Args`, `Console`, `ConsoleInput`, and `Process` under `[dev-capabilities]` for the integration test.\n- `src/sum.hd`: `pub enum SumError` (`@error`, `@derive(Eq, Debug)`) with `MissingColumn(line)` and `NotANumber(line, text)`, plus `pub fn summarize(...)` with the signature you specified. It has unit tests in a `tests:` block.\n- `src/main.hd`: `main!` reads stdin, parses options, and prints results. `parse_options` is pure and tested, and so is `main!` through scripted input and recorded output.\n- `tests/colsum.hd`: an integration test that runs the `colsum` executable on piped stdin.\n\n**Behaviour I checked by running the tool**\n- Totals print as `key,total`, sorted by key.\n- A bad value prints `colsum: line 2: not a number: x` to stderr and exits 1, with nothing on stdout.\n- A short line prints `colsum: line 1: missing column` and exits 1.\n- `--skip-header` and `--key`/`--value` work as specified.\n\n**Choices I made that you didn't specify**\n- A bad option (`--key 0`, `--key` with no number, an unknown flag) prints `colsum: ...` to stderr and exits 2, to keep it separate from data errors (exit 1).\n- Keys and values are trimmed. Blank or whitespace-only lines are skipped but still counted in line numbers.\n- Totals use `i64` addition, so a sum that overflows panics rather than returning an error.\n- `s",
+      "is_error": false
+    },
+    "agent_exit": 0
+  },
+  {
+    "task": "02-todos",
+    "package": "todos",
+    "scenario": "JSON in and out",
+    "selling_points": [
+      "derive Serialize/Deserialize",
+      "field defaults",
+      "property tests"
+    ],
+    "grade": {
+      "check": {
+        "ok": true,
+        "errors": 0,
+        "codes": []
+      },
+      "own_tests": {
+        "cases": 12,
+        "passed": 12,
+        "failed": []
+      },
+      "hidden": {
+        "expected": 5,
+        "passed": 5,
+        "failed": [],
+        "compile_errors": []
+      },
+      "runs": [],
+      "idiom": [
+        {
+          "id": "derive-serde",
+          "desc": "JSON through @derive(Serialize, Deserialize)",
+          "ok": true
+        },
+        {
+          "id": "field-default",
+          "desc": "done defaults with a field default",
+          "ok": true
+        },
+        {
+          "id": "prop-test",
+          "desc": "round trip checked with a property test",
+          "ok": true
+        },
+        {
+          "id": "own-tests",
+          "desc": "writes at least 2 test cases of its own",
+          "ok": true
+        }
+      ],
+      "fmt_clean": true,
+      "pass": true,
+      "idiom_score": 1
+    },
+    "metrics": {
+      "skill_invoked": true,
+      "pages_read": [
+        "language.md",
+        "reference/packages.md",
+        "design/testing.md",
+        "reference/std/README.md"
+      ],
+      "bash": 7,
+      "hd": {
+        "help": 1,
+        "new": 1,
+        "check": 3,
+        "test": 2,
+        "fmt": 1,
+        "lint": 1
+      },
+      "denied": [],
+      "diagnostic_codes": {
+        "type-mismatch": 2,
+        "local-reference-escapes": 1,
+        "unsatisfied-trait-bound": 9
+      },
+      "failing_checks": 1,
+      "turns": 20,
+      "cost_usd": 0.02200257,
+      "duration_s": 54,
+      "tokens": 699727,
+      "final_message": "The `todos` library is written and both `hd check --tests` and `hd test` pass (12 tests, 0 failures).\n\n- **`src/todos.hd`** holds the public API: `Todo`, `TodoError`, `load`, `dump`, `complete` and `pending`, plus the unit tests in a `tests:` block.\n- **`src/lib.hd`** re-exports those items. `hd new --lib` makes `src/lib.hd` the library root, so the public names are re-exported from `todos` there.\n- **`tests/todos.hd`** is an integration test that uses the public API through `pkg`.\n- **`hd.toml`** was created by `hd new --lib --vcs none .` in the current directory, so there is no git repository.\n\nDesign choices:\n- `load` uses `decode::[List[Todo]]` with derived `Deserialize`, and maps any decode error to `BadJson` with the JSON error text as the message. `done` has a default of `false`, so it can be absent.\n- `Todo` derives `Serialize`, `Deserialize`, `Arbitrary`, `Eq` and `Debug`. `dump` is `encode`, so `load` reads its output back unchanged. A property test checks this on generated todo lists.\n- `TodoError` has `@error` messages and derives `Eq` and `Debug`.\n- `complete` returns `UnknownId` when no todo has the id. If several todos share the id, all of them are marked done.\n\nThe tests cover a missing `done`, the empty array, and several invalid inputs (non-array, missing `id` or `title`, fractional or out-of-range `id`, non-bool `done`, `null` `done`, a numeric `title`, and malformed text). `hd fmt` reformatted the files, then `hd lint` reported nothing, and `hd check --tes",
+      "is_error": false
+    },
+    "agent_exit": 0
+  },
+  {
+    "task": "03-config",
+    "package": "config",
+    "scenario": "configuration from file and environment",
+    "selling_points": [
+      "derive Validate + field facts",
+      "env_decode",
+      "@from errors",
+      "fakes"
+    ],
+    "grade": {
+      "check": {
+        "ok": true,
+        "errors": 0,
+        "codes": []
+      },
+      "own_tests": {
+        "cases": 12,
+        "passed": 12,
+        "failed": []
+      },
+      "hidden": {
+        "expected": 11,
+        "passed": 11,
+        "failed": [],
+        "compile_errors": []
+      },
+      "runs": [],
+      "idiom": [
+        {
+          "id": "derive-validate",
+          "desc": "rules written as @derive(Validate) field facts",
+          "ok": true
+        },
+        {
+          "id": "field-facts",
+          "desc": "uses @range / @length facts",
+          "ok": true
+        },
+        {
+          "id": "from-errors",
+          "desc": "error variants convert with @from",
+          "ok": true
+        },
+        {
+          "id": "fake-fs-env",
+          "desc": "tests use MemoryFs and ScriptedEnv",
+          "ok": true
+        },
+        {
+          "id": "own-tests",
+          "desc": "writes at least 2 test cases of its own",
+          "ok": true
+        }
+      ],
+      "fmt_clean": true,
+      "pass": true,
+      "idiom_score": 1
+    },
+    "metrics": {
+      "skill_invoked": true,
+      "pages_read": [
+        "language.md",
+        "scenarios/configuration.md",
+        "reference/packages.md",
+        "design/capabilities.md"
+      ],
+      "bash": 8,
+      "hd": {
+        "help": 3,
+        "new": 1,
+        "check": 3,
+        "test": 3,
+        "fmt": 1,
+        "lint": 1
+      },
+      "denied": [
+        "Bash: hd help new; echo ---; S=.claude/skills/hd-lang; sed -n 1,200p $S/reference/packages.md; echo ---; sed -n 1,200p $S/design/capabilities.md"
+      ],
+      "diagnostic_codes": {},
+      "failing_checks": 0,
+      "turns": 17,
+      "cost_usd": 0.01862865,
+      "duration_s": 58,
+      "tokens": 457988,
+      "final_message": "The `config` library is in place in this directory. `hd check --tests` and `hd test` both pass (12 tests), and `hd lint` is clean.\n\n**Files**\n- `src/config.hd`: `Config`, `ConfigError`, and `load_config!`, with the tests in a `tests:` block at the end.\n- `src/lib.hd`: re-exports `Config`, `ConfigError` and `load_config` as the package's public interface.\n- `hd.toml`, generated by `hd new --lib`. It needs no capability grants because a library has no `main`.\n\n**Choices I made**\n- **Port override:** I read only `APP_PORT`, with `env_as::[i32]`. Reading the whole struct with `env_decode` would also pick up other `APP_*` variables, which the spec doesn't ask for.\n- **`Read` for missing files:** a missing file is a `Read` error, as the spec says. I did not follow the scenario page, which treats a missing file as \"use defaults\".\n- **Rules:** `host` uses `@length(1, 253)`, `port` uses `@range(1024, 65535)`, and `workers` uses `@range(1, 64)`, with `workers` defaulting to 4. The rules run after the override, so an overridden port is checked too.\n- **Tests:** they use the in-memory file system and `ScriptedEnv` fakes, and cover each error variant, the defaults, the override, and the boundaries for `workers` and host length. I did not add a `tests/` integration file, since the package has no program to run.\n- **`hd fmt`:** I ran it on `src/config.hd`, so the file is formatted.\n\nI did not commit anything.",
+      "is_error": false
+    },
+    "agent_exit": 0
+  },
+  {
+    "task": "04-ratelimit",
+    "package": "ratelimit",
+    "scenario": "time-dependent logic",
+    "selling_points": [
+      "Clock requirement",
+      "ManualClock fake"
+    ],
+    "grade": {
+      "check": {
+        "ok": true,
+        "errors": 0,
+        "codes": []
+      },
+      "own_tests": {
+        "cases": 8,
+        "passed": 8,
+        "failed": []
+      },
+      "hidden": {
+        "expected": 4,
+        "passed": 0,
+        "failed": [],
+        "compile_errors": [
+          "tests/zz_hidden_eval.hd:1: unknown-module: no module named `ratelimit.limiter`"
+        ]
+      },
+      "runs": [],
+      "idiom": [
+        {
+          "id": "manual-clock",
+          "desc": "tests control time with ManualClock",
+          "ok": true
+        },
+        {
+          "id": "own-tests",
+          "desc": "writes at least 2 test cases of its own",
+          "ok": true
+        }
+      ],
+      "fmt_clean": true,
+      "pass": false,
+      "idiom_score": 1
+    },
+    "metrics": {
+      "skill_invoked": true,
+      "pages_read": [
+        "language.md",
+        "design/effects.md",
+        "design/testing.md",
+        "scenarios/project-layout.md",
+        "reference/packages.md"
+      ],
+      "bash": 12,
+      "hd": {
+        "help": 3,
+        "new": 1,
+        "doc": 5,
+        "check": 3,
+        "test": 2,
+        "fmt": 1,
+        "lint": 1
+      },
+      "denied": [
+        "Bash: ls -la && find . -path ./.claude -prune -o -type f -print | head -50; S=.claude/skills/hd-lang; ls $S $S/reference/std | head -80; grep -n \"\" $S/reference/std/time.md 2>/dev/null | head -150",
+        "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t3/04-ratelimit/ratelimit/.claude/skills/hd-lang/reference/std && grep -n \"ManualClock\\|Duration\\.\" time.txt | cu"
+      ],
+      "diagnostic_codes": {
+        "unknown-trait": 2
+      },
+      "failing_checks": 1,
+      "turns": 26,
+      "cost_usd": 0.027144259999999996,
+      "duration_s": 55,
+      "tokens": 1013526,
+      "final_message": "The `ratelimit` package is in the current directory, and `hd check --tests`, `hd lint` and `hd test` all pass (8 tests, 0 failures).\n\n**What's there**\n- `src/lib.hd`: `Limiter` with private fields (`max`, `window`, and a per-key map of allowed event times in Unix milliseconds), `new_limiter`, and `allow(&mut self, key) -> bool $ Clock`. `allow` reads the time with `now()`, so tests control it through `ManualClock`.\n- `tests/ratelimit.hd`: an integration test that exercises the public API (`new_limiter`, `allow`), replacing the generated `greet` test that no longer applies.\n- The `tests:` block in `src/lib.hd` has six unit tests: the max-then-refuse limit, refused events not being recorded, the exact window boundary (an event at `now - t == window` no longer counts), key independence, `max = 0`, and sliding-window behaviour.\n\n**Choices I made where the spec was silent**\n- **Window of zero:** the new event sits at `now`, so it counts only when `window > 0`. With a zero window, `allow` always returns true and nothing is recorded. This follows the literal \"counts while now - t < window\" rule.\n- **Pruning:** `allow` drops events that have left the window. A key with no events left is removed from the map, so keys don't accumulate forever.\n- **Refused calls:** they still prune old events from that key, but nothing new is recorded.\n\n**Other notes**\n- I ran `hd fmt` on the sources, which reformatted `src/lib.hd` (whitespace and comment alignment only).\n- The directory is not a git re",
+      "is_error": false
+    },
+    "agent_exit": 0
+  },
+  {
+    "task": "05-users",
+    "package": "users",
+    "scenario": "service with a user-defined effect",
+    "selling_points": [
+      "own effect trait",
+      "$.use",
+      "$.with providers",
+      "fakes"
+    ],
+    "grade": {
+      "check": {
+        "ok": true,
+        "errors": 0,
+        "codes": []
+      },
+      "own_tests": {
+        "cases": 9,
+        "passed": 9,
+        "failed": []
+      },
+      "hidden": {
+        "expected": 3,
+        "passed": 3,
+        "failed": [],
+        "compile_errors": []
+      },
+      "runs": [
+        {
+          "args": [],
+          "ok": true,
+          "status": 0,
+          "stdout": "renamed 1 to Ada Lovelace\nerror: no user 2\n",
+          "stderr": ""
+        }
+      ],
+      "idiom": [
+        {
+          "id": "use-effect",
+          "desc": "logic reaches the store with $.use(UserStore)",
+          "ok": true
+        },
+        {
+          "id": "provide-in-main",
+          "desc": "main provides a store with $.with",
+          "ok": true
+        },
+        {
+          "id": "fake-store",
+          "desc": "tests define their own UserStore fake",
+          "ok": true
+        },
+        {
+          "id": "error-enum",
+          "desc": "UserError declared with @error",
+          "ok": true
+        },
+        {
+          "id": "own-tests",
+          "desc": "writes at least 2 test cases of its own",
+          "ok": true
+        }
+      ],
+      "fmt_clean": true,
+      "pass": true,
+      "idiom_score": 1
+    },
+    "metrics": {
+      "skill_invoked": true,
+      "pages_read": [],
+      "bash": 10,
+      "hd": {
+        "check": 4,
+        "test": 3,
+        "run": 2,
+        "new": 3,
+        "fmt": 1,
+        "lint": 1
+      },
+      "denied": [
+        "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t3/05-users/users && hd new \"$PWD\" --app --vcs none 2>&1; echo \"exit $?\"; find . -path ./.claude -prune -o -type ",
+        "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t3/05-users/users && hd new . --app --vcs none; echo exit $?; find . -path ./.claude -prune -o -type f -print"
+      ],
+      "diagnostic_codes": {
+        "missing-requirement": 1,
+        "syntax-error": 2,
+        "unknown-type": 1
+      },
+      "failing_checks": 2,
+      "turns": 20,
+      "cost_usd": 0.01893248,
+      "duration_s": 57,
+      "tokens": 505631,
+      "final_message": "The `users` package is in the current directory. `hd check --tests` and `hd test` both pass (9 tests), and `hd run` prints the two required lines.\n\n`hd new` was denied by the permission system, so I wrote `hd.toml` and the source files by hand. The manifest is an app with `Console = true`. I ran `hd fmt` afterward, which reformatted a few lines; `hd check --tests` and `hd test` still pass after that.\n\n- **`src/users.hd`**: `User` and `UserError` derive `Eq` and `Debug`. `UserError` also carries `@error` messages (`no user $id`, `name is empty`). `UserStore` is the trait, and `rename!` takes it as a requirement (`$ UserStore`).\n- **`src/main.hd`**: an in-memory `MemoryStore` backed by a map, provided with `$.with`. It prints the two lines from the spec.\n- **Tests** (in `src/users.hd`): a fake store that counts `put!` calls. They cover a successful rename that stores once, trimming, blank names (a table with `it_each`) returning `EmptyName` with nothing stored, a missing user returning `NotFound` with nothing stored, and a property test that the stored name is always the trimmed one.\n\nDecisions you may want to change:\n- The name check runs before the user lookup, so a blank name for a missing user returns `EmptyName`. The spec didn't say which error wins.\n- The name is trimmed before storing, so `\"  Grace  \"` is stored as `\"Grace\"`.",
+      "is_error": false
+    },
+    "agent_exit": 0
+  },
+  {
+    "task": "06-quotes",
+    "package": "quotes",
+    "scenario": "concurrent calls with retries",
+    "selling_points": [
+      "map_join! / join!",
+      "retry policy",
+      "own effect",
+      "ManualClock"
+    ],
+    "grade": {
+      "check": {
+        "ok": true,
+        "errors": 0,
+        "codes": []
+      },
+      "own_tests": {
+        "cases": 7,
+        "passed": 7,
+        "failed": []
+      },
+      "hidden": {
+        "expected": 4,
+        "passed": 4,
+        "failed": [],
+        "compile_errors": []
+      },
+      "runs": [],
+      "idiom": [
+        {
+          "id": "bounded-concurrency",
+          "desc": "concurrency through map_join (limit 4)",
+          "ok": true
+        },
+        {
+          "id": "retry-policy",
+          "desc": "retries through std.task retry/Backoff",
+          "ok": true
+        },
+        {
+          "id": "fake-quotes",
+          "desc": "tests define their own Quotes fake",
+          "ok": true
+        },
+        {
+          "id": "manual-clock",
+          "desc": "tests use ManualClock",
+          "ok": true
+        },
+        {
+          "id": "own-tests",
+          "desc": "writes at least 2 test cases of its own",
+          "ok": true
+        }
+      ],
+      "fmt_clean": true,
+      "pass": true,
+      "idiom_score": 1
+    },
+    "metrics": {
+      "skill_invoked": true,
+      "pages_read": [],
+      "bash": 12,
+      "hd": {
+        "help": 2,
+        "new": 1,
+        "file": 1,
+        "check": 4,
+        "test": 4,
+        "fmt": 1,
+        "lint": 1
+      },
+      "denied": [
+        "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t3/06-quotes/quotes && which hd && hd --version; hd help new; S=.claude/skills/hd-lang; grep -n \"map_join\\|Manual",
+        "Bash: grep -n \"^tests:\" src/quotes.hd && head -n $(( $(grep -n \"^tests:\" src/quotes.hd | cut -d: -f1) - 1 )) src/quotes.hd > /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/spl"
+      ],
+      "diagnostic_codes": {
+        "missing-let": 2,
+        "syntax-error": 2,
+        "unknown-trait": 2,
+        "unknown-name": 2,
+        "missing-requirement": 2,
+        "missing-contextual-enum-type": 12,
+        "not-writable": 2
+      },
+      "failing_checks": 2,
+      "turns": 21,
+      "cost_usd": 0.02489991,
+      "duration_s": 66,
+      "tokens": 857052,
+      "final_message": "The `quotes` package is written and passes both `hd check --tests` and `hd test` (7 tests, all passing). `hd fmt` and `hd lint` are clean.\n\n**Files**\n- `src/quotes.hd`: `QuoteError` (`@error`, `@derive(Eq, Debug)`), the `Quotes` trait, `order_total!`, and the `tests:` block.\n- `src/lib.hd`: re-exports `QuoteError`, `Quotes` and `order_total` as the package's public interface. `hd new` generated this file, and I replaced its sample `greet` function.\n- `tests/quotes.hd`: one integration test that calls the public API through a small fake.\n- `hd.toml`: unchanged from `hd new --lib`.\n\n**Implementation choices**\n- Each sku is wrapped in `retry(Backoff { attempts: 3, initial: 10ms, factor: 1 })`. `factor: 1` keeps the wait at a constant 10 ms; the default factor of 2 would give 10 ms, then 20 ms.\n- `map_join!(skus, 4, ...)` runs the quotes with at most 4 in flight. Its results come back in list order.\n- The total is summed with `result?` over those results, so the first failing sku in list order is the error. An empty list gives `.Ok(0)`.\n\n**Not covered**\n- The \"at most 4 in flight\" limit is not tested. The `quote!` signature in the spec has no `Clock` in its row, so a fake cannot sleep to make overlapping calls visible. The limit comes from `map_join!`, not from a test.\n- The 10 ms spacing between attempts is also untested. The retry tests check call counts (3 calls on success and on give-up), not elapsed clock time.\n\n**Permissions**\nTwo shell commands were denied because they nee",
+      "is_error": false
+    },
+    "agent_exit": 0
+  },
+  {
+    "task": "07-sandbox",
+    "package": "linecount",
+    "scenario": "sandboxed program",
+    "selling_points": [
+      "scoped capability grants",
+      "minimal capabilities"
+    ],
+    "grade": {
+      "check": {
+        "ok": true,
+        "errors": 0,
+        "codes": []
+      },
+      "own_tests": {
+        "cases": 11,
+        "passed": 11,
+        "failed": []
+      },
+      "hidden": {},
+      "runs": [
+        {
+          "args": [
+            "data/a.txt",
+            "data/b.txt"
+          ],
+          "ok": true,
+          "status": 0,
+          "stdout": "3 data/a.txt\n1 data/b.txt\n4 total\n",
+          "stderr": ""
+        },
+        {
+          "args": [
+            "data/a.txt",
+            "hd.toml"
+          ],
+          "ok": true,
+          "status": 1,
+          "stdout": "3 data/a.txt\n3 total\n",
+          "stderr": "linecount: hd.toml: access to hd.toml is not granted\n"
+        },
+        {
+          "args": [
+            "data/nope.txt"
+          ],
+          "ok": true,
+          "status": 1,
+          "stdout": "0 total\n",
+          "stderr": "linecount: data/nope.txt: not found: data/nope.txt\n"
+        }
+      ],
+      "idiom": [
+        {
+          "id": "minimal-caps",
+          "desc": "[capabilities] grants only Console, Args and FsRead",
+          "ok": true
+        },
+        {
+          "id": "scoped-fsread",
+          "desc": "FsRead scoped to data/",
+          "ok": true
+        }
+      ],
+      "fmt_clean": true,
+      "pass": true,
+      "idiom_score": 1
+    },
+    "metrics": {
+      "skill_invoked": true,
+      "pages_read": [
+        "language.md",
+        "scenarios/cli-tool.md",
+        "design/capabilities.md",
+        "design/testing.md",
+        "reference/packages.md",
+        "scenarios/files-and-directories.md"
+      ],
+      "bash": 7,
+      "hd": {
+        "help": 4,
+        "new": 1,
+        "check": 2,
+        "test": 2,
+        "run": 3,
+        "fmt": 2,
+        "lint": 1
+      },
+      "denied": [
+        "Bash: hd help new; echo ---; hd help run; echo ---; hd help test | head -30; echo ---; S=.claude/skills/hd-lang/reference/std; cat $S/fs.txt | head -150; echo ---; cat $S/cli.txt | head -60"
+      ],
+      "diagnostic_codes": {
+        "trait-used-as-type": 1,
+        "missing-capability": 1
+      },
+      "failing_checks": 0,
+      "turns": 24,
+      "cost_usd": 0.02795425,
+      "duration_s": 80,
+      "tokens": 756576,
+      "final_message": "The `linecount` package is in the current directory. `hd check --tests` and `hd test` both pass (11 tests), and `hd fmt --check` and `hd lint` are clean.\n\n**Behavior, checked by running it:**\n- `hd run -- data/three.txt` prints `3 data/three.txt`, then `3 total`, and exits 0.\n- Given `data/three.txt /etc/hosts ../hd.toml nope.txt`, it prints the good file and then `linecount: <file>: <reason>` on stderr for each refused file. It still prints the total and exits 1.\n- With no arguments it prints `0 total` and exits 0.\n\n**Files:**\n- `src/main.hd`: `count_lines` counts newline bytes and adds one for an unterminated last line. `report!` processes files in order, reports failures on stderr, skips them, and returns `ExitCode(1)` if any failed. The tests cover the counting rules, ordering, skipped files, and the no-argument case.\n- `hd.toml`: `Console`, `Args`, and `FsRead = [\"data/\"]` are granted. `FsWrite`, `Env`, `Http`, `Net`, `Sys`, `Clock`, `Random`, `ConsoleInput`, `Signals` and `Workers` are set to `false`. `[dev-capabilities]` has `Process = true` so the integration tests can run the built program.\n- `tests/linecount.hd`: integration tests run the real binary. One checks that out-of-scope paths (`../hd.toml`, `data/../hd.toml`) are refused and reported, and that the status is 1.\n- `data/three.txt`: a sample file for the integration tests.\n\n**Choices to review:**\n- `Process` is not set to `false` in `[capabilities]`. A `false` in either table denies it, so that would have blo",
+      "is_error": false
+    },
+    "agent_exit": 0
+  },
+  {
+    "task": "08-derive-template",
+    "package": "fields",
+    "scenario": "custom derive",
+    "selling_points": [
+      "derive template by Structure",
+      "Walker"
+    ],
+    "grade": {
+      "check": {
+        "ok": true,
+        "errors": 0,
+        "codes": []
+      },
+      "own_tests": {
+        "cases": 4,
+        "passed": 4,
+        "failed": []
+      },
+      "hidden": {
+        "expected": 2,
+        "passed": 2,
+        "failed": [],
+        "compile_errors": []
+      },
+      "runs": [],
+      "idiom": [
+        {
+          "id": "template",
+          "desc": "a derive template: impl[T] FieldNames for T by Structure",
+          "ok": true
+        },
+        {
+          "id": "walker",
+          "desc": "walks members with a Walker",
+          "ok": true
+        },
+        {
+          "id": "own-tests",
+          "desc": "writes at least 2 test cases of its own",
+          "ok": true
+        }
+      ],
+      "fmt_clean": true,
+      "pass": true,
+      "idiom_score": 1
+    },
+    "metrics": {
+      "skill_invoked": true,
+      "pages_read": [
+        "language.md",
+        "design/derive.md"
+      ],
+      "bash": 13,
+      "hd": {
+        "help": 1,
+        "doc": 1,
+        "new": 1,
+        "check": 7,
+        "test": 2,
+        "fmt": 1,
+        "lint": 1
+      },
+      "denied": [
+        "Bash: cat > src/fields.hd <<'EOF'\nuse std.meta.{Field, Structure, Variant, Walker}\n\n## The names of a struct's fields, in declaration order.\npub trait FieldNames:\n    fn field_names(self) -> List[stri",
+        "Write: /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-scratch-probe/probe.hd",
+        "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-scratch-probe && hd check --tests probe.hd 2>&1 | head -30"
+      ],
+      "diagnostic_codes": {
+        "decorator-not-top-level": 3,
+        "syntax-error": 1,
+        "unknown-method": 3,
+        "marker-template": 1,
+        "unknown-trait": 1,
+        "unsatisfied-trait-bound": 1
+      },
+      "failing_checks": 3,
+      "turns": 25,
+      "cost_usd": 0.023170990000000002,
+      "duration_s": 69,
+      "tokens": 701457,
+      "final_message": "The `fields` package is in place, and `hd check --tests` and `hd test` both pass (4 tests). `@derive(FieldNames)` works on any struct, in any module, and returns field names in declaration order.\n\n**Files**\n- `src/fields.hd` declares `pub trait FieldNames` and a derive template, `impl[T] FieldNames for T by Structure`. The template walks the struct's fields and collects their names, so users never write a per-struct impl. It also holds unit tests for a plain struct, an empty struct, and a generic struct.\n- `src/lib.hd` re-exports the trait (`pub use self.fields.{FieldNames}`), so users can write `use pkg.{FieldNames}`. I replaced the `hd new` sample `greet` function with this.\n- `tests/fields.hd` is an integration test that derives `FieldNames` in a separate test module.\n- `hd.toml` is the library manifest that `hd new --lib` created.\n\n**Choices and limits**\n- Deriving on a generic struct adds a `FieldNames` bound on each type parameter. `Pair[usize, bool]` failed with `unknown-method`, so the generic test instantiates `Pair` with types that derive `FieldNames`. This is inferred from the failure, not from documentation.\n- Enums are not covered. I did not test `@derive(FieldNames)` on an enum, so its output is unknown.\n- The package is not a git repository (`--vcs none`), so I made no commit.\n- Shell commands writing files outside the package were denied in this session. I wrote the files with the Write tool, and I ran `hd fmt`, which reformatted the test files.",
+      "is_error": false
+    },
+    "agent_exit": 0
+  },
+  {
+    "task": "09-contracts",
+    "package": "bank",
+    "scenario": "invariants",
+    "selling_points": [
+      "require",
+      "ensure"
+    ],
+    "grade": {
+      "check": {
+        "ok": true,
+        "errors": 0,
+        "codes": []
+      },
+      "own_tests": {
+        "cases": 15,
+        "passed": 15,
+        "failed": []
+      },
+      "hidden": {
+        "expected": 6,
+        "passed": 6,
+        "failed": [],
+        "compile_errors": []
+      },
+      "runs": [],
+      "idiom": [
+        {
+          "id": "require",
+          "desc": "preconditions with require",
+          "ok": true
+        },
+        {
+          "id": "ensure",
+          "desc": "postconditions with ensure",
+          "ok": true
+        },
+        {
+          "id": "no-raw-panic",
+          "desc": "no hand-written panic( for checks",
+          "ok": true
+        },
+        {
+          "id": "own-tests",
+          "desc": "writes at least 2 test cases of its own",
+          "ok": true
+        }
+      ],
+      "fmt_clean": true,
+      "pass": true,
+      "idiom_score": 1
+    },
+    "metrics": {
+      "skill_invoked": true,
+      "pages_read": [
+        "language.md",
+        "design/contracts.md",
+        "design/testing.md",
+        "reference/packages.md"
+      ],
+      "bash": 6,
+      "hd": {
+        "new": 1,
+        "file": 1,
+        "check": 2,
+        "test": 2,
+        "fmt": 1,
+        "lint": 1
+      },
+      "denied": [
+        "Bash: d=$(mktemp -d) && cd \"$d\" && hd new bank --lib && cd bank && find . -type f | sort && for f in hd.toml src/lib.hd tests/bank.hd; do echo \"== $f\"; cat \"$f\"; done; echo \"$d\""
+      ],
+      "diagnostic_codes": {},
+      "failing_checks": 0,
+      "turns": 17,
+      "cost_usd": 0.01746549,
+      "duration_s": 45,
+      "tokens": 435938,
+      "final_message": "The `bank` package is in the current directory. `hd check --tests`, `hd test` (15 passed, 0 failed), `hd fmt` and `hd lint` all pass.\n\n**Files**\n- `src/account.hd`: the `Account` struct, `open`, `transfer`, and the `balance`, `deposit` and `withdraw` methods, plus the tests in a `tests:` block.\n- `src/lib.hd`: re-exports `Account`, `open` and `transfer` as the package interface.\n- `hd.toml`: package manifest, `name = \"bank\"`.\n\n**Checks**\n- Preconditions use `require`: a non-negative opening balance, a positive deposit, a positive withdrawal, a withdrawal no larger than the balance, and a positive transfer no larger than the source balance. These panic in debug and test builds and are skipped in release.\n- Postconditions use `ensure`: the balance changes by exactly the amount, the balance is never negative, and a transfer keeps the total.\n- Tests cover the normal paths and each rejected call with `expect_panic=\"explicit-panic\"`. A property test runs random transfers and checks that the total is kept and no account overdraws.\n\n**Choices to check**\n- **Release cost of `ensure`:** `ensure` is checked in every build, including release, so the postcondition lines cost something there. Only the `require` checks are free in release. If you want the postconditions gone from release too, I can remove them and keep the invariants as comments.\n- **Transfer amount:** I made a non-positive transfer a programming error, the same as a non-positive deposit or withdrawal. The spec only named t",
+      "is_error": false
+    },
+    "agent_exit": 0
+  },
+  {
+    "task": "10-rle",
+    "package": "rle",
+    "scenario": "algorithm with properties",
+    "selling_points": [
+      "it_prop",
+      "derive Eq/Debug"
+    ],
+    "grade": {
+      "check": {
+        "ok": true,
+        "errors": 0,
+        "codes": []
+      },
+      "own_tests": {
+        "cases": 16,
+        "passed": 16,
+        "failed": []
+      },
+      "hidden": {
+        "expected": 5,
+        "passed": 5,
+        "failed": [],
+        "compile_errors": []
+      },
+      "runs": [],
+      "idiom": [
+        {
+          "id": "prop-test",
+          "desc": "a property test (it_prop)",
+          "ok": true
+        },
+        {
+          "id": "own-tests",
+          "desc": "writes at least 2 test cases of its own",
+          "ok": true
+        }
+      ],
+      "fmt_clean": true,
+      "pass": true,
+      "idiom_score": 1
+    },
+    "metrics": {
+      "skill_invoked": true,
+      "pages_read": [],
+      "bash": 10,
+      "hd": {
+        "help": 1,
+        "test": 5,
+        "new": 1,
+        "file": 1,
+        "check": 4,
+        "fmt": 2,
+        "lint": 2
+      },
+      "denied": [
+        "Bash: hd fmt && hd lint 2>&1 | tail -20; hd check --tests && hd test 2>&1 | tail -3; D=$(mktemp -d) && cp -R hd.toml src tests \"$D\"/ && sed -i '' 's/for _ in 0..run.count:/for _ in 0..(run.count - (if"
+      ],
+      "diagnostic_codes": {
+        "misplaced-tests-block": 1
+      },
+      "failing_checks": 1,
+      "turns": 17,
+      "cost_usd": 0.018843119999999998,
+      "duration_s": 60,
+      "tokens": 569107,
+      "final_message": "The `rle` package is in place. `hd check --tests` passes, and `hd test` runs 16 cases, all passing. `hd lint` gave no advice.\n\nFiles:\n- **`src/rle.hd`**: `pub struct Run` (public `value: i32` and `count: usize`, derives `Eq` and `Debug`), `pub fn encode`, and `pub fn decode`. `encode` builds maximal runs. `decode` expands them back.\n- **`src/lib.hd`**: re-exports `Run`, `encode` and `decode`, so callers can write `use pkg.{encode, decode, Run}`. Without this, the API would only be reachable as `pkg.rle`.\n- **`tests/rle.hd`**: one integration test that round-trips a list through the public API.\n\nTests live in the `tests:` block of `src/rle.hd`:\n- **Examples**: `it_each` tables for `encode` and `decode`, plus a 1000-element run, and `i32` extremes.\n- **Property tests**: `decode(encode(xs)) == xs` on arbitrary lists and on run-heavy lists. Also `encode(decode(runs)) == runs` on canonical run lists, and a check that `encode` output has no empty runs, no equal neighbours, and counts that sum to the input length.\n\nTwo things I did not verify:\n- I tried a mutation check (planting a bug in a scratch copy to confirm the properties catch it). That command was denied, so I have not shown that the property tests fail on broken code.\n- The package is not under git, so nothing is committed.",
+      "is_error": false
+    },
+    "agent_exit": 0
+  },
+  {
+    "task": "11-calc",
+    "package": "calc",
+    "scenario": "parser and interpreter",
+    "selling_points": [
+      "recursive enums",
+      "box",
+      "@error",
+      "match"
+    ],
+    "grade": {
+      "check": {
+        "ok": true,
+        "errors": 0,
+        "codes": []
+      },
+      "own_tests": {
+        "cases": 31,
+        "passed": 31,
+        "failed": []
+      },
+      "hidden": {
+        "expected": 20,
+        "passed": 20,
+        "failed": [],
+        "compile_errors": []
+      },
+      "runs": [],
+      "idiom": [
+        {
+          "id": "tree-enum",
+          "desc": "a recursive enum for the syntax tree (boxed children)",
+          "ok": true
+        },
+        {
+          "id": "error-enum",
+          "desc": "CalcError declared with @error",
+          "ok": true
+        },
+        {
+          "id": "table-test",
+          "desc": "table tests with it_each",
+          "ok": true
+        },
+        {
+          "id": "own-tests",
+          "desc": "writes at least 2 test cases of its own",
+          "ok": true
+        }
+      ],
+      "fmt_clean": true,
+      "pass": true,
+      "idiom_score": 1
+    },
+    "metrics": {
+      "skill_invoked": true,
+      "pages_read": [
+        "language.md",
+        "scenarios/parser.md",
+        "design/testing.md",
+        "reference/packages.md"
+      ],
+      "bash": 7,
+      "hd": {
+        "help": 1,
+        "new": 1,
+        "check": 3,
+        "test": 3,
+        "fmt": 1,
+        "lint": 2
+      },
+      "denied": [],
+      "diagnostic_codes": {},
+      "failing_checks": 0,
+      "turns": 17,
+      "cost_usd": 0.028733350000000005,
+      "duration_s": 107,
+      "tokens": 533538,
+      "final_message": "The `calc` library is in place. `hd check --tests`, `hd test` (31 passed), and `hd lint` are all clean.\n\n**Files**\n- `src/calc.hd` holds the evaluator and its `tests:` block.\n- `src/lib.hd` re-exports `CalcError` and `eval`. hd reads a library's public interface from `src/lib.hd`, so `calc.hd` can't be the root on its own.\n- `hd.toml` is the scaffold's manifest, unchanged.\n\n**Design**\n- Lexing produces a token list ending in an `End` token at `src.len()`. Unknown bytes become `Bad` tokens, so the parser reports them only when the grammar reaches them. That is what makes `\"1 $ 2\"` give `Unexpected(2)` and not an earlier error.\n- The parser is recursive descent with one method per precedence level: `expr` (`+ -`), `term` (`* /`), `unary` (`-`), `primary` (integer or parenthesised expression). All levels are left-associative.\n- The syntax tree is `Expr` with `Num`, `Neg` and `Bin(op, *Expr, *Expr)`. `eval` parses, then `evaluate` walks the tree. `DivideByZero` is raised only when the right operand is zero.\n\n**Tests (31)**\n- Value table covering precedence, associativity, truncation toward zero, unary minus, and spaces.\n- Error table with exact offsets, including all four examples from the spec.\n- Divide-by-zero cases.\n- Two property tests comparing `eval` with integer arithmetic on generated `i32` pairs.\n\n**Choices you may want to change**\n- An integer literal that doesn't fit in `i64` is reported as `Unexpected` at its first digit. This also rejects `-9223372036854775808`, whic",
+      "is_error": false
+    },
+    "agent_exit": 0
+  },
+  {
+    "task": "12-lru",
+    "package": "lru",
+    "scenario": "stateful data structure",
+    "selling_points": [
+      "model-based property test",
+      "commands"
+    ],
+    "grade": {
+      "check": {
+        "ok": true,
+        "errors": 0,
+        "codes": []
+      },
+      "own_tests": {
+        "cases": 12,
+        "passed": 12,
+        "failed": []
+      },
+      "hidden": {
+        "expected": 5,
+        "passed": 5,
+        "failed": [],
+        "compile_errors": []
+      },
+      "runs": [],
+      "idiom": [
+        {
+          "id": "model-test",
+          "desc": "a generated-operations test (it_prop / it_prop_with / commands)",
+          "ok": true
+        },
+        {
+          "id": "own-tests",
+          "desc": "writes at least 2 test cases of its own",
+          "ok": true
+        }
+      ],
+      "fmt_clean": true,
+      "pass": true,
+      "idiom_score": 1
+    },
+    "metrics": {
+      "skill_invoked": true,
+      "pages_read": [
+        "design/testing.md",
+        "reference/packages.md"
+      ],
+      "bash": 18,
+      "hd": {
+        "help": 2,
+        "new": 2,
+        "check": 5,
+        "test": 5,
+        "fmt": 4,
+        "lint": 2
+      },
+      "denied": [
+        "Bash: S=.claude/skills/hd-lang; sed -n 400,600p /Users/hd/.claude/projects/-private-var-folders-qt--jh-5zt97cd748zcbynvz1v40000gn-T-hd-skill-evals-split-t3-12-lru-lru/192c5986-6fb0-4358-94de-2ed996b77",
+        "Bash: hd new --lib --vcs none . ; echo EXIT $?; find . -path ./.claude -prune -o -type f -print; cat hd.toml; cat src/lib.hd; cat tests/*.hd 2>/dev/null"
+      ],
+      "diagnostic_codes": {
+        "not-writable": 1
+      },
+      "failing_checks": 1,
+      "turns": 31,
+      "cost_usd": 0.033500520000000006,
+      "duration_s": 106,
+      "tokens": 1195380,
+      "final_message": "The `lru` package is in the current directory and both `hd check --tests` and `hd test` pass (12 tests). `hd lint` is clean.\n\n- **Implementation:** `src/lru.hd` holds `Lru`, `new_lru`, `get`, `put`, and `len` with the signatures you gave. It uses a hash map from key to slot plus a doubly linked list in recency order, so `get` and `put` are O(1). A full cache reuses the evicted slot, so storage never grows past capacity. A miss in `get` changes nothing. Capacity 0 stores nothing.\n- **Package root:** `hd new --lib` made `src/lib.hd` with a sample `greet` function. I replaced it with `pub use self.lru.{Lru, new_lru}` so the package exposes the cache, and removed the sample `tests/lru.hd`.\n- **Example tests (10):** an empty cache, put then get, update of an existing key, eviction of the least recent key, a get hit saving a key from eviction, a put-update counting as use, a miss leaving order unchanged, capacity 1, capacity 0, and a longer eviction sequence.\n- **Model tests (2):** `it_prop_with` generates a capacity from 0 to 4 and up to 40 get/put commands over five keys. A plain model (an ordered list of pairs, most recent first) is run alongside. Every `get` result and the length are compared after each step, then all five keys are checked at the end. A second property checks that the length never exceeds capacity.\n- **Mutation check:** I removed the recency update from `get` for one run. Three tests failed, including the model test, which shrank to a four-step history. I then ",
+      "is_error": false
+    },
+    "agent_exit": 0
+  }
+]

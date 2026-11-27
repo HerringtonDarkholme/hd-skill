@@ -1,0 +1,9 @@
+use pkg.{load, complete, pending, dump}
+use std.testing.assert_equal
+
+it("finishes a todo loaded from JSON and saves the list"):
+    todos := load("[{\"id\": 1, \"title\": \"milk\"}, {\"id\": 2, \"title\": \"eggs\"}]")
+        .expect("valid JSON")
+    done := complete(todos, 1).expect("id 1 exists")
+    assert_equal(pending(done), ["eggs"], reason="only eggs is left")
+    assert_equal(load(dump(done)), .Ok(done), reason="the saved list loads back")

@@ -1,0 +1,76 @@
+{
+  "task": "12-lru",
+  "package": "lru",
+  "scenario": "stateful data structure",
+  "selling_points": [
+    "model-based property test",
+    "commands"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 12,
+      "passed": 12,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "model-test",
+        "desc": "a generated-operations test (it_prop / it_prop_with / commands)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/testing.md"
+    ],
+    "bash": 15,
+    "hd": {
+      "help": 2,
+      "new": 3,
+      "doc": 4,
+      "file": 1,
+      "check": 3,
+      "test": 3,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: n=$(grep -n \"# The model: the entries\" src/lru.hd | cut -d: -f1) && head -n $((n-1)) src/lru.hd > /tmp/lru_head.hd && cat > /tmp/lru_tail.hd <<'EOF'\n    # The model: the entries as a list ordere",
+      "Bash: rm -rf /tmp/lru_mut && cp -R /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/split-t2/12-lru/lru /tmp/lru_mut && cd /tmp/lru_mut && sed -i '' 's/self.touch(slot)$/pass/' "
+    ],
+    "diagnostic_codes": {
+      "not-writable": 1
+    },
+    "failing_checks": 1,
+    "turns": 28,
+    "cost_usd": 0.030415770000000005,
+    "duration_s": 88,
+    "tokens": 1166330,
+    "final_message": "The `lru` package is in place. `hd check --tests` and `hd test` both pass (12 passed, 0 failed), and `hd fmt` and `hd lint` ran clean.\n\n**Layout**\n- `src/lru.hd` holds the cache. It has `Lru`, `new_lru`, `get`, `put` and `len` as specified.\n- `src/lib.hd` re-exports `Lru` and `new_lru` so `use pkg.{Lru, new_lru}` works from outside. I replaced the `greet` sample.\n- `tests/lru.hd` is a small integration test that uses the package root.\n\n**Design choices**\n- The recency order is a doubly linked list over a fixed pool of at most `capacity` nodes. A `Map[string, i64]` maps each key to its node slot. Links are `i64` with `-1` as \"none\", because hd has no pointers.\n- When the cache is full, a new key reuses the tail node's slot. So there is no free list, and the pool never grows past `capacity`.\n- Capacity 0 stores nothing: `put` is a no-op.\n- A missed `get` changes nothing. A hit or an update moves the key to the front.\n\n**Tests**\n- Ten example cases cover basic get/put, update in place, eviction order, recency from hits and from updates, a missed get leaving state alone, capacity 0 and 1, and a longer run.\n- One property test, `it_prop_with`, generates random sequences of up to 40 `put`/`get` operations over five keys with capacity 3. It checks every `get` result and the length against a plain list model that is ordered by recency.\n\n**Not done**\n- I wanted to confirm the property test catches a real bug by breaking `get` on a scratch copy. That command was denied because it neede",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

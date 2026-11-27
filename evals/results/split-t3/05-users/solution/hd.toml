@@ -1,0 +1,5 @@
+[package]
+name = "users"
+
+[capabilities]
+Console = true

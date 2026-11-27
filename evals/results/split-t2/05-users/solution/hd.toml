@@ -1,0 +1,8 @@
+[package]
+name = "users"
+
+[capabilities]          # what the program's `main` may use
+Console = true
+
+[dev-capabilities]      # extra grants for tests and tasks only
+Process = true

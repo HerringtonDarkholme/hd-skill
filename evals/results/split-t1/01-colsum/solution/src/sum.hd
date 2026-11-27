@@ -1,0 +1,93 @@
+## A problem found while summing: the line it is on, and what is wrong.
+@error
+@derive(Eq, Debug)
+pub enum SumError:
+    @error("line $line: missing column")
+    MissingColumn(line: usize)
+    @error("line $line: not a number: $text")
+    NotANumber(line: usize, text: string)
+
+## One cell of a line, trimmed. Column 0 does not exist, so it is missing too.
+fn cell(cells: List[string], column: usize, line: usize) -> Result[string, SumError]:
+    if column == 0:
+        return .Err(SumError.MissingColumn(line))
+    match cells.get(column - 1):
+        .Some(text) => .Ok(text.trim())
+        .None => .Err(SumError.MissingColumn(line))
+
+## Sums the `value` column of each CSV line, grouped by the `key` column.
+## Columns are 1-based. Returns one (key, total) pair per key, sorted by key.
+pub fn summarize(
+    text: string,
+    key: usize,
+    value: usize,
+    skip_header: bool,
+) -> Result[List[(string, i64)], SumError]:
+    let mut totals: Map[string, i64] = {}
+    let number: usize = 0
+    for raw in text.lines():
+        number += 1
+        if skip_header && number == 1:
+            continue
+        if raw.trim() == "":
+            continue
+        cells := raw.split(",")
+        name := cell(cells, key, number)?
+        amount_text := cell(cells, value, number)?
+        amount := match amount_text.parse::[i64]():
+            .Ok(n) => n
+            .Err(_) => return .Err(SumError.NotANumber(number, amount_text))
+        totals[name] = totals.get(name).unwrap_or(0) + amount
+    let mut names: List[string] = []
+    for (name, _) in totals.entries():
+        names.push(name)
+    names.sort()
+    let mut out: List[(string, i64)] = []
+    for name in names:
+        out.push((name, totals[name]))
+    .Ok(out)
+
+tests:
+    it("groups by the first column and sums the second"):
+        assert_equal(
+            summarize("tea,3\ncake,1\ntea,4\n", 1, 2, false),
+            .Ok([("cake", 1), ("tea", 7)]),
+        )
+
+    it("sorts the keys and keeps the signs of values"):
+        assert_equal(summarize("b,-2\na,5\nb,1\n", 1, 2, false), .Ok([("a", 5), ("b", -1)]))
+
+    it("honors the column numbers"):
+        assert_equal(
+            summarize("x,10,jam\ny,20,jam\nx,5,tea\n", 3, 2, false),
+            .Ok([("jam", 30), ("tea", 5)]),
+        )
+
+    it("skips the first line when asked"):
+        assert_equal(summarize("name,amount\ntea,2\n", 1, 2, true), .Ok([("tea", 2)]))
+        assert_equal(
+            summarize("name,amount\ntea,2\n", 1, 2, false),
+            .Err(SumError.NotANumber(1, "amount")),
+        )
+
+    it("ignores blank lines but counts them as lines"):
+        assert_equal(summarize("tea,1\n\n   \ntea,2\n", 1, 2, false), .Ok([("tea", 3)]))
+        assert_equal(summarize("tea,1\n\nbad\n", 1, 2, false), .Err(SumError.MissingColumn(3)))
+
+    it("trims spaces around keys and values"):
+        assert_equal(summarize("  tea , 7  \n", 1, 2, false), .Ok([("tea", 7)]))
+
+    it("reports a line with too few columns"):
+        assert_equal(summarize("tea,1\ncake\n", 1, 2, false), .Err(SumError.MissingColumn(2)))
+
+    it("reports a value that is not an integer, trimmed"):
+        assert_equal(summarize("tea, 1.5 \n", 1, 2, false), .Err(SumError.NotANumber(1, "1.5")))
+
+    it("treats column 0 as missing"):
+        assert_equal(summarize("tea,1\n", 0, 2, false), .Err(SumError.MissingColumn(1)))
+
+    it("gives an empty result for empty input"):
+        assert_equal(summarize("", 1, 2, false), .Ok([]))
+
+    it("prints the error text with its line"):
+        assert_equal("${SumError.NotANumber(4, "x")}", "line 4: not a number: x")

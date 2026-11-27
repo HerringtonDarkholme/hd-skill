@@ -1,0 +1,7 @@
+use std.process.Command
+use std.testing.{assert_equal, hd_run}
+
+it("sums a column from standard input"):
+    out := hd_run!(*Command::new("colsum").arg("--key").arg("1").stdin("a,1\nb,2\na,3\n"))
+    assert_equal(out.stdout, "a,4\nb,2\n", reason="totals by key, sorted")
+    assert_equal(out.status, 0, reason="a clean exit")

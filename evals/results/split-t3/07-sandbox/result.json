@@ -1,0 +1,104 @@
+{
+  "task": "07-sandbox",
+  "package": "linecount",
+  "scenario": "sandboxed program",
+  "selling_points": [
+    "scoped capability grants",
+    "minimal capabilities"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 11,
+      "passed": 11,
+      "failed": []
+    },
+    "hidden": {},
+    "runs": [
+      {
+        "args": [
+          "data/a.txt",
+          "data/b.txt"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "3 data/a.txt\n1 data/b.txt\n4 total\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "data/a.txt",
+          "hd.toml"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "3 data/a.txt\n3 total\n",
+        "stderr": "linecount: hd.toml: access to hd.toml is not granted\n"
+      },
+      {
+        "args": [
+          "data/nope.txt"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "0 total\n",
+        "stderr": "linecount: data/nope.txt: not found: data/nope.txt\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "minimal-caps",
+        "desc": "[capabilities] grants only Console, Args and FsRead",
+        "ok": true
+      },
+      {
+        "id": "scoped-fsread",
+        "desc": "FsRead scoped to data/",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/cli-tool.md",
+      "design/capabilities.md",
+      "design/testing.md",
+      "reference/packages.md",
+      "scenarios/files-and-directories.md"
+    ],
+    "bash": 7,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 2,
+      "test": 2,
+      "run": 3,
+      "fmt": 2,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: hd help new; echo ---; hd help run; echo ---; hd help test | head -30; echo ---; S=.claude/skills/hd-lang/reference/std; cat $S/fs.txt | head -150; echo ---; cat $S/cli.txt | head -60"
+    ],
+    "diagnostic_codes": {
+      "trait-used-as-type": 1,
+      "missing-capability": 1
+    },
+    "failing_checks": 0,
+    "turns": 24,
+    "cost_usd": 0.02795425,
+    "duration_s": 80,
+    "tokens": 756576,
+    "final_message": "The `linecount` package is in the current directory. `hd check --tests` and `hd test` both pass (11 tests), and `hd fmt --check` and `hd lint` are clean.\n\n**Behavior, checked by running it:**\n- `hd run -- data/three.txt` prints `3 data/three.txt`, then `3 total`, and exits 0.\n- Given `data/three.txt /etc/hosts ../hd.toml nope.txt`, it prints the good file and then `linecount: <file>: <reason>` on stderr for each refused file. It still prints the total and exits 1.\n- With no arguments it prints `0 total` and exits 0.\n\n**Files:**\n- `src/main.hd`: `count_lines` counts newline bytes and adds one for an unterminated last line. `report!` processes files in order, reports failures on stderr, skips them, and returns `ExitCode(1)` if any failed. The tests cover the counting rules, ordering, skipped files, and the no-argument case.\n- `hd.toml`: `Console`, `Args`, and `FsRead = [\"data/\"]` are granted. `FsWrite`, `Env`, `Http`, `Net`, `Sys`, `Clock`, `Random`, `ConsoleInput`, `Signals` and `Workers` are set to `false`. `[dev-capabilities]` has `Process = true` so the integration tests can run the built program.\n- `tests/linecount.hd`: integration tests run the real binary. One checks that out-of-scope paths (`../hd.toml`, `data/../hd.toml`) are refused and reported, and that the status is 1.\n- `data/three.txt`: a sample file for the integration tests.\n\n**Choices to review:**\n- `Process` is not set to `false` in `[capabilities]`. A `false` in either table denies it, so that would have blo",
+    "is_error": false
+  },
+  "agent_exit": 0
+}
