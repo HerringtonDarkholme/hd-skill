@@ -1,6 +1,6 @@
 ---
 name: hd-lang
-description: Write, check, test and run hd-lang (hd) code - a statically typed, indentation-based language that compiles to WebAssembly, with value semantics and lending (`&`, `&mut`, `box`), effects declared in each signature as requirement rows (`$ Console`) that tests swap for fakes, explicit waiting with `!` functions, errors as values (`T?`, `Result`, `?`), enums with exhaustive `match`, traits and generics, derives for routine code, and `tests:` blocks next to the code. Covers what hd is and how it differs from Python and Rust, the edit-check loop for the `hd` command, and an index of focused references - how-to pages by scenario (a command-line tool, files, configuration, an HTTP API, concurrency, shared state, project layout), syntax by topic, the standard library, testing, packages, and the diagnostics agents hit most with their fixes. Use before writing or editing any `.hd` file or `hd.toml` package, and whenever running the `hd` command.
+description: Write, check, test and run hd-lang (hd) code - a statically typed, indentation-based language that compiles to WebAssembly, with value semantics and lending (`&`, `&mut`, `box`), effects declared in each signature as requirement rows (`$ Console`) that tests swap for fakes, explicit waiting with `!` functions, errors as values (`T?`, `Result`, `?`), enums with exhaustive `match`, traits and generics, derives for routine code and derive templates for your own traits, `require`/`ensure` contracts, and `tests:` blocks next to the code. Covers what hd is and how it differs from Python and Rust, which hd feature to reach for in each situation, the edit-check loop for the `hd` command, and an index of focused references - how-to pages by scenario (a command-line tool, files, configuration, an HTTP API, concurrency, shared state, project layout), syntax by topic, the standard library, testing, packages, and the diagnostics agents hit most with their fixes. Use before writing or editing any `.hd` file or `hd.toml` package, and whenever running the `hd` command.
 ---
 
 # Write hd-lang Code
@@ -82,6 +82,24 @@ The ideas that shape every hd program, each with the page that teaches it:
   fields ([traits](references/language/traits.md#derived-implementations)).
 - **Tests live with the code.** A `tests:` block at the end of a file,
   run with `hd test` ([unit-tests](references/testing/unit-tests.md)).
+
+## The hd Way
+
+hd has a feature for each of these situations. Use it, rather than the
+loop or `if` another language would need.
+
+| When | Write |
+| --- | --- |
+| code reaches a database, service, clock or file | a trait for it, required with `$ Trait` and reached with `$.use(Trait)`; `main` provides the real one with `$.with`, tests a fake ([requirements](references/language/requirements.md), [fakes](references/testing/fakes.md)) |
+| you declare an error enum | `@error` on it, with an `@error("...")` message per variant, even next to `@derive(Eq, Debug)` ([errors](references/language/errors.md)) |
+| a call should be retried, time out or race a fallback | a `std.task` policy, `retry(Backoff { ... })` with `apply!`, not a hand loop ([concurrent work](references/how-to/concurrent-work.md)) |
+| several calls should wait together | `join!`, or `map_join!` with a limit |
+| you'd write `==`, JSON, options parsing or validation by hand | `@derive` it, configured with field facts ([traits](references/language/traits.md#derived-implementations)) |
+| your own trait needs the same per-field `impl` on several types | a derive template, so `@derive(YourTrait)` works ([derive](design/derive.md)) |
+| a call has rules the caller must keep, or a result has a guarantee | `require` / `ensure` ([contracts](design/contracts.md)) |
+| something round-trips or holds for every input (encode then decode, sort, a cache against a model) | a property test with `it_prop`, beside the example tests ([unit tests](references/testing/unit-tests.md#tables-and-properties)) |
+| several examples share one assertion | one `it_each` table |
+| a package needs the outside world | only the capabilities it uses in `[capabilities]`, scoped where it can be (`FsRead = ["data/"]`) ([packages](references/cli/packages.md)) |
 
 ## One Program
 
@@ -169,6 +187,10 @@ Requirements:
 - A function that waits (input, files, timers) is named with `!`, and every
   call to it is written with `!`. Such a program's entry point is `main!`.
 - Declarations are private unless `pub`. The entry point is `pub fn main`.
+- A field is private unless `pub`, even in a `pub struct`. Another module,
+  including a test file under `tests/`, cannot build the struct or read
+  the field (`private-member`). When an API lists a struct's fields, write
+  `pub` on each.
 
 ## Reach for Std Before Writing It
 
@@ -207,6 +229,13 @@ pieces it is made of.
 | model states, transitions and validation rules | [domain-model.md](references/how-to/domain-model.md) |
 | start a project, split it into modules, and add subcommands | [project-layout.md](references/how-to/project-layout.md) |
 | translate a habit from Python, TypeScript, Rust or Go | [from-other-languages.md](references/how-to/from-other-languages.md) |
+
+### Design: the hd way
+
+| File | Covers |
+| --- | --- |
+| [derive.md](design/derive.md) | built-in derives vs writing your own: derive templates over `Structure`, walkers, custom field facts, derivation blocks |
+| [contracts.md](design/contracts.md) | `require` and `ensure`: when to use them instead of `Result` or `panic`, their forms, how they behave in tests and release builds |
 
 ### Language
 

@@ -34,7 +34,10 @@ cargo install --locked --git https://github.com/HerringtonDarkholme/hd-lang hd-l
 
 ```text
 skills/hd-lang/
-  SKILL.md                  when to use it, the edit-check loop, the rules that surprise, the index
+  SKILL.md                  when to use it, the edit-check loop, the hd way, the rules that surprise, the index
+  design/                   one page per hd design move: when to use it, and how
+    derive.md               built-in derives, and writing your own derive template
+    contracts.md            require and ensure
   references/
     how-to/                 one page per scenario: a complete, tested program and its pieces
       common-operations.md  strings, numbers, lists, maps, trees, scanners, with the clues
