@@ -1,0 +1,97 @@
+{
+  "task": "05-users",
+  "package": "users",
+  "scenario": "service with a user-defined effect",
+  "selling_points": [
+    "own effect trait",
+    "$.use",
+    "$.with providers",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 4,
+      "passed": 4,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 3,
+      "passed": 3,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [],
+        "ok": true,
+        "status": 0,
+        "stdout": "renamed 1 to Ada Lovelace\nerror: no user 2\n",
+        "stderr": ""
+      }
+    ],
+    "idiom": [
+      {
+        "id": "use-effect",
+        "desc": "logic reaches the store with $.use(UserStore)",
+        "ok": true
+      },
+      {
+        "id": "provide-in-main",
+        "desc": "main provides a store with $.with",
+        "ok": true
+      },
+      {
+        "id": "fake-store",
+        "desc": "tests define their own UserStore fake",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "UserError declared with @error",
+        "ok": false
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.8
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 10,
+    "hd": {
+      "help": 7,
+      "new": 1,
+      "check": 4,
+      "test": 3,
+      "run": 3,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/baseline-t2/05-users/users && hd help new; hd help check; hd help test; R=.claude/skills/hd-lang/references; cat $R/lan",
+      "Bash: rm tests/users.hd && rmdir tests && cat >> src/main.hd <<'EOF'\n\ntests:\n    use std.console.MemoryConsole\n\n    it(\"prints the rename and the missing-user error\"):\n        console := MemoryConsole"
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 4
+    },
+    "failing_checks": 1,
+    "turns": 16,
+    "cost_usd": 0.01830474,
+    "duration_s": 51,
+    "tokens": 504360,
+    "final_message": "The `users` package is in the current directory. `hd check --tests` and `hd test` both pass (4 tests), and `hd run` prints the two lines you specified.\n\nFiles:\n- **`src/users.hd`**: `User` and `UserError` (both `@derive(Eq, Debug)`), the `UserStore` trait, and `rename!`. `rename!` trims the name, returns `EmptyName` without touching the store, looks the user up with `get!`, returns `NotFound` if it is missing, and otherwise calls `put!` once and returns the renamed user. Its `tests:` block uses a fake store to cover the rename, the empty name, and the missing user, checking the store's put count each time.\n- **`src/main.hd`**: an in-memory `MemoryStore` holding user 1 (\"ada\"), installed with `$.with(UserStore=...)`. It renames user 1 and user 2 and prints the results. Its `tests:` block captures the console with `MemoryConsole` and checks the exact output.\n- **`hd.toml`**: `[capabilities] Console = true`.\n\nDecisions to review:\n- **`main` is `pub fn main!()`**, not `pub fn main()`. Calling `rename!` is a waiting call, so the entry point has to be `main!`.\n- **The package is an app** (`hd new --app --vcs none`), so there is no git repo. The scaffold's integration test expected the old \"hello, world\" output and needed a `Process` grant, so I deleted it and moved the output check into `main.hd`'s unit test.\n- **The in-memory store lives in `main.hd`**, not in `users.hd`, so the library module stays limited to the interface you specified.\n\nOne environment note: two of my shell com",
+    "is_error": false
+  },
+  "agent_exit": null
+}

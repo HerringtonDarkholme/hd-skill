@@ -1,0 +1,28 @@
+use pkg.todos.{Todo, TodoError, complete, dump, load, pending}
+use std.testing.it_prop
+
+it("hidden: loads, defaulting done to false"):
+    json := "[{\"id\": 1, \"title\": \"milk\", \"done\": true}, {\"id\": 2, \"title\": \"eggs\"}]"
+    assert_equal(load(json), .Ok([Todo { id: +1, title: "milk", done: true }, Todo { id: +2, title: "eggs" }]))
+
+it("hidden: bad JSON is BadJson"):
+    match load("[{\"id\": \"one\"}]"):
+        .Err(.BadJson(_)) => pass
+        other => assert(false, reason="expected BadJson, got ${other.is_ok()}")
+    match load("not json"):
+        .Err(.BadJson(_)) => pass
+        other => assert(false, reason="expected BadJson")
+
+it("hidden: complete marks one todo"):
+    todos := [Todo { id: +1, title: "a" }, Todo { id: +2, title: "b" }]
+    assert_equal(complete(todos, 2), .Ok([Todo { id: +1, title: "a" }, Todo { id: +2, title: "b", done: true }]))
+    assert_equal(complete(todos, 9), .Err(.UnknownId(9)))
+
+it("hidden: pending keeps order"):
+    todos := [Todo { id: +1, title: "a", done: true }, Todo { id: +2, title: "b" }, Todo { id: +3, title: "c" }]
+    assert_equal(pending(todos), ["b", "c"])
+
+it_prop("hidden: load undoes dump", prop=fn!(rows: List[(string, bool)]):
+    todos := [for (i, row) in rows.enumerate() => Todo { id: i32(i) - 5, title: row._0, done: row._1 }]
+    assert_equal(load(dump(todos)), .Ok(todos))
+)

@@ -1,0 +1,40 @@
+{
+  "package": "bank",
+  "scenario": "invariants",
+  "selling_points": [
+    "require",
+    "ensure"
+  ],
+  "files": {},
+  "runs": [],
+  "idiom": [
+    {
+      "id": "require",
+      "desc": "preconditions with require",
+      "scope": "src",
+      "pattern": "\\brequire\\b[^\\n]*:",
+      "expect": true
+    },
+    {
+      "id": "ensure",
+      "desc": "postconditions with ensure",
+      "scope": "src",
+      "pattern": "\\bensure\\b[^\\n]*:",
+      "expect": true
+    },
+    {
+      "id": "no-raw-panic",
+      "desc": "no hand-written panic( for checks",
+      "scope": "src",
+      "pattern": "\\bpanic\\(",
+      "expect": false
+    },
+    {
+      "id": "own-tests",
+      "desc": "writes at least 2 test cases of its own",
+      "kind": "min_tests",
+      "n": 2
+    }
+  ],
+  "expected_hidden": 6
+}

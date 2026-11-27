@@ -1,0 +1,32 @@
+@error
+@derive(Eq, Debug)
+pub enum SumError:
+    @error("line $line: missing column")
+    MissingColumn(line: usize)
+    @error("line $line: not a number: $text")
+    NotANumber(line: usize, text: string)
+
+## Sums column `value` grouped by column `key` (both 1-based), sorted by key.
+pub fn summarize(text: string, key: usize, value: usize, skip_header: bool) -> Result[List[(string, i64)], SumError]:
+    let mut totals: Map[string, i64] = {}
+    for (i, line) in text.lines().enumerate():
+        number := i + 1
+        if (skip_header && number == 1) || line.trim().is_empty():
+            continue
+        fields := line.split(",")
+        if key == 0 || value == 0 || key > fields.len() || value > fields.len():
+            return .Err(.MissingColumn(number))
+        raw := fields[value - 1].trim()
+        amount := match raw.parse::[i64]():
+            .Ok(n) => n
+            .Err(_) => return .Err(.NotANumber(number, raw))
+        k := fields[key - 1].trim()
+        totals[k] = totals.get(k).unwrap_or(0) + amount
+    .Ok(totals.entries().sorted_by_key(fn(pair: &(string, i64)) -> string: pair._0))
+
+tests:
+    it("groups and sums"):
+        assert_equal(summarize("a,1\nb,2\na,3\n", 1, 2, false), .Ok([("a", 4i64), ("b", 2i64)]))
+
+    it("names the line of a bad number"):
+        assert_equal(summarize("a,1\nb,x\n", 1, 2, false), .Err(.NotANumber(2, "x")))

@@ -1,0 +1,52 @@
+use pkg.{CalcError, eval}
+use std.testing.assert_equal
+
+it("respects precedence and parentheses"):
+    assert_equal(eval("1 + 2 * 3"), .Ok(7))
+    assert_equal(eval("(1 + 2) * 3"), .Ok(9))
+    assert_equal(eval("2 * 3 + 4 * 5"), .Ok(26))
+
+it("is left-associative"):
+    assert_equal(eval("10 - 4 - 3"), .Ok(3))
+    assert_equal(eval("100 / 10 / 5"), .Ok(2))
+    assert_equal(eval("2 * 6 / 4 * 3"), .Ok(9))
+
+it("truncates division toward zero"):
+    assert_equal(eval("7 / 2"), .Ok(3))
+    assert_equal(eval("-7 / 2"), .Ok(-3))
+    assert_equal(eval("7 / -2"), .Ok(-3))
+
+it("applies unary minus"):
+    assert_equal(eval("-4"), .Ok(-4))
+    assert_equal(eval("- -4"), .Ok(4))
+    assert_equal(eval("2 * -3"), .Ok(-6))
+    assert_equal(eval("-(1 + 2)"), .Ok(-3))
+    assert_equal(eval("1 - -2"), .Ok(3))
+
+it("allows spaces anywhere between tokens"):
+    assert_equal(eval("  1+2 "), .Ok(3))
+    assert_equal(eval("( 1 )*  2"), .Ok(2))
+
+it("handles large literals"):
+    assert_equal(eval("9223372036854775807"), .Ok(9223372036854775807))
+
+it("reports division by zero"):
+    assert_equal(eval("1 / 0"), .Err(CalcError.DivideByZero))
+    assert_equal(eval("1 / (2 - 2)"), .Err(CalcError.DivideByZero))
+
+it("reports where parsing failed"):
+    assert_equal(eval("1 +"), .Err(.Unexpected(3)))
+    assert_equal(eval("1 2"), .Err(.Unexpected(2)))
+    assert_equal(eval(""), .Err(.Unexpected(0)))
+    assert_equal(eval("1 $ 2"), .Err(.Unexpected(2)))
+    assert_equal(eval("(1"), .Err(.Unexpected(2)))
+    assert_equal(eval("()"), .Err(.Unexpected(1)))
+    assert_equal(eval(")"), .Err(.Unexpected(0)))
+    assert_equal(eval("* 2"), .Err(.Unexpected(0)))
+    assert_equal(eval("1 (2)"), .Err(.Unexpected(2)))
+
+it("reports the first unacceptable token, even past a later invalid one"):
+    assert_equal(eval("1 2 $"), .Err(.Unexpected(2)))
+
+it("reports an out-of-range literal at its start"):
+    assert_equal(eval("1 + 99999999999999999999"), .Err(.Unexpected(4)))

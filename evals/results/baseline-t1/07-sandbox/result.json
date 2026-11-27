@@ -1,0 +1,102 @@
+{
+  "task": "07-sandbox",
+  "package": "linecount",
+  "scenario": "sandboxed program",
+  "selling_points": [
+    "scoped capability grants",
+    "minimal capabilities"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 8,
+      "passed": 8,
+      "failed": []
+    },
+    "hidden": {},
+    "runs": [
+      {
+        "args": [
+          "data/a.txt",
+          "data/b.txt"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "3 data/a.txt\n1 data/b.txt\n4 total\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "data/a.txt",
+          "hd.toml"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "3 data/a.txt\n3 total\n",
+        "stderr": "linecount: hd.toml: access to hd.toml is not granted\n"
+      },
+      {
+        "args": [
+          "data/nope.txt"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "0 total\n",
+        "stderr": "linecount: data/nope.txt: not found: data/nope.txt\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "minimal-caps",
+        "desc": "[capabilities] grants only Console, Args and FsRead",
+        "ok": true
+      },
+      {
+        "id": "scoped-fsread",
+        "desc": "FsRead scoped to data/",
+        "ok": true
+      }
+    ],
+    "fmt_clean": false,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/cli/packages.md",
+      "references/how-to/files-and-directories.md",
+      "references/language/requirements.md",
+      "references/how-to/cli-tool.md",
+      "references/std/host.md"
+    ],
+    "bash": 14,
+    "hd": {
+      "help": 4,
+      "new": 2,
+      "check": 4,
+      "test": 2,
+      "run": 3,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: sed -i '' 's/\\.bytes()), /.to_utf8()), /' src/main.hd && grep -n \"to_utf8\" src/main.hd && hd check --format json --tests 2>&1; echo \"exit=$?\"",
+      "Bash: ln -s ../hd.toml data/escape-link && hd run -- data/escape-link data/three.txt; echo \"exit=$?\"; rm -f data/escape-link && ls data"
+    ],
+    "diagnostic_codes": {
+      "type-mismatch": 4
+    },
+    "failing_checks": 1,
+    "turns": 30,
+    "cost_usd": 0.02633606,
+    "duration_s": 70,
+    "tokens": 901785,
+    "final_message": "The `linecount` package is in the current directory. `hd check --tests`, `hd lint` and `hd test` all pass (8 tests).\n\n**What it does**\n- `hd run -- FILE...` prints `<lines> <file>` for each argument, then `<total> total`.\n- A file that can't be read prints `linecount: <file>: <reason>` to standard error, is skipped, and makes the exit status 1. Otherwise the status is 0.\n\n**Sandbox**\n- `hd.toml` grants only `Console`, `Args`, and `FsRead = [\"data/\"]`. The template's `Clock` and `Random` grants are removed, and there is no write, environment, network, or process access.\n- The `[dev-capabilities] Process = true` grant is kept for the integration test, which runs the built program. The program itself does not get it.\n- Verified by running the program: `../hd.toml`, `data/../hd.toml`, `/etc/hosts`, `hd.toml` and `data/../src/main.hd` are all refused. Files inside `data/` are counted.\n\n**Choices I made**\n- **Line count:** every newline ends a line, and a final line without a newline also counts. So `a\\nb` is 2 lines and an empty file is 0. This differs from `wc -l`, which would give 1 for `a\\nb`.\n- **Bytes, not text:** the file is read as bytes, so a binary or non-UTF-8 file still gets a count and is not reported as unreadable.\n- **Directories** are reported as errors (`data: is a directory`), not counted.\n- **No arguments** prints `0 total` and exits 0.\n\n**Not verified**\n- A symlink inside `data/` that points outside it. Creating the symlink was denied by the permission system, s",
+    "is_error": false
+  },
+  "agent_exit": null
+}

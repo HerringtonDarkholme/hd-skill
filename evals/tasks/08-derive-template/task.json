@@ -1,0 +1,33 @@
+{
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "files": {},
+  "runs": [],
+  "idiom": [
+    {
+      "id": "template",
+      "desc": "a derive template: impl[T] FieldNames for T by Structure",
+      "scope": "src",
+      "pattern": "impl\\[\\w+\\]\\s+FieldNames\\s+for\\s+\\w+\\s+by\\s+Structure",
+      "expect": true
+    },
+    {
+      "id": "walker",
+      "desc": "walks members with a Walker",
+      "scope": "src",
+      "pattern": "Walker\\[",
+      "expect": true
+    },
+    {
+      "id": "own-tests",
+      "desc": "writes at least 2 test cases of its own",
+      "kind": "min_tests",
+      "n": 2
+    }
+  ],
+  "expected_hidden": 2
+}

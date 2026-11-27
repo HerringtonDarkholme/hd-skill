@@ -1,2 +1,5 @@
 .DS_Store
 node_modules/
+evals/results/reference/
+evals/results-*.log
+build/

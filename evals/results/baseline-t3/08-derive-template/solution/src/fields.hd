@@ -1,0 +1,3 @@
+## A type whose field names, in declaration order, are listed.
+pub trait FieldNames:
+    fn field_names(self) -> List[string]

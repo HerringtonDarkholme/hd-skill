@@ -1,0 +1,12 @@
+[package]
+name = "linecount"
+
+# Only what `main` needs: the arguments, the console, and reads under data/.
+# Clock, Random, writes, environment, network and processes are not granted.
+[capabilities]
+Console = true
+Args = true
+FsRead = ["data/"]
+
+[dev-capabilities]
+Process = true

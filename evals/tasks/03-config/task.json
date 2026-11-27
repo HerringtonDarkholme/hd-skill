@@ -1,0 +1,49 @@
+{
+  "package": "config",
+  "scenario": "configuration from file and environment",
+  "selling_points": [
+    "derive Validate + field facts",
+    "env_decode",
+    "@from errors",
+    "fakes"
+  ],
+  "files": {},
+  "runs": [],
+  "idiom": [
+    {
+      "id": "derive-validate",
+      "desc": "rules written as @derive(Validate) field facts",
+      "scope": "all",
+      "pattern": "@derive\\([^)]*\\bValidate\\b",
+      "expect": true
+    },
+    {
+      "id": "field-facts",
+      "desc": "uses @range / @length facts",
+      "scope": "all",
+      "pattern": "@(range|length)\\(",
+      "expect": true
+    },
+    {
+      "id": "from-errors",
+      "desc": "error variants convert with @from",
+      "scope": "all",
+      "pattern": "@from\\b",
+      "expect": true
+    },
+    {
+      "id": "fake-fs-env",
+      "desc": "tests use MemoryFs and ScriptedEnv",
+      "scope": "all",
+      "pattern": "ScriptedEnv",
+      "expect": true
+    },
+    {
+      "id": "own-tests",
+      "desc": "writes at least 2 test cases of its own",
+      "kind": "min_tests",
+      "n": 2
+    }
+  ],
+  "expected_hidden": 11
+}

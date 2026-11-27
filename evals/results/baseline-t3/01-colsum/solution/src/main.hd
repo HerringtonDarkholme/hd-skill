@@ -1,0 +1,47 @@
+use pkg.sum.{SumError, summarize}
+use std.cli.{Args, Cli}
+use std.console.{ConsoleInput, eprintln, read_all}
+use std.process.ExitCode
+
+## Sum one column of CSV from standard input, grouped by another
+@derive(Cli)
+struct Options:
+    ## the 1-based column to group by
+    key: usize = 1
+    ## the 1-based column to sum, as a signed integer
+    value: usize = 2
+    ## ignore the first line
+    skip_header: bool
+
+fn report(error: SumError) -> string:
+    match error:
+        .MissingColumn(line) => "colsum: line $line: missing column"
+        .NotANumber(line, text) => "colsum: line $line: not a number: ${debug(text)}"
+
+pub fn main!() -> ExitCode $ Args + Console + ConsoleInput:
+    options := match Options::parse_args():
+        .Ok(options) => options
+        .Err(error) => return error.exit() # usage error: status 2; --help: status 0
+    if options.key == 0 || options.value == 0:
+        eprintln("colsum: columns start at 1")
+        return ExitCode(2)
+    text := match read_all!():
+        .Ok(text) => text
+        .Err(error) =>
+            eprintln("colsum: $error")
+            return ExitCode(1)
+    match summarize(text, options.key, options.value, options.skip_header):
+        .Ok(totals) =>
+            for (key, total) in totals:
+                println("$key,$total")
+            ExitCode(0)
+        .Err(error) =>
+            eprintln(report(error))
+            ExitCode(1)
+
+tests:
+    it("reports a missing column with its line number"):
+        assert_equal(report(.MissingColumn(3)), "colsum: line 3: missing column")
+
+    it("reports a bad number with its trimmed text"):
+        assert_equal(report(.NotANumber(2, "x")), "colsum: line 2: not a number: \"x\"")

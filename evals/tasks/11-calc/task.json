@@ -1,0 +1,42 @@
+{
+  "package": "calc",
+  "scenario": "parser and interpreter",
+  "selling_points": [
+    "recursive enums",
+    "box",
+    "@error",
+    "match"
+  ],
+  "files": {},
+  "runs": [],
+  "idiom": [
+    {
+      "id": "tree-enum",
+      "desc": "a recursive enum for the syntax tree (boxed children)",
+      "scope": "all",
+      "pattern": "\\*\\s*\\w+\\s*\\)|box\\(",
+      "expect": true
+    },
+    {
+      "id": "error-enum",
+      "desc": "CalcError declared with @error",
+      "scope": "all",
+      "pattern": "@error\\s*\\n(@derive[^\\n]*\\n)?\\s*pub enum CalcError",
+      "expect": true
+    },
+    {
+      "id": "table-test",
+      "desc": "table tests with it_each",
+      "scope": "all",
+      "pattern": "\\bit_each\\(",
+      "expect": true
+    },
+    {
+      "id": "own-tests",
+      "desc": "writes at least 2 test cases of its own",
+      "kind": "min_tests",
+      "n": 2
+    }
+  ],
+  "expected_hidden": 20
+}

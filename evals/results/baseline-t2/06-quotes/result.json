@@ -1,0 +1,98 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": false
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.8
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/cli/packages.md",
+      "references/language/suspension.md",
+      "references/language/requirements.md",
+      "references/testing/fakes.md",
+      "references/how-to/concurrent-work.md",
+      "references/language/traits.md",
+      "references/testing/unit-tests.md",
+      "references/language/modules.md",
+      "references/language/errors.md"
+    ],
+    "bash": 10,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "doc": 3,
+      "check": 4,
+      "test": 3,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: S=.claude/skills/hd-lang/references && cat $S/cli/packages.md $S/language/requirements.md $S/language/suspension.md $S/testing/fakes.md"
+    ],
+    "diagnostic_codes": {
+      "unknown-trait": 1
+    },
+    "failing_checks": 1,
+    "turns": 27,
+    "cost_usd": 0.025702490000000005,
+    "duration_s": 66,
+    "tokens": 839029,
+    "final_message": "The `quotes` package is written, and `hd check --tests` and `hd test` both pass (6 of 6 tests).\n\n**Files**\n- `src/quotes.hd`: `QuoteError` (`@derive(Eq, Debug)`), the `Quotes` trait, and `order_total!`, plus the unit tests in a `tests:` block.\n- `src/lib.hd`: re-exports `QuoteError`, `Quotes` and `order_total` so callers can write `use quotes.{...}`.\n- `tests/quotes.hd`: replaced the generated `greet` sample with one test that goes through the public API.\n- `hd.toml`, created by `hd new --lib`.\n\n**How it works**\n- `quote_sku!` calls the provider, and on an error waits 10 ms and tries again, up to 3 attempts in total. It retries every error kind, including `Unknown`, because the spec says each sku gets up to 3 attempts.\n- `order_total!` runs `map_join!(skus, 4, quote_sku)`, which caps concurrency at 4 and returns results in list order. It then returns the first `Err` in that order, or the sum. An empty list gives `.Ok(0)`.\n\n**Choices I made**\n- The spec names `src/quotes.hd`, but `hd` treats `src/lib.hd` as the library root. I kept the code in `src/quotes.hd` as asked and added the re-export in `lib.hd`.\n- I wrote the retry as a plain loop rather than `retry(Backoff{...})`. The loop gives exactly 10 ms between attempts and avoids the `From[TimedOut]` requirement that `apply!` puts on the error type.\n\n**Tests**\n- They cover: empty order, summing, recovery after busy answers, giving up after 3 attempts, and first-failure-in-list-order.\n- The 4-in-flight limit is not tested. A `Q",
+    "is_error": false
+  },
+  "agent_exit": null
+}

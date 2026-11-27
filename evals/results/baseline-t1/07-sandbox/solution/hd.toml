@@ -1,0 +1,15 @@
+[package]
+name = "linecount"
+
+# Only what `main` needs: console output, the argument list, and reading
+# files under data/. Every other capability (writing, the clock, the
+# environment, the network, processes) is left out, so it is refused.
+[capabilities]
+Console = true
+Args = true
+FsRead = ["data/"]
+
+# Integration tests run the built program, so they need to start a process.
+# This grant is for tests only; the program itself does not get it.
+[dev-capabilities]
+Process = true

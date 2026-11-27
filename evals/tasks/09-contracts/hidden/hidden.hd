@@ -1,0 +1,29 @@
+use pkg.account.{Account, open, transfer}
+
+it("hidden: deposit and withdraw"):
+    let mut a = open(10)
+    a.deposit(5)
+    a.withdraw(15)
+    assert_equal(a.balance(), 0)
+
+it("hidden: transfer moves the amount"):
+    let mut a = open(100)
+    let mut b = open(1)
+    transfer(&mut a, &mut b, 99)
+    assert_equal((a.balance(), b.balance()), (1, 100))
+
+it("hidden-panics: withdrawing more than the balance"):
+    let mut a = open(10)
+    a.withdraw(11)
+
+it("hidden-panics: a zero deposit"):
+    let mut a = open(10)
+    a.deposit(0)
+
+it("hidden-panics: a negative opening balance"):
+    _ := open(-1)
+
+it("hidden-panics: a transfer larger than the source"):
+    let mut a = open(5)
+    let mut b = open(0)
+    transfer(&mut a, &mut b, 6)

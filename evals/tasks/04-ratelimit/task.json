@@ -1,0 +1,33 @@
+{
+  "package": "ratelimit",
+  "scenario": "time-dependent logic",
+  "selling_points": [
+    "Clock requirement",
+    "ManualClock fake"
+  ],
+  "files": {},
+  "runs": [],
+  "idiom": [
+    {
+      "id": "manual-clock",
+      "desc": "tests control time with ManualClock",
+      "scope": "all",
+      "pattern": "ManualClock",
+      "expect": true
+    },
+    {
+      "id": "virtual-sleep",
+      "desc": "tests advance virtual time with sleep!",
+      "scope": "all",
+      "pattern": "sleep!\\(",
+      "expect": true
+    },
+    {
+      "id": "own-tests",
+      "desc": "writes at least 2 test cases of its own",
+      "kind": "min_tests",
+      "n": 2
+    }
+  ],
+  "expected_hidden": 4
+}

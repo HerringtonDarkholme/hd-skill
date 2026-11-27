@@ -1,0 +1,82 @@
+{
+  "task": "02-todos",
+  "package": "todos",
+  "scenario": "JSON in and out",
+  "selling_points": [
+    "derive Serialize/Deserialize",
+    "field defaults",
+    "property tests"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 11,
+      "passed": 11,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-serde",
+        "desc": "JSON through @derive(Serialize, Deserialize)",
+        "ok": true
+      },
+      {
+        "id": "field-default",
+        "desc": "done defaults with a field default",
+        "ok": true
+      },
+      {
+        "id": "prop-test",
+        "desc": "round trip checked with a property test",
+        "ok": false
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.75
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 12,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 6,
+      "test": 4,
+      "fmt": 3,
+      "lint": 3
+    },
+    "denied": [
+      "Bash: sed -i '' 's/    let mut found = false/    let found = false/' src/todos.hd && grep -n 'found' src/todos.hd && hd fmt && hd lint; hd check --tests; echo \"check=$?\"; hd test; echo \"test=$?\""
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "unknown-import": 2
+    },
+    "failing_checks": 1,
+    "turns": 20,
+    "cost_usd": 0.017913800000000004,
+    "duration_s": 53,
+    "tokens": 646149,
+    "final_message": "The `todos` library is written. `hd check --tests` and `hd test` both pass: 11 tests, 0 failures. `hd fmt` and `hd lint` are clean.\n\nThe code is in `src/todos.hd`. `src/lib.hd` re-exports `Todo`, `TodoError`, `load`, `dump`, `complete` and `pending` as the package interface.\n\nChoices I made that the spec left open:\n\n- **Parsing:** `load` uses a derived `Deserialize` on `Todo`, with `done` defaulting to `false`. Any decode failure becomes `BadJson` carrying the decoder's message. Extra fields in the JSON are ignored.\n- **Duplicate ids:** allowed. `complete` marks every todo with the matching id.\n- **`complete` on an unknown id:** returns `UnknownId`.\n- **Round trip:** `dump` is compact JSON from `encode`, and `load` reads it back equal.\n\nOther changes:\n\n- I removed the scaffold's `greet` function and its sample test in `tests/todos.hd`, since they no longer apply.\n- `hd test` created a `build/` directory with test records. It is build output and should not be committed.\n- A `sed -i` edit was denied by the permission system, so I made that one-line change with the edit tool instead. It removed an unneeded `mut` that lint flagged.\n- The package is not a git repository (`--vcs none`), so there is no commit.",
+    "is_error": false
+  },
+  "agent_exit": null
+}

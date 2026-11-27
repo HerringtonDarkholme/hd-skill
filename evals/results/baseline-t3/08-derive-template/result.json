@@ -1,0 +1,83 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 0,
+      "passed": 0,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 0,
+      "failed": [],
+      "compile_errors": [
+        "tests/zz_hidden_eval.hd:3: underivable-trait: `FieldNames` has no template and cannot be derived",
+        "tests/zz_hidden_eval.hd:10: underivable-trait: `FieldNames` has no template and cannot be derived"
+      ]
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": false
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": false
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": false
+      }
+    ],
+    "fmt_clean": true,
+    "pass": false,
+    "idiom_score": 0
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 19,
+    "hd": {
+      "help": 5,
+      "new": 1,
+      "doc": 21,
+      "check": 5,
+      "file": 1,
+      "test": 2
+    },
+    "denied": [
+      "Bash: mkdir -p /tmp/hdprobe && cd /tmp/hdprobe && cat > probe.hd <<'EOF'\npub trait FieldNames:\n    fn field_names(self) -> List[string]\n\n@derive(FieldNames)\nstruct Point:\n    x: i32\n    y: i32\n\nfn mai",
+      "Write: /tmp/hdprobe/probe.hd",
+      "Bash: mv src/probe.hd /tmp/probe.hd.bak 2>/dev/null; ls src; hd doc std.meta.Target; hd doc std.meta.annotate; hd doc std.meta.Skips"
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "underivable-trait": 6,
+      "unknown-name": 1,
+      "unknown-import": 2
+    },
+    "failing_checks": 3,
+    "turns": 27,
+    "cost_usd": 0.029448570000000007,
+    "duration_s": 71,
+    "tokens": 1303092,
+    "final_message": "I could not implement `@derive(FieldNames)`. The compiler rejects it, and the hd-lang skill I have doesn't document how a package defines a derive, so the core requirement is unmet.\n\n**What the compiler says:** a probe with the trait and `@derive(FieldNames)` on a struct fails with `underivable-trait: FieldNames has no template and cannot be derived`. A guessed `@template` decorator fails with `unknown-name`, so I stopped guessing.\n\n**What the skill does cover:** `std.meta` has the compiler-side pieces for derives (`Members`, `Member`, `Describer`, `Walker`, `facts_of`), but nothing that says how a user package declares a template for its own trait. Writing an `impl` per struct would go against your requirement, so I did not add one.\n\n**What's in place** (`hd check --tests` and `hd test` both pass):\n- `hd.toml`: package `fields`, scaffolded with `hd new . --lib --vcs none`.\n- `src/fields.hd`: `pub trait FieldNames` with `fn field_names(self) -> List[string]`, plus a doc comment.\n- `src/lib.hd`: `pub use pkg.fields.{FieldNames}`. I replaced the scaffold `greet` function with this.\n- `tests/fields.hd`: deleted. It only tested the scaffold `greet` function, and it broke the check.\n- There are no tests yet, so `hd test` reports 0 cases.\n\n**Blocked and not done:**\n- The derive itself, and the tests for it, which need to cover structs in several modules including test modules.\n- I wrote a probe file into `src/` and then deleted it. Two writes/moves to `/tmp` were denied, so I did n",
+    "is_error": false
+  },
+  "agent_exit": null
+}

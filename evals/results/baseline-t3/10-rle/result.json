@@ -1,0 +1,73 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 17,
+      "passed": 17,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/cli/packages.md",
+      "references/testing/unit-tests.md",
+      "references/language/traits.md",
+      "references/language/modules.md"
+    ],
+    "bash": 10,
+    "hd": {
+      "help": 5,
+      "new": 1,
+      "check": 2,
+      "test": 6,
+      "fmt": 1
+    },
+    "denied": [
+      "Bash: cat tests/rle.hd; S=.claude/skills/hd-lang/references; ls $S/std/api | head -50; grep -rn -E \"fn (push|is_empty|map|repeat|range|len|sum)\\b|fn! ?(it_prop|it_each)|range\" $S/language/collections.",
+      "Bash: hd test 2>&1 | tail -60; echo \"exit=${PIPESTATUS[0]}\""
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 21,
+    "cost_usd": 0.018343030000000003,
+    "duration_s": 57,
+    "tokens": 516107,
+    "final_message": "The `rle` package is in this directory. `hd check --tests` passes with no errors or warnings, and `hd test` passes all 17 cases (11 examples, 6 property tests), including under seeds 1, 42 and 9001.\n\n**What's there**\n- `src/rle.hd` has `pub struct Run` with `pub value: i32` and `pub count: usize`, derived `Eq` and `Debug`, plus `pub fn encode` and `pub fn decode`. The `tests:` block is at the end of the file.\n- `src/lib.hd` re-exports the public API with `pub use self.rle.{Run, encode, decode}`. The library's root is `src/lib.hd` by hd's convention, so this is how `src/rle.hd` becomes part of the package's interface. Callers write `use rle.encode`.\n- `hd.toml` is the scaffold's manifest, with package name `rle`. I created the package with `--vcs none`, so there is no git repository.\n\n**Tests**\n- Examples cover the empty list, a single value, a block of equal values, changes of value, negatives, equal values separated by another value, and decoding of zero-length and non-maximal runs.\n- Property tests check that `decode(encode(xs)) == xs` for any `List[i32]`. A second round-trip property uses `x % 3`, so long runs actually occur; random `i32` lists rarely repeat values.\n- Further properties check that encoded runs are maximal, that their counts sum to the list length, that re-encoding a decoded list gives the same runs, and that the encoding is never longer than the input.\n\n**Choices and changes**\n- I deleted the scaffolded `tests/rle.hd`. It tested the sample `greet` function",
+    "is_error": false
+  },
+  "agent_exit": null
+}

@@ -1,0 +1,2 @@
+# The bank package's interface: the account type and its operations.
+pub use self.account.{Account, open, transfer}

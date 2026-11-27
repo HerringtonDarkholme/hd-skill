@@ -1,0 +1,85 @@
+{
+  "task": "09-contracts",
+  "package": "bank",
+  "scenario": "invariants",
+  "selling_points": [
+    "require",
+    "ensure"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 6,
+      "passed": 6,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "require",
+        "desc": "preconditions with require",
+        "ok": true
+      },
+      {
+        "id": "ensure",
+        "desc": "postconditions with ensure",
+        "ok": false
+      },
+      {
+        "id": "no-raw-panic",
+        "desc": "no hand-written panic( for checks",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.75
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/language/modules.md"
+    ],
+    "bash": 19,
+    "hd": {
+      "new": 2,
+      "help": 1,
+      "check": 2,
+      "test": 2,
+      "run": 6,
+      "fmt": 2,
+      "file": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cat language/modules.md | head -120; mkdir -p /tmp/hdscratch && cd /tmp/hdscratch && hd new bank --lib && find bank -type f | xargs -I{} sh -c 'echo \"== {}\"; cat {}'",
+      "Bash: R=/private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/baseline-t1/09-contracts/bank/.claude/skills/hd-lang/references; ls -la $R/src $R/tests $R/hd.toml && rm -r $R/src $R/te"
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 3
+    },
+    "failing_checks": 0,
+    "turns": 35,
+    "cost_usd": 0.025497989999999998,
+    "duration_s": 78,
+    "tokens": 961959,
+    "final_message": "The `bank` package is written and passes `hd check --tests`, `hd test` (7 passed), `hd fmt --check` and `hd lint`. I also ran the misuse cases by hand, because the testing API has no helper for asserting a panic.\n\n**Files in the project root**\n- `hd.toml`: library manifest, name `bank`.\n- `src/account.hd`: `Account` with its functions, the invariants, and the `tests:` block.\n- `src/lib.hd`: `pub use self.account.{Account, open, transfer}`, so the package exposes the three public functions. The `balance`, `deposit` and `withdraw` methods come with the type.\n\n**Design choices**\n- Each misuse check is a `require` from `std.contract`. The message names the rule, for example \"withdrawal is larger than the balance\".\n- Invariants are stated in code: a private `check_balance` requires the balance is never negative, and it runs after every mutation. `transfer` also requires that the total is unchanged.\n- The field is named `cents`, not `balance`, so it does not clash with the `balance()` method.\n\n**Verified behavior**\n- Debug build: `open(-5)`, `withdraw(500)` from 100, and `transfer(…, 101)` from 100 each panic with `explicit-panic` and the right message. Exit status is 3.\n- Release build (`--release`): the same over-withdrawal does not panic and exits 0, so the checks cost nothing there.\n- I did not run the deposit-zero and transfer-zero cases separately. They use the same pattern as the checked cases.\n\n**Problems to fix**\n- **Stray files in the skill folder.** Early on, a `cd` left",
+    "is_error": false
+  },
+  "agent_exit": null
+}

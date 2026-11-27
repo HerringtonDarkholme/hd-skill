@@ -1,0 +1,48 @@
+use std.collections.Deque
+use std.time.{Clock, Duration, Timestamp, now}
+
+## Allows at most `max` events per key in any window of length `window`.
+pub struct Limiter:
+    max: usize
+    window: Duration
+    seen: Map[string, Deque[Timestamp]] = {}
+
+pub fn new_limiter(max: usize, window: Duration) -> Limiter:
+    Limiter { max: max, window: window }
+
+impl Limiter:
+    ## Records an event for `key` and says whether it is allowed.
+    ## A refused event is not counted.
+    pub fn allow(&mut self, key: string) -> bool $ Clock:
+        at := now()
+        let mut events = self.seen.get(key).unwrap_or(Deque::new())
+        while true:
+            match events.front():
+                .Some(first) =>
+                    if at.since(first) >= self.window: _ := events.pop_front() else: break
+                .None => break
+        allowed := events.len() < self.max
+        if allowed:
+            events.push_back(at)
+        self.seen[key] = events
+        allowed
+
+tests:
+    use std.time.{ManualClock, s, sleep}
+
+    it("refuses the event over the limit until the window passes"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        let mut limiter = new_limiter(2, 10s)
+        $.with(Clock=clock):
+            assert(limiter.allow("a"))
+            assert(limiter.allow("a"))
+            assert(!limiter.allow("a"))
+            sleep!(10s)
+            assert(limiter.allow("a"))
+
+    it("keeps keys apart"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        let mut limiter = new_limiter(1, 10s)
+        $.with(Clock=clock):
+            assert(limiter.allow("a"))
+            assert(limiter.allow("b"))

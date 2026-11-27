@@ -1,0 +1,47 @@
+use std.encoding.{Deserialize, Serialize}
+use std.encoding.json.{decode, encode}
+
+@derive(Serialize, Deserialize, Eq, Debug)
+pub struct Todo:
+    pub id: i32
+    pub title: string
+    pub done: bool = false
+
+@error
+@derive(Eq, Debug)
+pub enum TodoError:
+    @error("bad JSON: $message")
+    BadJson(message: string)
+    @error("no todo with id $id")
+    UnknownId(id: i32)
+
+## Reads a JSON array of todos; a missing "done" is false.
+pub fn load(json: string) -> Result[List[Todo], TodoError]:
+    match decode::[List[Todo]](json):
+        .Ok(todos) => .Ok(todos)
+        .Err(error) => .Err(.BadJson("$error"))
+
+pub fn dump(todos: List[Todo]) -> string:
+    encode(todos)
+
+pub fn complete(todos: List[Todo], id: i32) -> Result[List[Todo], TodoError]:
+    let mut out = todos
+    for i in 0..out.len():
+        if out[i].id == id:
+            out[i].done = true
+            return .Ok(out)
+    .Err(.UnknownId(id))
+
+pub fn pending(todos: List[Todo]) -> List[string]:
+    [for t in todos if !t.done => t.title]
+
+tests:
+    use std.testing.it_prop
+
+    it("loads a missing done as false"):
+        assert_equal(load("[{\"id\": 1, \"title\": \"a\"}]"), .Ok([Todo { id: +1, title: "a" }]))
+
+    it_prop("dump then load gives the same titles", prop=fn!(titles: List[string]):
+        todos := [for (i, t) in titles.enumerate() => Todo { id: i32(i), title: t }]
+        assert_equal(load(dump(todos)), .Ok(todos))
+    )

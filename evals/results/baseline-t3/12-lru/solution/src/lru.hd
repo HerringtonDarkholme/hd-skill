@@ -1,0 +1,159 @@
+## A least-recently-used cache from string keys to i64 values.
+## `order` lists the keys oldest first, so the last entry is the most recent.
+pub struct Lru:
+    capacity: usize
+    order: List[string]
+    values: Map[string, i64]
+
+## An empty cache that holds at most `capacity` keys.
+pub fn new_lru(capacity: usize) -> Lru:
+    Lru { capacity: capacity, order: [], values: {} }
+
+impl Lru:
+    ## The value stored under `key`. A hit makes the key most recently used;
+    ## a miss changes nothing.
+    pub fn get(&mut self, key: string) -> i64?:
+        match self.values.get(key):
+            .None => .None
+            .Some(value) =>
+                self.touch(key)
+                .Some(value)
+
+    ## Inserts or updates `key`, makes it most recently used, then evicts
+    ## the least recently used keys while over capacity.
+    pub fn put(&mut self, key: string, value: i64) -> void:
+        self.values[key] = value
+        self.touch(key)
+        while self.order.len() > self.capacity:
+            oldest := self.order.remove(0)
+            _ := self.values.remove(oldest)
+
+    pub fn len(self) -> usize:
+        self.values.len()
+
+    ## Moves `key` to the end of `order`, adding it if it is absent.
+    fn touch(&mut self, key: string) -> void:
+        let position = self.order.index_of(key).unwrap_or(self.order.len())
+        if position < self.order.len():
+            _ := self.order.remove(position)
+        self.order.push(key)
+
+tests:
+    use std.testing.{it_prop, Arbitrary}
+
+    ## A deliberately simple model: a list of pairs, oldest first.
+    struct Model:
+        capacity: usize
+        entries: List[(string, i64)]
+
+    impl Model:
+        fn position(&self, key: string) -> usize?:
+            let mut i: usize = 0
+            while i < self.entries.len():
+                if self.entries[i]._0 == key:
+                    return .Some(i)
+                i += 1
+            .None
+
+        fn get(&mut self, key: string) -> i64?:
+            match self.position(key):
+                .None => .None
+                .Some(i) =>
+                    entry := self.entries.remove(i)
+                    self.entries.push(entry)
+                    .Some(entry._1)
+
+        fn put(&mut self, key: string, value: i64) -> void:
+            let i = self.position(key).unwrap_or(self.entries.len())
+            if i < self.entries.len():
+                _ := self.entries.remove(i)
+            self.entries.push((key, value))
+            while self.entries.len() > self.capacity:
+                _ := self.entries.remove(0)
+
+    @derive(Arbitrary, Debug)
+    struct Op:
+        is_put: bool
+        key: u8
+        value: i64
+
+    @derive(Arbitrary, Debug)
+    struct Script:
+        capacity: u8
+        ops: List[Op]
+
+    it("a new cache is empty"):
+        let mut cache = new_lru(3)
+        assert_equal(cache.len(), 0)
+        assert_equal(cache.get("a"), .None)
+
+    it("a put value can be read back"):
+        let mut cache = new_lru(3)
+        cache.put("a", 1)
+        assert_equal(cache.get("a"), .Some(1))
+        assert_equal(cache.len(), 1)
+
+    it("updating a key replaces its value without growing"):
+        let mut cache = new_lru(3)
+        cache.put("a", 1)
+        cache.put("a", 7)
+        assert_equal(cache.get("a"), .Some(7))
+        assert_equal(cache.len(), 1)
+
+    it("a hit makes a key most recently used"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        assert_equal(cache.get("a"), .Some(1))
+        cache.put("c", 3)
+        assert_equal(cache.get("b"), .None, reason="b was least recent")
+        assert_equal(cache.get("a"), .Some(1))
+        assert_equal(cache.get("c"), .Some(3))
+
+    it("a put makes a key most recently used"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        cache.put("a", 10)
+        cache.put("c", 3)
+        assert_equal(cache.get("b"), .None)
+        assert_equal(cache.get("a"), .Some(10))
+
+    it("a missed get changes nothing"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        assert_equal(cache.get("zzz"), .None)
+        assert_equal(cache.len(), 2)
+        cache.put("c", 3)
+        assert_equal(cache.get("a"), .None, reason="a stayed least recent")
+
+    it("capacity 0 stores nothing"):
+        let mut cache = new_lru(0)
+        cache.put("a", 1)
+        assert_equal(cache.len(), 0)
+        assert_equal(cache.get("a"), .None)
+
+    it("evicts exactly one key per over-capacity put"):
+        let mut cache = new_lru(1)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        assert_equal(cache.len(), 1)
+        assert_equal(cache.get("a"), .None)
+        assert_equal(cache.get("b"), .Some(2))
+
+    it_prop("matches the list model on any operation sequence", prop=fn!(script: Script):
+        let mut cache = new_lru(usize(script.capacity % 5))
+        let mut model = Model { capacity: usize(script.capacity % 5), entries: [] }
+        for op in script.ops:
+            key := "k${op.key % 4}"
+            if op.is_put:
+                cache.put(key, op.value)
+                model.put(key, op.value)
+            else:
+                assert_equal(cache.get(key), model.get(key))
+            assert_equal(cache.len(), model.entries.len())
+        for k in 0..4:
+            key := "k${k}"
+            assert_equal(cache.get(key), model.get(key))
+    )

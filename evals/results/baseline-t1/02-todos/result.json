@@ -1,0 +1,88 @@
+{
+  "task": "02-todos",
+  "package": "todos",
+  "scenario": "JSON in and out",
+  "selling_points": [
+    "derive Serialize/Deserialize",
+    "field defaults",
+    "property tests"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 15,
+      "passed": 15,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-serde",
+        "desc": "JSON through @derive(Serialize, Deserialize)",
+        "ok": true
+      },
+      {
+        "id": "field-default",
+        "desc": "done defaults with a field default",
+        "ok": true
+      },
+      {
+        "id": "prop-test",
+        "desc": "round trip checked with a property test",
+        "ok": false
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.75
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/std/host.md",
+      "references/testing/unit-tests.md",
+      "references/language/traits.md",
+      "references/cli/packages.md"
+    ],
+    "bash": 8,
+    "hd": {
+      "help": 2,
+      "new": 1,
+      "check": 3,
+      "test": 3,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: S=.claude/skills/hd-lang/references; sed -n '/## JSON/,$p' $S/std/host.md; echo ----; cat $S/language/traits.md | sed -n '/Derived/,/^## [A-Z]/p' | head -150; echo ----; cat $S/testing/unit-test"
+    ],
+    "diagnostic_codes": {
+      "unsatisfied-trait-bound": 4,
+      "unknown-field": 4,
+      "private-member": 4
+    },
+    "failing_checks": 1,
+    "turns": 22,
+    "cost_usd": 0.01657491,
+    "duration_s": 45,
+    "tokens": 479324,
+    "final_message": "The `todos` library is in place and both `hd check --tests` and `hd test` pass: 15 tests, 0 failures.\n\n**Layout**\n- `hd.toml`: package `todos`, created with `hd new --lib --vcs none .`.\n- `src/todos.hd`: the implementation and its `tests:` block (13 unit tests).\n- `src/lib.hd`: replaced the generated sample with `pub use pkg.todos.{Todo, TodoError, complete, dump, load, pending}`, so the package's public interface is the four functions and two types.\n- `tests/todos.hd`: replaced the generated sample with 2 integration tests that use only the public interface.\n\n**Choices I made where the spec was silent**\n- `load` decodes straight into `List[Todo]` with the JSON codec. Any decode failure, including non-array input, wrong field types, a missing `id` or `title`, or a fractional `id`, becomes `BadJson` carrying the decoder's message. Extra fields are ignored.\n- `done` defaults to `false` when absent, both in the struct and in the JSON codec.\n- `dump` is `encode`, so output is compact JSON.\n- `complete` on an already-done todo keeps it done. On an unknown id it returns `UnknownId(id)`.\n- Duplicate ids are not rejected. `complete` marks every todo with that id.\n- The fields of `Todo` are `pub`, because the integration test constructs and reads them from outside the module.\n\nI did not run `git` anywhere, since this directory is not a repository, so no commit was made and no commit attribution applies.",
+    "is_error": false
+  },
+  "agent_exit": null
+}

@@ -1,0 +1,15 @@
+use std.process.Command
+use std.testing.{assert_equal, hd_run}
+
+it("prints each count and the total"):
+    let out = hd_run!(*Command::new("linecount").args(["data/three.txt", "data/empty.txt", "data/no-newline.txt"]))
+    assert_equal(out.stdout, "3 data/three.txt\n0 data/empty.txt\n2 data/no-newline.txt\n5 total\n")
+    assert_equal(out.status, 0, reason="every file was readable")
+
+it("refuses files outside data/ and exits with status 1"):
+    let out = hd_run!(*Command::new("linecount").args(["hd.toml", "data/../hd.toml", "../hd.toml", "/etc/hosts", "data/three.txt"]))
+    assert_equal(out.stdout, "3 data/three.txt\n3 total\n")
+    assert_equal(out.status, 1)
+    assert(out.stderr.contains("linecount: hd.toml: "), reason="a plain name outside data/ is reported")
+    assert(out.stderr.contains("linecount: ../hd.toml: "), reason="a parent-relative name is reported")
+    assert(out.stderr.contains("linecount: /etc/hosts: "), reason="an absolute name is reported")

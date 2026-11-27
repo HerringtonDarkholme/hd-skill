@@ -1,0 +1,51 @@
+@derive(Eq, Debug)
+pub struct User:
+    pub id: i64
+    pub name: string
+
+@error
+@derive(Eq, Debug)
+pub enum UserError:
+    @error("no user $id")
+    NotFound(id: i64)
+    @error("a name cannot be empty")
+    EmptyName
+
+## Where users are kept; the caller provides it.
+pub trait UserStore:
+    fn get!(&mut self, id: i64) -> User?
+    fn put!(&mut self, user: User) -> void
+
+## Renames user `id` to `name`, trimmed, and returns the stored user.
+pub fn rename!(id: i64, name: string) -> Result[User, UserError] $ UserStore:
+    clean := name.trim()
+    if clean.is_empty():
+        return .Err(.EmptyName)
+    store := $.use(UserStore)
+    let mut user = match store.get!(id):
+        .Some(user) => user
+        .None => return .Err(.NotFound(id))
+    user.name = clean
+    store.put!(user)
+    .Ok(user)
+
+tests:
+    struct Fake:
+        users: Map[i64, User]
+
+    impl UserStore for Fake:
+        fn get!(&mut self, id: i64) -> User?:
+            self.users.get(id)
+        fn put!(&mut self, user: User) -> void:
+            self.users[user.id] = user
+
+    it("renames a stored user"):
+        fake := box(Fake { users: {1: User { id: 1, name: "a" }} })
+        $.with(UserStore=fake):
+            assert_equal(rename!(1, " Ada "), .Ok(User { id: 1, name: "Ada" }))
+        assert_equal(fake.users.get(1), .Some(User { id: 1, name: "Ada" }))
+
+    it("a missing user is NotFound"):
+        fake := box(Fake { users: {} })
+        $.with(UserStore=fake):
+            assert_equal(rename!(3, "x"), .Err(.NotFound(3)))

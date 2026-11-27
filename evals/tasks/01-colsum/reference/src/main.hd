@@ -1,0 +1,32 @@
+use pkg.sum.summarize
+use std.cli.{Args, Cli}
+use std.console.{ConsoleInput, eprintln, read_all}
+use std.process.ExitCode
+
+## Sum one CSV column grouped by another, reading standard input
+@derive(Cli)
+struct Options:
+    ## the 1-based column to group by
+    key: usize = 1
+    ## the 1-based column to sum
+    value: usize = 2
+    ## ignore the first line
+    skip_header: bool
+
+pub fn main!() -> ExitCode $ Args + Console + ConsoleInput:
+    options := match Options::parse_args():
+        .Ok(options) => options
+        .Err(error) => return error.exit()
+    text := match read_all!():
+        .Ok(text) => text
+        .Err(error) =>
+            eprintln("colsum: $error")
+            return ExitCode(1)
+    match summarize(text, options.key, options.value, options.skip_header):
+        .Ok(rows) =>
+            for (k, total) in rows:
+                println("$k,$total")
+            ExitCode(0)
+        .Err(error) =>
+            eprintln("colsum: $error")
+            ExitCode(1)

@@ -1,0 +1,84 @@
+{
+  "task": "04-ratelimit",
+  "package": "ratelimit",
+  "scenario": "time-dependent logic",
+  "selling_points": [
+    "Clock requirement",
+    "ManualClock fake"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "manual-clock",
+        "desc": "tests control time with ManualClock",
+        "ok": true
+      },
+      {
+        "id": "virtual-sleep",
+        "desc": "tests advance virtual time with sleep!",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/language/requirements.md",
+      "references/testing/fakes.md",
+      "references/cli/packages.md",
+      "references/language/modules.md",
+      "references/std/host.md",
+      "references/testing/unit-tests.md",
+      "references/std/api/README.md",
+      "references/std/collections.md",
+      "references/std/api/time.md",
+      "references/std/api/collections-deque.md",
+      "references/std/api/collections-map.md"
+    ],
+    "bash": 7,
+    "hd": {
+      "check": 4,
+      "test": 4,
+      "fmt": 3,
+      "lint": 2,
+      "file": 1
+    },
+    "denied": [
+      "Bash: S=.claude/skills/hd-lang/references; cat $S/language/modules.md | head -150; echo ----; ls $S/std/api/; echo ----; grep -n -i \"duration\\|Clock\\|now\\|ManualClock\\|since\\|subtract\\|elapsed\\|compar"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 24,
+    "cost_usd": 0.020062740000000003,
+    "duration_s": 53,
+    "tokens": 584864,
+    "final_message": "The `ratelimit` package is in the current directory. `hd check --tests` and `hd test` both pass: 6 tests, 0 failures.\n\n**Files**\n- `hd.toml`: package manifest, name `ratelimit`, no capabilities (it is a library).\n- `src/limiter.hd`: `Limiter`, `new_limiter`, `allow`, and the `tests:` block.\n- `src/lib.hd`: `pub use self.limiter.{Limiter, new_limiter}`, so callers import `ratelimit.Limiter`. The spec named only `src/limiter.hd`, but a library needs a root module, so I added this one.\n\n**Design**\n- Each key maps to a `Deque[Timestamp]` of allowed events, oldest first.\n- `allow` reads `now()` (so it needs `$ Clock`), drops events with `now - t >= window` from the front, then refuses if `len >= max`. Otherwise it records the time and returns true.\n- Refused events are never pushed, so they are not recorded.\n- Keys are independent because each has its own deque.\n\n**Tests**\n- Up to `max` allowed, then refused.\n- Refused events are not recorded.\n- Boundary: an event counts while `now - t < window`, and expires exactly at `window`.\n- The window slides event by event.\n- Keys are independent.\n- A zero limit refuses everything.\n\nTime is controlled with `ManualClock` installed via `$.with(Clock=...)` and advanced with `sleep!`.\n\n**Things to know**\n- `hd fmt` rewrote `src/limiter.hd` (comment spacing only). I re-checked and re-tested after formatting.\n- The second `hd check` reported `modules_checked: 0`, but status was 0 and the first run checked 2 modules. I think this is a cache effect",
+    "is_error": false
+  },
+  "agent_exit": null
+}

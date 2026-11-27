@@ -1,0 +1,33 @@
+## One value repeated `count` times.
+@derive(Eq, Debug)
+pub struct Run:
+    pub value: i32
+    pub count: usize
+
+pub fn encode(xs: List[i32]) -> List[Run]:
+    let mut runs: List[Run] = []
+    for x in xs:
+        n := runs.len()
+        if n > 0 && runs[n - 1].value == x:
+            runs[n - 1].count += 1
+        else:
+            runs.push(Run { value: x, count: 1 })
+    runs
+
+pub fn decode(runs: List[Run]) -> List[i32]:
+    let mut xs: List[i32] = []
+    for run in runs:
+        for _ in 0..run.count:
+            xs.push(run.value)
+    xs
+
+tests:
+    use std.testing.it_prop
+
+    fn round_trip!(xs: List[i32]) -> void:
+        assert_equal(decode(encode(xs)), xs)
+
+    it("encodes runs"):
+        assert_equal(encode([+1, +1, +2]), [Run { value: +1, count: 2 }, Run { value: +2, count: 1 }])
+
+    it_prop("decode undoes encode", prop=round_trip)

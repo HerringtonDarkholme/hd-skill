@@ -1,0 +1,84 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": false
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.8
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 12,
+    "hd": {
+      "help": 2,
+      "doc": 3,
+      "new": 2,
+      "check": 2,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 18,
+    "cost_usd": 0.0218638,
+    "duration_s": 64,
+    "tokens": 643421,
+    "final_message": "The `quotes` package is in place. `hd check --tests` and `hd test` both pass: 6 tests, 0 failures.\n\n**Files**\n- `src/quotes.hd` holds the implementation and the `tests:` block.\n- `src/lib.hd` is the library root. It re-exports `QuoteError`, `Quotes` and `order_total` from `quotes`.\n- `hd.toml` is the manifest from `hd new --lib`. I removed the sample `tests/quotes.hd` because it tested the placeholder `greet` function.\n\n**Choices I made**\n- **Library root:** `hd new` puts the library root at `src/lib.hd`, but you asked for `src/quotes.hd`. I put the code in `src/quotes.hd` and re-exported it from `lib.hd`.\n- **Retries:** `quote_sku!` loops up to 3 times and sleeps 10 ms before each retry. It stops at the first success. Every error is retried, including `Unknown`, because the spec says each sku gets 3 attempts before its error counts.\n- **Concurrency:** `order_total!` calls `map_join!(skus, 4, quote_sku)`, which caps in-flight work at 4 and returns results in list order. The first failing result is then returned by `?`, which gives the first failing sku in list order.\n- **Equality and debug:** `QuoteError` derives `Eq` and `Debug`.\n\n**Tests**\nThe six tests use a `Shop` fake with per-sku prices and a configurable number of `Busy` answers. They cover:\n- an empty order totals 0\n- prices are summed\n- a busy sku is retried, and the virtual clock shows two 10 ms waits\n- a sku gives up after exactly 3 attempts\n- each sku has its own attempt budget\n- the error reported is the first fa",
+    "is_error": false
+  },
+  "agent_exit": null
+}

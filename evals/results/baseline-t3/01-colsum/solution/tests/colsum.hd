@@ -1,0 +1,33 @@
+use std.process.Command
+use std.testing.hd_run
+
+it("sums a column grouped by another from standard input"):
+    let out = hd_run!(*Command::new("colsum").stdin("a,1\nb,2\na,3\n"))
+    assert_equal(out.stdout, "a,4\nb,2\n", reason="totals by key")
+    assert_equal(out.stderr, "", reason="no diagnostics")
+    assert_equal(out.status, 0, reason="a clean exit")
+
+it("takes --key, --value and --skip-header"):
+    let out = hd_run!(
+        *Command::new("colsum")
+            .args(["--key", "2", "--value", "3", "--skip-header"])
+            .stdin("x,k,5\nx,j,1\ny,k,-2\n"),
+    )
+    assert_equal(
+        out.stdout,
+        "j,1\nk,-2\n",
+        reason="grouped by column 2; the header line is skipped",
+    )
+    assert_equal(out.status, 0, reason="a clean exit")
+
+it("prints the error on standard error with status 1 and nothing on standard output"):
+    let out = hd_run!(*Command::new("colsum").stdin("a,1\n\nb,x\n"))
+    assert_equal(out.stdout, "", reason="no totals on error")
+    assert_equal(out.stderr, "colsum: line 3: not a number: \"x\"\n", reason="the message")
+    assert_equal(out.status, 1, reason="failure status")
+
+it("reports a short line as a missing column"):
+    let out = hd_run!(*Command::new("colsum").args(["--value", "3"]).stdin("a,1,2\nb\n"))
+    assert_equal(out.stdout, "", reason="no totals on error")
+    assert_equal(out.stderr, "colsum: line 2: missing column\n", reason="the message")
+    assert_equal(out.status, 1, reason="failure status")

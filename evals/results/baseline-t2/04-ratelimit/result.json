@@ -1,0 +1,90 @@
+{
+  "task": "04-ratelimit",
+  "package": "ratelimit",
+  "scenario": "time-dependent logic",
+  "selling_points": [
+    "Clock requirement",
+    "ManualClock fake"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "manual-clock",
+        "desc": "tests control time with ManualClock",
+        "ok": true
+      },
+      {
+        "id": "virtual-sleep",
+        "desc": "tests advance virtual time with sleep!",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/testing/fakes.md",
+      "references/cli/packages.md",
+      "references/language/requirements.md",
+      "references/std/api/collections-map.md",
+      "references/std/api/time.md",
+      "references/language/collections.md",
+      "references/how-to/shared-state.md",
+      "references/language/modules.md"
+    ],
+    "bash": 14,
+    "hd": {
+      "help": 1,
+      "new": 2,
+      "check": 5,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/baseline-t2/04-ratelimit/ratelimit/.claude/skills/hd-lang/references/std/api && grep -n \"^- \\`\\|^## \\|^pub \" collection",
+      "Bash: cd \"/private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/baseline-t2/04-ratelimit/ratelimit/.claude/skills/hd-lang/references\" && git status --short | head -20; echo ---; git ",
+      "Bash: R=\"/private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/baseline-t2/04-ratelimit/ratelimit/.claude/skills/hd-lang/references\"; rm -f \"$R/hd.toml\" \"$R/.gitignore\" \"$R/src/lib.h",
+      "Bash: cd \"/private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/baseline-t2/04-ratelimit/ratelimit\" && sed -i '' 's/^use pkg.{Limiter, new_limiter}$/use pkg.new_limiter/' tests/ratel"
+    ],
+    "diagnostic_codes": {
+      "prelude-name-shadow": 1,
+      "unknown-import": 2,
+      "missing-let": 1,
+      "unknown-trait": 1
+    },
+    "failing_checks": 2,
+    "turns": 38,
+    "cost_usd": 0.029878179999999997,
+    "duration_s": 85,
+    "tokens": 1119049,
+    "final_message": "The `ratelimit` package is written in the project directory. `hd check --tests`, `hd test` (6 passed) and `hd fmt` all succeed.\n\n**Stray files outside the project:** when I first ran `hd new --lib .`, my shell was still in the skill's `references/` folder, so it created a template package there. Those files are `hd.toml`, `.gitignore`, `src/lib.hd` and `tests/references.hd` under `.claude/skills/hd-lang/references/`. I tried to delete them, but the permission request was denied. Please remove them yourself. I did not touch that folder's `.git`, and nothing else there was changed by me.\n\n**What's in the project:**\n- `src/limiter.hd`: `Limiter` (private fields `max`, `window`, `events: Map[string, List[Timestamp]]`), `new_limiter`, and `allow(&mut self, key) -> bool $ Clock`.\n  - `allow` reads `now()` from `Clock`. It keeps only the events where `now - t < window`, then records `now` and returns true only if fewer than `max` remain. Refused events are not stored.\n  - An event exactly `window` old no longer counts.\n- `src/lib.hd`: re-exports `Limiter` and `new_limiter` from `ratelimit.limiter`, so callers write `use pkg.{Limiter, new_limiter}` (or `ratelimit.` from outside the package).\n- Tests: five unit tests in `src/limiter.hd` cover the limit, the exact window boundary, refused events not counting, a sliding window, and independent keys. `tests/ratelimit.hd` is a public-API test that replaces the template's `greet` test.\n\n**Choices I made:**\n- A clock that goes backwards cou",
+    "is_error": false
+  },
+  "agent_exit": null
+}

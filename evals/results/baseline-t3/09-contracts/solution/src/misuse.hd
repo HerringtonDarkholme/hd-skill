@@ -1,0 +1,29 @@
+## A small program that makes one call to the library, chosen by its first
+## argument. The integration tests run it to check that misuse stops the program.
+
+use std.cli.{Args, args}
+use pkg.{open, transfer}
+
+pub fn main() -> void $ Console + Args:
+    let case = args()[0]
+    if case == "open-negative":
+        println(debug(open(-5).balance()))
+    else if case == "deposit-zero":
+        let mut a = open(10)
+        a.deposit(0)
+    else if case == "withdraw-negative":
+        let mut a = open(10)
+        a.withdraw(-1)
+    else if case == "withdraw-too-much":
+        let mut a = open(10)
+        a.withdraw(11)
+    else if case == "transfer-zero":
+        let mut from = open(10)
+        let mut to = open(0)
+        transfer(&mut from, &mut to, 0)
+    else if case == "transfer-too-much":
+        let mut from = open(10)
+        let mut to = open(0)
+        transfer(&mut from, &mut to, 11)
+    else:
+        println("ok ${open(7).balance()}")

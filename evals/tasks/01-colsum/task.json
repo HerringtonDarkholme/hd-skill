@@ -1,0 +1,68 @@
+{
+  "package": "colsum",
+  "scenario": "CLI over standard input",
+  "selling_points": [
+    "derive Cli",
+    "@error",
+    "Result"
+  ],
+  "files": {},
+  "runs": [
+    {
+      "args": [
+        "--skip-header"
+      ],
+      "stdin": "k,v\nb,2\na,1\nb,5\n",
+      "stdout": "a,1\nb,7\n",
+      "status": 0
+    },
+    {
+      "args": [],
+      "stdin": "a,1\nb,zz\n",
+      "stdout": "",
+      "status": 1,
+      "stderr_contains": "colsum: line 2"
+    },
+    {
+      "args": [
+        "--key",
+        "2",
+        "--value",
+        "3"
+      ],
+      "stdin": "1, x ,7\n2,y,8\n\n3,x,-9\n",
+      "stdout": "x,-2\ny,8\n",
+      "status": 0
+    },
+    {
+      "args": [],
+      "stdin": "a\n",
+      "stdout": "",
+      "status": 1,
+      "stderr_contains": "line 1"
+    }
+  ],
+  "idiom": [
+    {
+      "id": "derive-cli",
+      "desc": "options parsed with @derive(Cli)",
+      "scope": "all",
+      "pattern": "@derive\\([^)]*\\bCli\\b",
+      "expect": true
+    },
+    {
+      "id": "error-enum",
+      "desc": "SumError declared with @error",
+      "scope": "all",
+      "pattern": "@error\\s*\\n(@derive[^\\n]*\\n)?\\s*pub enum SumError",
+      "expect": true
+    },
+    {
+      "id": "own-tests",
+      "desc": "writes at least 2 test cases of its own",
+      "kind": "min_tests",
+      "n": 2
+    }
+  ],
+  "expected_hidden": 5
+}

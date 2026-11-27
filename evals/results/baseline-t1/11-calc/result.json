@@ -1,0 +1,88 @@
+{
+  "task": "11-calc",
+  "package": "calc",
+  "scenario": "parser and interpreter",
+  "selling_points": [
+    "recursive enums",
+    "box",
+    "@error",
+    "match"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 15,
+      "passed": 15,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 20,
+      "passed": 20,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "tree-enum",
+        "desc": "a recursive enum for the syntax tree (boxed children)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "CalcError declared with @error",
+        "ok": false
+      },
+      {
+        "id": "table-test",
+        "desc": "table tests with it_each",
+        "ok": false
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.5
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/cli/packages.md",
+      "references/testing/unit-tests.md",
+      "references/language/data.md",
+      "references/language/modules.md",
+      "references/language/errors.md",
+      "references/language/collections.md",
+      "references/language/basics.md"
+    ],
+    "bash": 12,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 3,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/baseline-t1/11-calc/calc && hd check --tests --format json 2>&1 | head -40; echo \"exit ${PIPESTATUS[0]}\""
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 26,
+    "cost_usd": 0.03622903,
+    "duration_s": 129,
+    "tokens": 885714,
+    "final_message": "The `calc` package is in the current directory and both required commands pass: `hd check --tests` reports no errors, and `hd test` runs 15 tests, all passing. `hd lint` reports no warnings.\n\n**Files**\n- `hd.toml`: library package named `calc`.\n- `src/calc.hd`: `CalcError` (`@derive(Eq, Debug)`), `eval`, and the tests. The pipeline is a lexer, then a recursive-descent parser into an `Expr` tree (`*Expr` boxes for children), then a separate evaluator.\n- `src/lib.hd`: `pub use self.calc.{CalcError, eval}`. A library's root must be `src/lib.hd`, so this re-export makes `use calc.eval` work from outside.\n- `tests/calc.hd`: two integration tests through the package interface.\n\n**Decisions to review**\n- **Overflow wraps.** The spec's error enum has no overflow variant, so `+`, `-`, `*`, unary minus and `MIN / -1` use wrapping arithmetic. The evaluator never panics, but overflowing results are silently wrong. If you'd rather it fail, the enum needs a third variant.\n- **Numbers beyond i64 are `Unexpected(start of the number)`.** The spec doesn't cover this case.\n- **Only the space character counts as whitespace.** Tabs and newlines are reported as invalid characters, following the spec's wording.\n- **Error offsets.** An invalid character stops the lexer, and the parser fails at it or at an earlier token. So `\"1 2 $\"` reports offset 2, not the `$`.\n\nI ran `hd fmt` after the tests were written, which rewrote `src/calc.hd`. The check and test runs above were repeated after formatting. T",
+    "is_error": false
+  },
+  "agent_exit": null
+}

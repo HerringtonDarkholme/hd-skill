@@ -1,0 +1,98 @@
+{
+  "task": "03-config",
+  "package": "config",
+  "scenario": "configuration from file and environment",
+  "selling_points": [
+    "derive Validate + field facts",
+    "env_decode",
+    "@from errors",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 13,
+      "passed": 13,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 11,
+      "passed": 11,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-validate",
+        "desc": "rules written as @derive(Validate) field facts",
+        "ok": true
+      },
+      {
+        "id": "field-facts",
+        "desc": "uses @range / @length facts",
+        "ok": true
+      },
+      {
+        "id": "from-errors",
+        "desc": "error variants convert with @from",
+        "ok": true
+      },
+      {
+        "id": "fake-fs-env",
+        "desc": "tests use MemoryFs and ScriptedEnv",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/cli/packages.md",
+      "references/std/host.md",
+      "references/std/api/README.md",
+      "references/std/api/validate.md",
+      "references/testing/fakes.md",
+      "references/language/modules.md"
+    ],
+    "bash": 12,
+    "hd": {
+      "help": 3,
+      "new": 1,
+      "check": 3,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: H=.claude/skills/hd-lang/references; sed -n 1,200p $H/cli/packages.md; echo ----; hd help new; echo ----; sed -n 1,80p $H/how-to/project-layout.md",
+      "Bash: H=.claude/skills/hd-lang/references; grep -n -E \"read_text|env_as|fn env\\b|HostError|InvalidValue\" $H/std/api/*.md | head -40; echo ----; grep -n -E \"validated|length|range|Validate\" $H/std/api/"
+    ],
+    "diagnostic_codes": {
+      "unknown-name": 3,
+      "syntax-error": 1,
+      "type-mismatch": 1,
+      "missing-requirement": 20
+    },
+    "failing_checks": 1,
+    "turns": 29,
+    "cost_usd": 0.02380219,
+    "duration_s": 73,
+    "tokens": 703006,
+    "final_message": "The `config` library is in place: `src/config.hd` holds `Config`, `ConfigError` and `load_config!`, and `hd check --tests` and `hd test` both pass (13 of 13 tests).\n\nWhat's in the package:\n\n- **`src/config.hd`**: `Config` derives `Eq` and `Debug`, plus `Deserialize` and `Validate`. The rules are `@length(1, 253)` on `host`, `@range(1024, 65535)` on `port`, and `@range(1, 64)` on `workers`, which defaults to 4. `ConfigError` has the four variants: `Read` from `FsError`, `Parse` from `JsonError`, `Environment` from `HostError`, and `Invalid` from `ValidationError`.\n- **`load_config!`**: reads the file, decodes it, applies `APP_PORT` through `env_as::[i32]`, then runs `validated()`. The override happens before validation, so an overridden port is checked too.\n- **`src/lib.hd`**: re-exports `Config`, `ConfigError` and `load_config`.\n- **`hd.toml`**: the package is named `config`. It has no `[capabilities]` table because it is a library, not an app.\n\nDecisions to check:\n\n- **Module layout**: the spec asked for `src/config.hd`, but `hd new --lib` generates `src/lib.hd` as the library root. I kept both: `lib.hd` re-exports from `config.hd`.\n- **Bang on the re-export**: the compiler does not accept `load_config!` in a `use` line, so the re-export names `load_config`. The function is still defined and called as `load_config!`. I did not test calling it from another package.\n- **Sample files**: I deleted the generated `tests/config.hd`, which only tested the sample `greet` function. Th",
+    "is_error": false
+  },
+  "agent_exit": null
+}

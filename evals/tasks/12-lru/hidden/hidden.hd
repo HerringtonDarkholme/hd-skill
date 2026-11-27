@@ -1,0 +1,40 @@
+use pkg.lru.{Lru, new_lru}
+
+it("hidden: get on an empty cache"):
+    let mut cache = new_lru(2)
+    assert_equal(cache.get("x"), .None)
+    assert_equal(cache.len(), 0)
+
+it("hidden: put updates an existing key without eviction"):
+    let mut cache = new_lru(2)
+    cache.put("a", 1)
+    cache.put("b", 2)
+    cache.put("a", 10)
+    assert_equal(cache.len(), 2)
+    assert_equal(cache.get("a"), .Some(10))
+    assert_equal(cache.get("b"), .Some(2))
+
+it("hidden: updating a key makes it recent"):
+    let mut cache = new_lru(2)
+    cache.put("a", 1)
+    cache.put("b", 2)
+    cache.put("a", 3)
+    cache.put("c", 4)
+    assert_equal(cache.get("b"), .None)
+    assert_equal(cache.get("a"), .Some(3))
+
+it("hidden: get makes a key recent"):
+    let mut cache = new_lru(3)
+    cache.put("a", 1)
+    cache.put("b", 2)
+    cache.put("c", 3)
+    _ := cache.get("a")
+    cache.put("d", 4)
+    assert_equal(cache.get("b"), .None)
+    assert_equal(cache.len(), 3)
+
+it("hidden: a missed get changes nothing"):
+    let mut cache = new_lru(1)
+    cache.put("a", 1)
+    _ := cache.get("zz")
+    assert_equal(cache.get("a"), .Some(1))

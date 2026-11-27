@@ -1,0 +1,42 @@
+use pkg.quotes.{QuoteError, Quotes, order_total}
+use std.time.{Clock, ManualClock, Timestamp}
+
+struct Scripted:
+    busy: Map[string, usize]
+    calls: Map[string, usize]
+
+impl Quotes for Scripted:
+    fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]:
+        self.calls[sku] = self.calls.get(sku).unwrap_or(0) + 1
+        if sku == "ghost":
+            return .Err(.Unknown(sku))
+        left := self.busy.get(sku).unwrap_or(0)
+        if left > 0:
+            self.busy[sku] = left - 1
+            return .Err(.Busy)
+        .Ok(i64(sku.len()) * 100)
+
+fn clock() -> *mut ManualClock:
+    ManualClock::new(Timestamp::from_unix_milliseconds(0))
+
+it("hidden: sums every price"):
+    fake := box(Scripted { busy: {}, calls: {} })
+    $.with(Quotes=fake, Clock=clock()):
+        assert_equal(order_total!(["tea", "cake"]), .Ok(700))
+
+it("hidden: an empty order is zero"):
+    fake := box(Scripted { busy: {}, calls: {} })
+    $.with(Quotes=fake, Clock=clock()):
+        assert_equal(order_total!([]), .Ok(0))
+
+it("hidden: a busy sku is retried until it answers"):
+    fake := box(Scripted { busy: {"tea": 2}, calls: {} })
+    $.with(Quotes=fake, Clock=clock()):
+        assert_equal(order_total!(["tea"]), .Ok(300))
+    assert_equal(fake.calls.get("tea"), .Some(3))
+
+it("hidden: gives up after three attempts"):
+    fake := box(Scripted { busy: {}, calls: {} })
+    $.with(Quotes=fake, Clock=clock()):
+        assert_equal(order_total!(["tea", "ghost"]), .Err(.Unknown("ghost")))
+    assert_equal(fake.calls.get("ghost"), .Some(3))

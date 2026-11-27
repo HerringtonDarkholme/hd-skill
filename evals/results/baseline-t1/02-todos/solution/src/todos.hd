@@ -1,0 +1,115 @@
+use std.encoding.json.{decode, encode}
+use std.encoding.{Deserialize, Serialize}
+
+## One item on the list.
+@derive(Eq, Debug, Serialize, Deserialize)
+pub struct Todo:
+    pub id: i32
+    pub title: string
+    pub done: bool = false
+
+@derive(Eq, Debug)
+pub enum TodoError:
+    BadJson(message: string)
+    UnknownId(id: i32)
+
+## Reads a JSON array of {"id", "title", "done"} objects.
+pub fn load(json: string) -> Result[List[Todo], TodoError]:
+    match decode::[List[Todo]](json):
+        .Ok(todos) => .Ok(todos)
+        .Err(error) => .Err(.BadJson("$error"))
+
+## Writes the list as a JSON array that `load` reads back unchanged.
+pub fn dump(todos: List[Todo]) -> string:
+    encode(todos)
+
+## Marks the todo with `id` as done.
+pub fn complete(todos: List[Todo], id: i32) -> Result[List[Todo], TodoError]:
+    let mut out: List[Todo] = []
+    let found = false
+    for todo in todos:
+        if todo.id == id:
+            found = true
+            out.push(Todo { id: todo.id, title: todo.title, done: true })
+        else:
+            out.push(todo)
+    if !found:
+        return .Err(.UnknownId(id))
+    .Ok(out)
+
+## Titles of the todos not yet done, in order.
+pub fn pending(todos: List[Todo]) -> List[string]:
+    let mut out: List[string] = []
+    for todo in todos:
+        if !todo.done:
+            out.push(todo.title)
+    out
+
+tests:
+    it("loads a list and defaults done to false"):
+        result := load(
+            "[{\"id\": 1, \"title\": \"milk\"}, {\"id\": 2, \"title\": \"eggs\", \"done\": true}]",
+        )
+        assert_equal(
+            result,
+            .Ok([Todo { id: 1, title: "milk" }, Todo { id: 2, title: "eggs", done: true }]),
+        )
+
+    it("loads an empty array"):
+        assert_equal(load("[]"), .Ok([]))
+
+    it("ignores extra fields"):
+        assert_equal(
+            load("[{\"id\": 1, \"title\": \"a\", \"color\": \"red\"}]"),
+            .Ok([Todo { id: 1, title: "a" }]),
+        )
+
+    it("rejects input that is not a todo array"):
+        assert(load("{\"id\": 1, \"title\": \"a\"}").is_err())
+        assert(load("not json").is_err())
+        assert(load("[{\"title\": \"no id\"}]").is_err())
+        assert(load("[{\"id\": 1}]").is_err())
+        assert(load("[{\"id\": \"1\", \"title\": \"a\"}]").is_err())
+        assert(load("[{\"id\": 1.5, \"title\": \"a\"}]").is_err())
+        assert(load("[{\"id\": 1, \"title\": \"a\", \"done\": \"yes\"}]").is_err())
+        assert(load("[1, 2]").is_err())
+
+    it("reports a bad-json error variant"):
+        match load("[{}]"):
+            .Err(.BadJson(message)) => assert(message.len() > 0)
+            _ => panic("expected BadJson")
+
+    it("dump round-trips through load"):
+        todos := [Todo { id: 1, title: "milk" }, Todo { id: 7, title: "say \"hi\"", done: true }]
+        assert_equal(load(dump(todos)), .Ok(todos))
+
+    it("dump of an empty list round-trips"):
+        assert_equal(load(dump([])), .Ok([]))
+
+    it("complete marks one todo done"):
+        todos := [Todo { id: 1, title: "milk" }, Todo { id: 2, title: "eggs" }]
+        assert_equal(
+            complete(todos, 2),
+            .Ok([Todo { id: 1, title: "milk" }, Todo { id: 2, title: "eggs", done: true }]),
+        )
+
+    it("complete on an already-done todo keeps it done"):
+        todos := [Todo { id: 1, title: "milk", done: true }]
+        assert_equal(complete(todos, 1), .Ok(todos))
+
+    it("complete rejects an unknown id"):
+        assert_equal(complete([Todo { id: 1, title: "milk" }], 9), .Err(.UnknownId(9)))
+
+    it("complete on an empty list is an unknown id"):
+        assert_equal(complete([], 1), .Err(.UnknownId(1)))
+
+    it("pending lists undone titles in order"):
+        todos := [
+            Todo { id: 1, title: "milk", done: true },
+            Todo { id: 2, title: "eggs" },
+            Todo { id: 3, title: "bread" },
+        ]
+        assert_equal(pending(todos), ["eggs", "bread"])
+
+    it("pending of nothing is empty"):
+        assert_equal(pending([]), [])

@@ -1,0 +1,12 @@
+use pkg.{eval, CalcError}
+use std.testing.assert_equal
+
+it("evaluates through the package root"):
+    assert_equal(
+        eval("2 * (3 + 4) - 5 / 2"),
+        .Ok(12),
+        reason="precedence, parentheses and truncation",
+    )
+
+it("reports a failure through the package root"):
+    assert_equal(eval("8 / 0"), .Err(CalcError.DivideByZero))

@@ -1,0 +1,98 @@
+{
+  "task": "07-sandbox",
+  "package": "linecount",
+  "scenario": "sandboxed program",
+  "selling_points": [
+    "scoped capability grants",
+    "minimal capabilities"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {},
+    "runs": [
+      {
+        "args": [
+          "data/a.txt",
+          "data/b.txt"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "3 data/a.txt\n1 data/b.txt\n4 total\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "data/a.txt",
+          "hd.toml"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "3 data/a.txt\n3 total\n",
+        "stderr": "linecount: hd.toml: access to hd.toml is not granted\n"
+      },
+      {
+        "args": [
+          "data/nope.txt"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "0 total\n",
+        "stderr": "linecount: data/nope.txt: not found: data/nope.txt\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "minimal-caps",
+        "desc": "[capabilities] grants only Console, Args and FsRead",
+        "ok": true
+      },
+      {
+        "id": "scoped-fsread",
+        "desc": "FsRead scoped to data/",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 13,
+    "hd": {
+      "help": 5,
+      "new": 1,
+      "check": 4,
+      "test": 4,
+      "fmt": 6,
+      "run": 4,
+      "file": 1
+    },
+    "denied": [
+      "Bash: ln -sf /etc/hosts data/escape && hd run -- data/escape; echo \"status=$?\"; rm -f data/escape"
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "unknown-trait": 4,
+      "missing-requirement": 2
+    },
+    "failing_checks": 1,
+    "turns": 21,
+    "cost_usd": 0.01863179,
+    "duration_s": 54,
+    "tokens": 594192,
+    "final_message": "The `linecount` package is in the current directory. `hd check --tests` passes, and `hd test` passes all 7 cases (5 unit, 2 integration).\n\n**Files**\n- `hd.toml`: grants only `Console`, `Args`, and `FsRead = [\"data/\"]`. Clock, Random, writes, Env, network and processes are not granted; `Process` is a dev-only grant for the integration tests.\n- `src/main.hd`: `run!` counts lines for each argument, prints `<lines> <file>`, then `<total> total`. Unreadable files go to stderr as `linecount: <file>: <reason>`, are skipped, and make the status 1. `main!` passes `args()` to `run!`.\n- `tests/linecount.hd`: integration tests that run the built program against `data/sample.txt` and a `../hd.toml` path.\n- `data/sample.txt`: a three-line fixture for the integration test.\n\n**Choices I made**\n- **Line count** is `text.lines().len()`, so a final line without a trailing newline still counts (`\"a\\nb\"` is 2). `wc -l` would say 1. Tell me if you want `wc -l` semantics.\n- **Sandboxing** is done by the `FsRead` grant, not by checking paths in code. I checked with real runs: `../hd.toml`, `/etc/hosts`, `data/../hd.toml` are all refused with \"access … is not granted\", and a missing file and a directory are reported and skipped with status 1.\n\n**Not verified**\n- I tried to check that a symlink inside `data/` pointing to `/etc/hosts` is also refused. The command was denied by the permission system, so I did not run it and did not retry. Whether the grant follows symlinks is untested.\n- `hd fmt --check",
+    "is_error": false
+  },
+  "agent_exit": null
+}

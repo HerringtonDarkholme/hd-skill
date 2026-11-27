@@ -1,0 +1,9 @@
+use pkg.{eval, CalcError}
+use std.testing.assert_equal
+
+it("evaluates through the package interface"):
+    assert_equal(eval("2 * (3 + 4)"), .Ok(14))
+
+it("reports errors through the package interface"):
+    assert_equal(eval("8 / (4 - 4)"), .Err(.DivideByZero))
+    assert_equal(eval("8 +"), .Err(.Unexpected(3)))

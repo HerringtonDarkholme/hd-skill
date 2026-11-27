@@ -1,0 +1,89 @@
+## A bank account holding a balance in cents.
+##
+## Invariants, true after every call that returns:
+## - the balance is never negative;
+## - `transfer` keeps the total of its two accounts.
+##
+## Bad arguments are programming errors, not recoverable ones: a negative
+## opening balance, a deposit or withdrawal that is not positive, and a
+## withdrawal or transfer larger than the balance all stop the program in
+## debug and test builds. The `require` checks are removed from release builds.
+
+use std.contract.require
+
+pub struct Account:
+    cents: i64
+
+## Opens an account with `cents` in it.
+pub fn open(cents: i64) -> Account:
+    require("the opening balance is not negative", (fn() -> bool: cents >= 0))
+    Account { cents: cents }
+
+## Moves `cents` from `from` to `to`. The total of the two accounts is unchanged.
+pub fn transfer(from: &mut Account, to: &mut Account, cents: i64) -> void:
+    require("a transfer is positive", (fn() -> bool: cents > 0))
+    let source = from.cents
+    let target = to.cents
+    require("a transfer is not larger than the source balance", (fn() -> bool: cents <= source))
+    from.withdraw(cents)
+    to.deposit(cents)
+    let total_after = from.cents + to.cents
+    require("a transfer keeps the total", (fn() -> bool: total_after == source + target))
+
+impl Account:
+    ## The balance, in cents.
+    pub fn balance(self) -> i64:
+        self.cents
+
+    ## Adds `cents` to the balance.
+    pub fn deposit(&mut self, cents: i64) -> void:
+        require("a deposit is positive", (fn() -> bool: cents > 0))
+        let balance = self.cents + cents
+        self.cents = balance
+        require("the balance is never negative", (fn() -> bool: balance >= 0))
+
+    ## Removes `cents` from the balance.
+    pub fn withdraw(&mut self, cents: i64) -> void:
+        require("a withdrawal is positive", (fn() -> bool: cents > 0))
+        let current = self.cents
+        require("a withdrawal is not larger than the balance", (fn() -> bool: cents <= current))
+        let balance = current - cents
+        self.cents = balance
+        require("the balance is never negative", (fn() -> bool: balance >= 0))
+
+tests:
+    it("opens with the given balance"):
+        assert_equal(open(500).balance(), 500)
+
+    it("opens at zero"):
+        assert_equal(open(0).balance(), 0)
+
+    it("a deposit adds to the balance"):
+        let mut a = open(100)
+        a.deposit(250)
+        assert_equal(a.balance(), 350)
+
+    it("a withdrawal takes from the balance"):
+        let mut a = open(100)
+        a.withdraw(40)
+        assert_equal(a.balance(), 60)
+
+    it("a withdrawal may empty the account"):
+        let mut a = open(100)
+        a.withdraw(100)
+        assert_equal(a.balance(), 0)
+
+    it("a transfer moves money and keeps the total"):
+        let mut from = open(300)
+        let mut to = open(20)
+        transfer(&mut from, &mut to, 120)
+        assert_equal(from.balance(), 180)
+        assert_equal(to.balance(), 140)
+        assert_equal(from.balance() + to.balance(), 320)
+
+    it("a transfer may empty the source"):
+        let mut from = open(75)
+        let mut to = open(0)
+        transfer(&mut from, &mut to, 75)
+        assert_equal(from.balance(), 0)
+        assert_equal(to.balance(), 75)

@@ -1,0 +1,103 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 8,
+      "passed": 8,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": true
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "references/language/requirements.md",
+      "references/language/suspension.md",
+      "references/testing/fakes.md",
+      "references/cli/packages.md",
+      "references/language/traits.md",
+      "references/how-to/concurrent-work.md",
+      "references/language/errors.md",
+      "references/testing/unit-tests.md",
+      "references/language/modules.md"
+    ],
+    "bash": 18,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "doc": 3,
+      "check": 11,
+      "test": 11,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: mkdir -p /tmp/hdscratch && cd /tmp/hdscratch && cat > probe.hd <<'EOF'\nuse std.time.{Clock, ms, sleep}\nuse std.task.{join}\n\npub trait Q:\n    fn quote!(&mut self, sku: string) -> i64\n\nstruct F:\n ",
+      "Bash: sed -i.bak 's/map_join(skus, 4, quote_sku)/map_join(skus, 6, quote_sku)/' src/quotes.hd && hd test 2>&1 | grep -E \"FAILED|result|panic\" | head -5; mv src/quotes.hd.bak /tmp/quotes.hd.bak && sed "
+    ],
+    "diagnostic_codes": {
+      "missing-requirement": 1,
+      "missing-let": 2,
+      "refutable-let-pattern": 2,
+      "cannot-infer-type": 4,
+      "type-used-as-value": 2
+    },
+    "failing_checks": 3,
+    "turns": 38,
+    "cost_usd": 0.042684860000000005,
+    "duration_s": 117,
+    "tokens": 1749387,
+    "final_message": "The `quotes` package is in the current directory. `hd check --tests` and `hd test` both pass (8 tests).\n\nFiles:\n- `hd.toml`: package `quotes`, created with `hd new --lib`.\n- `src/quotes.hd`: `QuoteError`, the `Quotes` trait, `order_total!`, and the tests.\n- `src/lib.hd`: re-exports `QuoteError`, `Quotes` and `order_total` from `quotes`, so callers write `pkg.order_total`.\n\nHow the spec is met:\n- **Concurrency:** `map_join!(skus, 4, quote_sku)` runs at most 4 skus at a time and returns results in list order.\n- **Retries:** `retry(Backoff { attempts: 3, initial: 10ms, factor: 1 })`. The default `factor` is 2, which would give 10 ms then 20 ms; `factor: 1` keeps the wait at 10 ms. Every error is retried, including `Unknown`.\n- **Errors:** the total loops over the results with `?`, so the first failing sku in list order is the error.\n- **Empty order:** totals `0`.\n\nChoices I made:\n- `QuoteError` derives `Eq` and `Debug` and has no `@error` messages, since the spec only asked for `==` and debug printing.\n- Your spec gave no way to observe overlap, so the concurrency test uses a gated fake. Its `quote!` blocks on a channel, and a feeder task releases one quote per 1 ms of virtual time. The test asserts the peak in-flight count is exactly 4.\n\nNot verified: I could not run the mutation check (raising the limit to 6 should make the concurrency test fail). That command was denied by the sandbox, and I did not retry it. So the concurrency test is confirmed to pass at limit 4, but not ye",
+    "is_error": false
+  },
+  "agent_exit": null
+}

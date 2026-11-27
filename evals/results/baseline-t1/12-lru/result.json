@@ -1,0 +1,71 @@
+{
+  "task": "12-lru",
+  "package": "lru",
+  "scenario": "stateful data structure",
+  "selling_points": [
+    "model-based property test",
+    "commands"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 12,
+      "passed": 12,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "model-test",
+        "desc": "a generated-operations test (it_prop / it_prop_with / commands)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 14,
+    "hd": {
+      "help": 2,
+      "new": 1,
+      "check": 6,
+      "test": 4,
+      "fmt": 3
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/baseline-t1/12-lru/lru && cat >> src/lru.hd <<'EOF'\n\n    it_prop(\"matches the model on generated operation sequences\", ",
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/baseline-t1/12-lru/lru && rm tests/lru.hd && rmdir tests; hd check --tests --format json; echo \"exit $?\""
+    ],
+    "diagnostic_codes": {
+      "missing-capability": 1,
+      "not-writable": 1
+    },
+    "failing_checks": 1,
+    "turns": 28,
+    "cost_usd": 0.023532380000000002,
+    "duration_s": 72,
+    "tokens": 840386,
+    "final_message": "The `lru` package is in place, and `hd check --tests` and `hd test` both pass (12 tests, 0 failures).\n\n**Files**\n- `src/lru.hd`: the cache, the `tests:` block, and the model-based property test.\n- `src/lib.hd`: re-exports `Lru` and `new_lru`, so the package root exposes the public API.\n- `tests/lru.hd`: one integration test through `pkg`. The scaffold generated a test for a `greet` function that no longer exists. I could not delete this file because the permission prompt for `rm` was denied, so I rewrote it instead. You can remove it yourself if you don't want it.\n- `hd.toml` and the scaffolding from `hd new --lib`.\n\n**Design**\n- `values: Map[string, i64]` holds the values. `order: List[string]` lists keys from least to most recently used.\n- `get` on a miss returns `.None` before touching anything. On a hit it moves the key to the most-recent end.\n- `put` stores the value, moves the key to the most-recent end, and evicts the front of `order` when the length exceeds capacity.\n- `get` and `put` are O(n) because reordering `order` scans the list. A linked-list-plus-map design would make them O(1). I chose the simpler version because the spec asks for correctness, not speed. Say if you want the O(1) version.\n\n**Tests**\n- 10 example tests cover eviction, updates, hits refreshing recency, missed gets, capacity 0 and 1, and the empty-string key.\n- One property test (`it_prop`) runs generated sequences of `Get`/`Put` operations, with capacity 0–3 and keys drawn from 4 names so they c",
+    "is_error": false
+  },
+  "agent_exit": null
+}

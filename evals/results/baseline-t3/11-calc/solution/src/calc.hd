@@ -1,0 +1,256 @@
+# An integer expression evaluator: decimal literals, `+ - * /`, parentheses
+# and unary minus. Input is tokenized, parsed into a syntax tree, then the
+# tree is evaluated.
+
+## Why an evaluation failed.
+@derive(Eq, Debug)
+pub enum CalcError:
+    DivideByZero
+    ## The byte offset where parsing failed.
+    Unexpected(at: usize)
+
+# A syntax tree. Children are boxed, because a type cannot hold itself by value.
+enum Expr:
+    Num(i64)
+    Neg(*Expr)
+    Add(*Expr, *Expr)
+    Sub(*Expr, *Expr)
+    Mul(*Expr, *Expr)
+    Div(*Expr, *Expr)
+
+@derive(Eq, Debug)
+enum TokenKind:
+    Num(value: i64)
+    Plus
+    Minus
+    Star
+    Slash
+    Open
+    Close
+    End
+    # Input the grammar can never accept, such as `$` or an overflowing literal.
+    Bad
+
+struct Token:
+    kind: TokenKind
+    at: usize
+
+struct Parser:
+    tokens: List[Token]
+    at: usize
+
+## The value of `src`, or why it could not be computed. Integer overflow
+## panics, as it does for any hd integer.
+pub fn eval(src: string) -> Result[i64, CalcError]:
+    tree := parse(src)?
+    evaluate(&tree)
+
+fn is_digit(byte: u8) -> bool:
+    byte >= 48 && byte <= 57
+
+fn symbol(byte: u8) -> TokenKind?:
+    match byte:
+        43 => .Some(.Plus)
+        45 => .Some(.Minus)
+        42 => .Some(.Star)
+        47 => .Some(.Slash)
+        40 => .Some(.Open)
+        41 => .Some(.Close)
+        _ => .None
+
+# `value * 10 + digit`, or `.None` when that does not fit in an i64.
+fn push_digit(value: i64, digit: i64) -> i64?:
+    scaled := value.checked_mul(10)?
+    scaled.checked_add(digit)
+
+# Splits `src` into tokens. Spaces are skipped. The first character the
+# grammar cannot use becomes a `Bad` token, and the list ends with `End`.
+fn tokenize(src: string) -> List[Token]:
+    bytes := src.to_utf8()
+    let mut tokens: List[Token] = []
+    let at: usize = 0
+    while at < bytes.len():
+        byte := bytes[at]
+        if byte == 32:
+            at += 1
+        else if is_digit(byte):
+            start := at
+            let value: i64 = 0
+            let overflow = false
+            while at < bytes.len() && is_digit(bytes[at]):
+                if !overflow:
+                    match push_digit(value, i64(bytes[at] - 48)):
+                        .Some(next) => value = next
+                        .None => overflow = true
+                at += 1
+            if overflow:
+                tokens.push(Token { kind: .Bad, at: start })
+                break
+            tokens.push(Token { kind: .Num(value), at: start })
+        else:
+            match symbol(byte):
+                .Some(kind) =>
+                    tokens.push(Token { kind: kind, at: at })
+                    at += 1
+                .None =>
+                    tokens.push(Token { kind: .Bad, at: at })
+                    break
+    tokens.push(Token { kind: .End, at: bytes.len() })
+    tokens
+
+fn parse(src: string) -> Result[Expr, CalcError]:
+    let mut parser = Parser { tokens: tokenize(src), at: 0 }
+    tree := parser.expression()?
+    end := parser.current()
+    if end.kind == .End: .Ok(tree) else: .Err(.Unexpected(end.at))
+
+impl Parser:
+    fn current(&self) -> Token:
+        self.tokens[self.at]
+
+    fn advance(&mut self) -> void:
+        self.at += 1
+
+    # expression := term (('+' | '-') term)*
+    fn expression(&mut self) -> Result[Expr, CalcError]:
+        let mut left = self.term()?
+        while true:
+            match self.current().kind:
+                .Plus =>
+                    self.advance()
+                    right := self.term()?
+                    left = Expr.Add(box(left), box(right))
+                .Minus =>
+                    self.advance()
+                    right := self.term()?
+                    left = Expr.Sub(box(left), box(right))
+                _ => break
+        .Ok(left)
+
+    # term := unary (('*' | '/') unary)*
+    fn term(&mut self) -> Result[Expr, CalcError]:
+        let mut left = self.unary()?
+        while true:
+            match self.current().kind:
+                .Star =>
+                    self.advance()
+                    right := self.unary()?
+                    left = Expr.Mul(box(left), box(right))
+                .Slash =>
+                    self.advance()
+                    right := self.unary()?
+                    left = Expr.Div(box(left), box(right))
+                _ => break
+        .Ok(left)
+
+    # unary := '-' unary | primary
+    fn unary(&mut self) -> Result[Expr, CalcError]:
+        match self.current().kind:
+            .Minus =>
+                self.advance()
+                inner := self.unary()?
+                .Ok(Expr.Neg(box(inner)))
+            _ => self.primary()
+
+    # primary := NUMBER | '(' expression ')'
+    fn primary(&mut self) -> Result[Expr, CalcError]:
+        token := self.current()
+        match token.kind:
+            .Num(value) =>
+                self.advance()
+                .Ok(Expr.Num(value))
+            .Open =>
+                self.advance()
+                inner := self.expression()?
+                if self.current().kind == .Close:
+                    self.advance()
+                    .Ok(inner)
+                else:
+                    .Err(.Unexpected(self.current().at))
+            _ => .Err(.Unexpected(token.at))
+
+fn evaluate(e: &Expr) -> Result[i64, CalcError]:
+    match e:
+        .Num(n) => .Ok(n)
+        .Neg(inner) =>
+            value := evaluate(inner)?
+            .Ok(-value)
+        .Add(l, r) =>
+            left := evaluate(l)?
+            right := evaluate(r)?
+            .Ok(left + right)
+        .Sub(l, r) =>
+            left := evaluate(l)?
+            right := evaluate(r)?
+            .Ok(left - right)
+        .Mul(l, r) =>
+            left := evaluate(l)?
+            right := evaluate(r)?
+            .Ok(left * right)
+        .Div(l, r) =>
+            left := evaluate(l)?
+            right := evaluate(r)?
+            if right == 0:
+                return .Err(.DivideByZero)
+            .Ok(left / right)
+
+tests:
+    it("a single number"):
+        assert_equal(eval("42"), .Ok(42))
+
+    it("multiplication binds tighter than addition"):
+        assert_equal(eval("1 + 2 * 3"), .Ok(7))
+        assert_equal(eval("(1 + 2) * 3"), .Ok(9))
+
+    it("addition and subtraction associate to the left"):
+        assert_equal(eval("10 - 4 - 3"), .Ok(3))
+
+    it("multiplication and division associate to the left"):
+        assert_equal(eval("100 / 7 / 2"), .Ok(7))
+        assert_equal(eval("2 * 3 / 4"), .Ok(1))
+
+    it("division truncates toward zero"):
+        assert_equal(eval("7 / 2"), .Ok(3))
+        assert_equal(eval("-7 / 2"), .Ok(-3))
+        assert_equal(eval("7 / -2"), .Ok(-3))
+
+    it("unary minus binds tighter than binary operators"):
+        assert_equal(eval("- 3 * - 2"), .Ok(6))
+        assert_equal(eval("--4"), .Ok(4))
+        assert_equal(eval("-(2 + 3)"), .Ok(-5))
+        assert_equal(eval("2 - -3"), .Ok(5))
+
+    it("spaces are allowed anywhere between tokens"):
+        assert_equal(eval("  1   +  2 "), .Ok(3))
+        assert_equal(eval("(1+2)*3"), .Ok(9))
+
+    it("the largest literal evaluates"):
+        assert_equal(eval("9223372036854775807"), .Ok(9223372036854775807))
+
+    it("division by zero is an error"):
+        assert_equal(eval("1 / 0"), .Err(.DivideByZero))
+        assert_equal(eval("1 / (2 - 2)"), .Err(.DivideByZero))
+
+    it("an input that ends too early reports the end offset"):
+        assert_equal(eval("1 +"), .Err(.Unexpected(3)))
+        assert_equal(eval("(1 + 2"), .Err(.Unexpected(6)))
+        assert_equal(eval(""), .Err(.Unexpected(0)))
+
+    it("a token that cannot follow reports its own offset"):
+        assert_equal(eval("1 2"), .Err(.Unexpected(2)))
+        assert_equal(eval("(1 + 2))"), .Err(.Unexpected(7)))
+        assert_equal(eval("*2"), .Err(.Unexpected(0)))
+        assert_equal(eval("2 * / 3"), .Err(.Unexpected(4)))
+        assert_equal(eval("()"), .Err(.Unexpected(1)))
+
+    it("an invalid character reports its offset"):
+        assert_equal(eval("1 \$ 2"), .Err(.Unexpected(2)))
+        assert_equal(eval("1 2 \$"), .Err(.Unexpected(2)))
+        assert_equal(eval("1\t+2"), .Err(.Unexpected(1)))
+
+    it("offsets are byte offsets"):
+        assert_equal(eval("é"), .Err(.Unexpected(0)))
+        assert_equal(eval("1 + é"), .Err(.Unexpected(4)))
+
+    it("a literal too large for i64 is an error at its start"):
+        assert_equal(eval("1 + 99999999999999999999"), .Err(.Unexpected(4)))

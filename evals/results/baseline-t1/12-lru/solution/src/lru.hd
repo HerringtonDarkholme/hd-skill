@@ -1,0 +1,171 @@
+## A least-recently-used cache from string keys to i64 values.
+##
+## `order` lists the keys from least to most recently used, and `values`
+## holds each key's value. The two always hold the same keys.
+
+pub struct Lru:
+    capacity: usize
+    values: Map[string, i64]
+    order: List[string]
+
+## An empty cache that holds at most `capacity` keys.
+pub fn new_lru(capacity: usize) -> Lru:
+    Lru { capacity: capacity, values: {}, order: [] }
+
+impl Lru:
+    ## The value for `key`, or `.None`. A hit makes `key` the most recent;
+    ## a miss changes nothing.
+    pub fn get(&mut self, key: string) -> i64?:
+        if !self.values.contains_key(key):
+            return .None
+        self.touch(key)
+        self.values.get(key)
+
+    ## Stores `value` under `key` as the most recent entry, then evicts the
+    ## least recent entry if the cache is over capacity.
+    pub fn put(&mut self, key: string, value: i64) -> void:
+        self.values[key] = value
+        self.touch(key)
+        if self.order.len() > self.capacity:
+            evicted := self.order.remove(0)
+            _ := self.values.remove(evicted)
+
+    pub fn len(self) -> usize:
+        self.order.len()
+
+    ## Moves `key` to the most-recent end of `order`, adding it if absent.
+    fn touch(&mut self, key: string) -> void:
+        match self.order.index_of(key):
+            .Some(i) => _ := self.order.remove(i)
+            .None => pass
+        self.order.push(key)
+
+tests:
+    use std.testing.{Arbitrary, it_prop}
+
+    @derive(Arbitrary, Debug)
+    enum Op:
+        Get(key: u8)
+        Put(key: u8, value: i64)
+
+    @derive(Arbitrary, Debug)
+    struct Trace:
+        capacity: u8
+        ops: List[Op]
+
+    ## The model: entries from least to most recently used.
+    fn model_touch(entries: List[(string, i64)], key: string, value: i64) -> List[(string, i64)]:
+        let mut out = entries.filter(fn(e): e._0 != key)
+        out.push((key, value))
+        out
+
+    fn model_get(entries: List[(string, i64)], key: string) -> (List[(string, i64)], i64?):
+        match entries.find(fn(e): e._0 == key):
+            .Some(entry) => (model_touch(entries, key, entry._1), .Some(entry._1))
+            .None => (entries, .None)
+
+    fn model_put(
+        entries: List[(string, i64)],
+        capacity: usize,
+        key: string,
+        value: i64,
+    ) -> List[(string, i64)]:
+        out := model_touch(entries, key, value)
+        if out.len() > capacity:
+            return out.slice(1, out.len())
+        out
+
+    fn key_of(k: u8) -> string:
+        "k${k % 4}"
+
+    it("a new cache is empty"):
+        let mut cache = new_lru(2)
+        assert_equal(cache.len(), 0)
+        assert_equal(cache.get("a"), .None)
+
+    it("returns a stored value"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        assert_equal(cache.get("a"), .Some(1))
+        assert_equal(cache.len(), 1)
+
+    it("updates an existing key without growing"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("a", 7)
+        assert_equal(cache.get("a"), .Some(7))
+        assert_equal(cache.len(), 1)
+
+    it("evicts the least recently used key"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        cache.put("c", 3)
+        assert_equal(cache.get("a"), .None)
+        assert_equal(cache.get("b"), .Some(2))
+        assert_equal(cache.get("c"), .Some(3))
+        assert_equal(cache.len(), 2)
+
+    it("a hit makes the key most recent before eviction"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        assert_equal(cache.get("a"), .Some(1))
+        cache.put("c", 3)
+        assert_equal(cache.get("b"), .None)
+        assert_equal(cache.get("a"), .Some(1))
+
+    it("an update makes the key most recent"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        cache.put("a", 10)
+        cache.put("c", 3)
+        assert_equal(cache.get("b"), .None)
+        assert_equal(cache.get("a"), .Some(10))
+
+    it("a missed get changes nothing"):
+        let mut cache = new_lru(2)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        assert_equal(cache.get("zzz"), .None)
+        cache.put("c", 3)
+        assert_equal(cache.get("a"), .None)
+        assert_equal(cache.get("b"), .Some(2))
+
+    it("capacity zero keeps nothing"):
+        let mut cache = new_lru(0)
+        cache.put("a", 1)
+        assert_equal(cache.len(), 0)
+        assert_equal(cache.get("a"), .None)
+
+    it("capacity one keeps only the latest key"):
+        let mut cache = new_lru(1)
+        cache.put("a", 1)
+        cache.put("b", 2)
+        assert_equal(cache.get("a"), .None)
+        assert_equal(cache.get("b"), .Some(2))
+        assert_equal(cache.len(), 1)
+
+    it("the empty string is an ordinary key"):
+        let mut cache = new_lru(1)
+        cache.put("", 5)
+        assert_equal(cache.get(""), .Some(5))
+
+    it_prop("matches the model on generated operation sequences", prop=fn!(trace: Trace):
+        capacity := usize(trace.capacity % 4)
+        let mut cache = new_lru(capacity)
+        let mut model: List[(string, i64)] = []
+        for op in trace.ops:
+            match op:
+                .Get(k) =>
+                    key := key_of(k)
+                    result := model_get(model, key)
+                    model = result._0
+                    assert_equal(cache.get(key), result._1, reason="get ${key}")
+                .Put(k, value) =>
+                    key := key_of(k)
+                    cache.put(key, value)
+                    model = model_put(model, capacity, key, value)
+            assert_equal(cache.len(), model.len(), reason="len after ${debug(op)}")
+    )
