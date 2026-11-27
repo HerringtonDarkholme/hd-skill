@@ -3,7 +3,7 @@
 How to drive `hd` while writing code: the edit-check loop, the commands
 and flags an agent needs, and how to read what `hd` prints. `hd help`
 lists every command; `hd help COMMAND` one command's flags. Flags go after
-the command word: `hd check --format json FILE.hd`.
+the command word: `hd test --filter doubles FILE.hd`.
 
 ## One file or a package
 
@@ -24,10 +24,14 @@ executable to install, or integration tests.
 ## The loop
 
 ```sh
-hd check --format json src/cart.hd    # or, in a package: hd check --format json --tests
-hd test --format json                 # one JSON line per case
-hd fmt && hd lint                     # before finishing
+hd check src/cart.hd       # or, in a package: hd check --tests
+hd test src/cart.hd        # or, in a package: hd test
+hd fmt && hd lint          # before finishing
 ```
+
+Read the plain text output. It has everything you act on, and a failing
+test also shows its stack, a property's failing input and a `repro:`
+line, which `--format json` leaves out ([JSON output](#json-output-for-scripts)).
 
 1. **Check after every edit.** Checking is incremental and fast, so
    batching edits saves nothing and hides which edit broke what.
@@ -89,7 +93,7 @@ Program arguments always go after `--`: `hd run -- input.txt --verbose`.
 
 | Flag | On | Does |
 | --- | --- | --- |
-| `--format json` | every command that reports diagnostics | one JSON object per line ([below](#json-diagnostics)) |
+| `--format json` | every command that reports diagnostics | one JSON object per line, for a script that parses it ([below](#json-output-for-scripts)) |
 | `--max-errors N` | `check`, `lint` | stop printing after the Nth error |
 | `--summary` | `check`, `lint` | counts per file and code instead of each diagnostic |
 | `--release` | `hd FILE`, `run`, `build` | optimized build: integer overflow wraps, `require` is skipped ([performance](scenarios/performance.md)) |
@@ -120,11 +124,39 @@ error: src/main.hd:5:24: missing-capability: `main` requires `FsRead` in `$ Cons
 check result: FAILED. errors: 1; warnings: 0
 ```
 
-The shape is `severity: file:line:column: code: message`. The **code**
-(`missing-capability`) is stable: look it up in
-[diagnostics](reference/diagnostics.md).
+The shape is `severity: file:line:column: code: message`, then the fix in
+words when there is one. The **code** (`missing-capability`) is stable:
+look it up in [diagnostics](reference/diagnostics.md).
 
-### JSON diagnostics
+### Test failures
+
+A failing case prints its panic, its stack, and the command that reruns
+it alone:
+
+```text
+PANIC orders.hd:6: doubles
+    panic: assertion-failed: actual 4, expected 5
+    <std>/testing.hd:739 std.testing.check_equal
+    orders.hd:7 test "doubles"
+    repro: hd test orders.hd --filter "doubles"
+test result: FAILED. 0 passed; 1 failed; 0 ignored
+```
+
+A failing property test also prints the shrunk input and the seed that
+reproduces it ([testing](design/testing.md)):
+
+```text
+    input: 200
+    repro: hd test prop.hd --filter "small" --seed 4518923217868180678
+```
+
+### JSON output, for scripts
+
+`--format json` is for a program that parses `hd`'s output, such as a CI
+step or an editor. An agent reading the output does better with text: the
+JSON is twice as long for the same diagnostics, and a failing test's JSON
+line keeps only the message, without the stack, the failing input or the
+`repro:` line.
 
 `hd check --format json` prints one line per diagnostic, then a summary
 that always ends the stream:
@@ -147,12 +179,9 @@ that always ends the stream:
 `hd test --format json` prints one line per case, then the summary:
 
 ```text
-{"kind":"test","name":"doubles","outcome":"failed","message":"panic: assertion-failed: 2 * 2: actual 6, expected 4"}
-{"kind":"summary","errors":0,"warnings":0,"passed":2,"failed":1,"ignored":0,"status":1}
+{"kind":"test","name":"doubles","outcome":"failed","message":"panic: assertion-failed: actual 4, expected 5"}
+{"kind":"summary","errors":0,"warnings":0,"passed":0,"failed":1,"ignored":0,"status":1}
 ```
-
-A failing property test also prints a `repro:` line that reruns that one
-case ([testing](design/testing.md)).
 
 ### Exit status
 

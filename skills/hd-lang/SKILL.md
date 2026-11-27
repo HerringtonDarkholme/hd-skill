@@ -25,11 +25,12 @@ hd help                  # the commands; `hd help COMMAND` for one command's fla
 2. **Pick the design** from [The hd Way](#the-hd-way). When the task
    matches a [scenario](#scenarios), start from that page: it is a
    complete, tested program to adapt.
-3. **Write, then check after every edit**:
-   `hd check --format json FILE.hd`, or `hd check --format json --tests`
-   in a package. Fix the first error first; look its code up in
-   [diagnostics](reference/diagnostics.md) ([the loop](cli.md#the-loop)).
-4. **Test**: `hd test FILE.hd`, or `hd test` in a package.
+3. **Write, then check after every edit**: `hd check FILE.hd`, or
+   `hd check --tests` in a package. Fix the first error first; look its
+   code up in [diagnostics](reference/diagnostics.md)
+   ([the loop](cli.md#the-loop)).
+4. **Test**: `hd test FILE.hd`, or `hd test` in a package. A failure
+   prints a `repro:` line that reruns just that case.
 5. **Finish**: `hd fmt`, then `hd lint`.
 
 Two tries at most per error. Then find out instead of guessing: a piped

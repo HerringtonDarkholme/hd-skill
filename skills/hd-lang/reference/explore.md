@@ -5,7 +5,7 @@ authority: when this skill and `hd` disagree, `hd` is right.
 
 ## In order
 
-1. **The diagnostic.** Read the message and its `fixes`
+1. **The diagnostic.** Read the message and its `fix:` line
    ([reading output](../cli.md#reading-the-output)). Many messages say
    the fix outright.
 2. **[diagnostics.md](diagnostics.md)**, by the diagnostic's code.

@@ -1,8 +1,9 @@
 # Diagnostics: Code, Cause, Fix
 
-Look up the `code` that `hd check --format json` reports. Each row is what
+Look up the code that `hd check` reports, as in
+`error: cart.hd:4:13: trait-used-as-type: ...`. Each row is what
 was written, and what to write instead. When the code is not here, read the
-message and its `fixes` first; then the page that owns the topic, or
+message and its `fix:` line first; then the page that owns the topic, or
 `hd doc` for a std name ([explore](explore.md)).
 
 Fix the first error first: later ones are often follow-ons. `syntax-error`
