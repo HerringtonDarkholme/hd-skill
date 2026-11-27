@@ -1,0 +1,2 @@
+## Bank accounts: opening, depositing, withdrawing and transferring cents.
+pub use self.account.{Account, open, transfer}

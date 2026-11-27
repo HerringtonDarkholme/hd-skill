@@ -1,0 +1,73 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 17,
+      "passed": 17,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "reference/packages.md",
+      "design/testing.md"
+    ],
+    "bash": 8,
+    "hd": {
+      "check": 3,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: ls -la && (hd --version || true)"
+    ],
+    "diagnostic_codes": {
+      "invalid-test-statement": 2,
+      "unknown-name": 2
+    },
+    "failing_checks": 1,
+    "turns": 18,
+    "cost_usd": 0.019049439999999997,
+    "duration_s": 59,
+    "tokens": 432215,
+    "final_message": "The `rle` package is written and both `hd check --tests` and `hd test` pass (17 tests, 0 failures). `hd fmt` and `hd lint` also ran clean.\n\nFiles in the current directory:\n\n- `hd.toml`: the package manifest, named `rle`. It has no capability grants because the code is pure.\n- `src/rle.hd`: the implementation and tests.\n- `src/lib.hd`: the library root, which re-exports `Run`, `encode` and `decode`. I added it because a library package needs a root module, and the functions live in `src/rle.hd` as you asked.\n\nThe API:\n\n- `Run` is `@derive(Eq, Debug)` with public `value: i32` and `count: usize` fields.\n- `encode` makes maximal runs. It pops the last run and either extends it or starts a new one.\n- `decode` expands each run `count` times.\n\nThe tests:\n\n- **Examples** cover the empty list, single values, runs of equal values, alternating values, negative numbers and a run of ten zeros. A separate table checks `decode`, including a zero-count run, which decodes to nothing.\n- **Properties** use `it_prop` with generated `List[i32]` inputs:\n  - `decode(encode(xs)) == xs` for any list, which is the round-trip you asked for.\n  - `encode` output is maximal: no empty run, neighbours differ, and the counts sum to the input length.\n  - `encode` never has more runs than items.\n  - Encoding decoded runs gives back the same runs.\n\nI did not commit anything, and the repository is not a git repo.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

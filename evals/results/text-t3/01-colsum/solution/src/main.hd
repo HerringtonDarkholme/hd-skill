@@ -1,0 +1,86 @@
+use pkg.sum.{summarize}
+use std.cli.{Args, Cli, ScriptedArgs}
+use std.console.{Console, ConsoleInput, MemoryConsole, ScriptedInput, eprintln, read_all}
+use std.process.ExitCode
+
+## Sum one CSV column grouped by another, reading standard input
+@derive(Cli)
+struct Options:
+    ## the 1-based column to group by
+    key: usize = 1
+    ## the 1-based column to sum
+    value: usize = 2
+    ## ignore the first line
+    skip_header: bool
+
+pub fn main!() -> ExitCode $ Args + Console + ConsoleInput:
+    options := match Options::parse_args():
+        .Ok(options) => options
+        .Err(error) => return error.exit()
+    if options.key == 0 || options.value == 0:
+        eprintln("colsum: columns are numbered from 1")
+        return ExitCode(1)
+    text := match read_all!():
+        .Ok(text) => text
+        .Err(error) =>
+            eprintln("colsum: $error")
+            return ExitCode(1)
+    totals := match summarize(text, options.key, options.value, options.skip_header):
+        .Ok(totals) => totals
+        .Err(error) =>
+            eprintln("colsum: line ${error.line()}: $error")
+            return ExitCode(1)
+    for (key, total) in totals:
+        println("$key,$total")
+    ExitCode(0)
+
+tests:
+    it("prints one line per key, sorted"):
+        input := ScriptedInput::new(["tea,3", "cake,1", "tea,4"])
+        console := MemoryConsole::new()
+        arguments := box(ScriptedArgs::new("colsum", []))
+        $.with(Args=arguments, ConsoleInput=input, Console=console):
+            assert_equal(main!(), ExitCode(0))
+        assert_equal(console.output().join(""), "cake,1\ntea,7\n")
+        assert_equal(console.error_output().join(""), "")
+
+    it("uses --key, --value and --skip-header"):
+        input := ScriptedInput::new(["qty,item,n", "2,tea,5", "9,tea,6"])
+        console := MemoryConsole::new()
+        arguments := box(
+            ScriptedArgs::new("colsum", ["--key", "2", "--value", "3", "--skip-header"]),
+        )
+        $.with(Args=arguments, ConsoleInput=input, Console=console):
+            assert_equal(main!(), ExitCode(0))
+        assert_equal(console.output().join(""), "tea,11\n")
+
+    it("writes nothing to standard output on error"):
+        input := ScriptedInput::new(["tea,1", "jam"])
+        console := MemoryConsole::new()
+        arguments := box(ScriptedArgs::new("colsum", []))
+        $.with(Args=arguments, ConsoleInput=input, Console=console):
+            assert_equal(main!(), ExitCode(1))
+        assert_equal(console.output().join(""), "")
+        assert_equal(console.error_output().join(""), "colsum: line 2: missing column\n")
+
+    it("reports a bad number with its line"):
+        input := ScriptedInput::new(["tea,1", "jam,x"])
+        console := MemoryConsole::new()
+        arguments := box(ScriptedArgs::new("colsum", []))
+        $.with(Args=arguments, ConsoleInput=input, Console=console):
+            assert_equal(main!(), ExitCode(1))
+        assert_equal(console.error_output().join(""), "colsum: line 2: not a number: x\n")
+
+    it("rejects column 0"):
+        input := ScriptedInput::new(["tea,1"])
+        console := MemoryConsole::new()
+        arguments := box(ScriptedArgs::new("colsum", ["--key", "0"]))
+        $.with(Args=arguments, ConsoleInput=input, Console=console):
+            assert_equal(main!(), ExitCode(1))
+        assert_equal(console.output().join(""), "")
+
+    it("defaults to columns 1 and 2"):
+        options := Options::parse([]).expect("no arguments")
+        assert_equal(options.key, 1)
+        assert_equal(options.value, 2)
+        assert(!options.skip_header)

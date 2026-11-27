@@ -1,0 +1,90 @@
+{
+  "task": "03-config",
+  "package": "config",
+  "scenario": "configuration from file and environment",
+  "selling_points": [
+    "derive Validate + field facts",
+    "env_decode",
+    "@from errors",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": false,
+      "errors": 2,
+      "codes": [
+        "unknown-trait",
+        "type-mismatch"
+      ]
+    },
+    "own_tests": {
+      "cases": 0,
+      "passed": 0,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 11,
+      "passed": 0,
+      "failed": [],
+      "compile_errors": [
+        "src/config.hd:43: unknown-trait: no trait named `FsWrite`; add `use std.fs.FsWrite`",
+        "src/config.hd:45: type-mismatch: in result: expected MemoryFs, found *mut MemoryFs"
+      ]
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-validate",
+        "desc": "rules written as @derive(Validate) field facts",
+        "ok": true
+      },
+      {
+        "id": "field-facts",
+        "desc": "uses @range / @length facts",
+        "ok": true
+      },
+      {
+        "id": "from-errors",
+        "desc": "error variants convert with @from",
+        "ok": true
+      },
+      {
+        "id": "fake-fs-env",
+        "desc": "tests use MemoryFs and ScriptedEnv",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": false,
+    "pass": false,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/configuration.md",
+      "reference/packages.md"
+    ],
+    "bash": 2,
+    "hd": {
+      "new": 1
+    },
+    "denied": [
+      "Bash: d=$(mktemp -d) && cd \"$d\" && hd new config --lib 2>&1; find \"$d\" -type f | sort; echo ---; cat \"$d/config/hd.toml\"; echo ---; cat \"$d/config/src/lib.hd\"; echo ---; cat \"$d/config/tests/config.hd"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 12,
+    "cost_usd": 0.02062889,
+    "duration_s": 84,
+    "tokens": 242017,
+    "final_message": "The package files are written, but I could not run `hd check --tests` or `hd test`. The shell command that would have scaffolded a reference package was denied, and this session cannot grant approval, so every `hd` run is blocked. Nothing has been compiled or tested.\n\n**Files created in `config/`:**\n- `hd.toml`: package `config`, with `FsRead = true` and `Env = [\"APP_PORT\"]` granted.\n- `src/config.hd`: the implementation and the `tests:` block.\n- `src/lib.hd`: `pub use pkg.config.{Config, ConfigError, load_config}`, so the package's public interface is at the library root.\n\n**What the code does:**\n- `Config` is `pub` with `pub` fields `host: string`, `port: i32`, and `workers: i32 = 4`. It derives `Deserialize`, `Validate`, `Eq` and `Debug`. Host length is 1–253, port 1024–65535, and workers 1–64, all enforced with `@length` and `@range`.\n- `ConfigError` is a `@error` enum with `Read`, `Parse`, `Environment` and `Invalid` variants. Each has one `@from` field.\n- `load_config!` reads the file, decodes it, reads `APP_PORT` with `env_as::[i32]`, applies the override, then calls `validated()`.\n- Tests cover success and defaults, the `APP_PORT` override, each error kind, and the boundary values for port, host and workers.\n\n**Choices you may want to change:**\n- `host` and `port` have no default, so the file must contain both. If `APP_PORT` is set but the file has no `port`, the result is `Parse`. The spec did not cover this case.\n- I passed the full variable name `\"APP_PORT\"` to `en",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

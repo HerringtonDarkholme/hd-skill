@@ -1,0 +1,9 @@
+use pkg.{new_lru}
+
+it("is usable through the package root"):
+    let mut cache = new_lru(1)
+    cache.put("a", 1)
+    cache.put("b", 2)
+    assert_equal(cache.get("a"), .None)
+    assert_equal(cache.get("b"), .Some(2))
+    assert_equal(cache.len(), 1)

@@ -1,0 +1,92 @@
+use pkg.{Config, ConfigError, load_config}
+use std.fs.{FsRead, FsWrite, MemoryFs, write_text}
+use std.host.{Env, ScriptedEnv}
+use std.path.Path
+use std.testing.assert_equal
+
+# A fake file system holding config.json with `text`.
+fn file_with!(text: string) -> *mut MemoryFs:
+    fs := MemoryFs::new()
+    $.with(FsWrite=fs):
+        _ := write_text!(Path("config.json"), text)
+    fs
+
+# Loads config.json holding `text`, with the environment `env`.
+fn run!(text: string, env: Map[string, string]) -> Result[Config, ConfigError]:
+    fs := file_with!(text)
+    $.with(FsRead=fs, Env=box(ScriptedEnv::new(env))):
+        return load_config!("config.json")
+
+# Which variant the result holds, so tests can name it.
+fn kind(result: Result[Config, ConfigError]) -> string:
+    match result:
+        .Ok(_) => "ok"
+        .Err(.Read(_)) => "read"
+        .Err(.Parse(_)) => "parse"
+        .Err(.Environment(_)) => "environment"
+        .Err(.Invalid(_)) => "invalid"
+
+fn json(host: string, port: i32) -> string:
+    "{\"host\": \"$host\", \"port\": $port}"
+
+it("reads host and port, and defaults workers to 4"):
+    config := run!(json("example.com", 8080), {}).ok().expect("a valid config")
+    assert_equal(config, Config { host: "example.com", port: 8080, workers: 4 })
+
+it("reads an explicit workers value"):
+    text := "{\"host\": \"example.com\", \"port\": 8080, \"workers\": 8}"
+    config := run!(text, {}).ok().expect("a valid config")
+    assert_equal(config.workers, 8)
+
+it("lets APP_PORT replace the port"):
+    config := run!(json("example.com", 8080), { "APP_PORT": "9000" }).ok().expect("a valid config")
+    assert_equal(config.port, 9000)
+    assert_equal(config.host, "example.com")
+
+it("keeps the file's port when APP_PORT is unset"):
+    config := run!(json("example.com", 8080), {}).ok().expect("a valid config")
+    assert_equal(config.port, 8080)
+
+it("reports a missing file as Read"):
+    fs := MemoryFs::new()
+    $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+        result := load_config!("config.json")
+        assert_equal(kind(result), "read")
+
+it("reports text that is not JSON as Parse"):
+    assert_equal(kind(run!("{not json", {})), "parse")
+
+it("reports a missing required field as Parse"):
+    assert_equal(kind(run!("{\"port\": 8080}", {})), "parse")
+
+it("reports a non-integer APP_PORT as Environment"):
+    assert_equal(kind(run!(json("example.com", 8080), { "APP_PORT": "http" })), "environment")
+
+it("checks the overridden port"):
+    assert_equal(kind(run!(json("example.com", 8080), { "APP_PORT": "80" })), "invalid")
+    assert_equal(kind(run!(json("example.com", 8080), { "APP_PORT": "65536" })), "invalid")
+    assert_equal(kind(run!(json("example.com", 8080), { "APP_PORT": "1024" })), "ok")
+
+it("accepts ports 1024 to 65535 and rejects others"):
+    assert_equal(kind(run!(json("example.com", 1023), {})), "invalid")
+    assert_equal(kind(run!(json("example.com", 1024), {})), "ok")
+    assert_equal(kind(run!(json("example.com", 65535), {})), "ok")
+    assert_equal(kind(run!(json("example.com", 65536), {})), "invalid")
+
+it("accepts a host of 1 to 253 characters"):
+    assert_equal(kind(run!(json("", 8080), {})), "invalid")
+    assert_equal(kind(run!(json("h", 8080), {})), "ok")
+    assert_equal(kind(run!(json("x".repeat(253), 8080), {})), "ok")
+    assert_equal(kind(run!(json("x".repeat(254), 8080), {})), "invalid")
+
+it("accepts workers from 1 to 64"):
+    assert_equal(kind(run!("{\"host\": \"h\", \"port\": 8080, \"workers\": 0}", {})), "invalid")
+    assert_equal(kind(run!("{\"host\": \"h\", \"port\": 8080, \"workers\": 1}", {})), "ok")
+    assert_equal(kind(run!("{\"host\": \"h\", \"port\": 8080, \"workers\": 64}", {})), "ok")
+    assert_equal(kind(run!("{\"host\": \"h\", \"port\": 8080, \"workers\": 65}", {})), "invalid")
+
+it("compares configs by value"):
+    a := Config { host: "h", port: 8080, workers: 4 }
+    b := Config { host: "h", port: 8080, workers: 4 }
+    assert(a == b)
+    assert(a != Config { host: "h", port: 8081, workers: 4 })

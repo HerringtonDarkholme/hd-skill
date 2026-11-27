@@ -1,0 +1,2 @@
+# The library root: the public interface is the calc module's `pub` items.
+pub use self.calc.{CalcError, eval}

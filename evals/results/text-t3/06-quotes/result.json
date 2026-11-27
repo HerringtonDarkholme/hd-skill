@@ -1,0 +1,88 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 8,
+      "passed": 8,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": true
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/concurrency.md",
+      "design/effects.md"
+    ],
+    "bash": 9,
+    "hd": {
+      "help": 4,
+      "doc": 1,
+      "new": 1,
+      "check": 2,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 19,
+    "cost_usd": 0.023705729999999998,
+    "duration_s": 68,
+    "tokens": 682897,
+    "final_message": "The `quotes` package is in place and passes `hd check --tests` and `hd test` (8 passed, 0 failed). `hd fmt` reformatted `src/quotes.hd`, and `hd lint` reported nothing.\n\n**Layout**\n- `src/quotes.hd` holds the code and the unit tests in a `tests:` block. It defines `QuoteError` (`@error`, `@derive(Eq, Debug)`), the `Quotes` trait, and `order_total!`.\n- `src/lib.hd` re-exports `QuoteError`, `Quotes` and `order_total` as the package's public interface.\n- `tests/quotes.hd` is one integration test that calls the public interface with a small fake.\n- `hd.toml` came from `hd new --lib`. The scaffold's `greet` function and its test are gone.\n\n**Implementation**\n- `order_total!` uses `map_join!(skus, 4, ...)`, so at most 4 skus are in flight and the results come back in list order.\n- Each sku runs `retry(Backoff { attempts: 3, initial: 10ms, factor: 1 })`. With `factor: 1` the wait stays at 10 ms between attempts.\n- The results are then summed in order. The first `Err` in list order is returned, and an empty order gives `.Ok(0)`.\n\n**Choices I made**\n- I added `@error` to `QuoteError`, following the skill's guidance, and gave `Unknown` the message `\"unknown sku $sku\"`.\n- The unit tests use a scripted fake that counts attempts per sku. They cover the sum, retries and give-up after 3 attempts, unknown skus, and first-error-in-list-order.\n\n**Not tested:** the 4-in-flight limit. The trait method has no row, so a fake cannot sleep on the clock, and nothing in the fake gives the tasks a poin",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

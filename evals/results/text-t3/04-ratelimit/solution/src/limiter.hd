@@ -1,0 +1,113 @@
+use std.time.{Clock, Duration, Timestamp, now}
+
+## A sliding-window rate limiter: each key may have at most `max` allowed
+## events within the last `window`. Refused events are not recorded.
+pub struct Limiter:
+    max: usize
+    window: Duration
+    events: Map[string, List[Timestamp]]
+
+## A limiter that allows `max` events per key in every `window`.
+pub fn new_limiter(max: usize, window: Duration) -> Limiter:
+    Limiter { max, window, events: {} }
+
+impl Limiter:
+    ## Records an event for `key` at the current time. Returns true when,
+    ## counting it, at most `max` events for `key` fall within the last `window`.
+    pub fn allow(&mut self, key: string) -> bool $ Clock:
+        current := now()
+        let mut recent: List[Timestamp] = []
+        for past in self.events.get(key).unwrap_or([]):
+            if current.since(past) < self.window:
+                recent.push(past)
+        allowed := recent.len() < self.max
+        if allowed:
+            recent.push(current)
+        self.events[key] = recent
+        allowed
+
+tests:
+    use std.time.{ManualClock, ms, s, sleep}
+    use std.testing.{Choices, it_prop_with}
+
+    it("allows up to max events, then refuses"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut limiter = new_limiter(2, s(10))
+            assert(limiter.allow("a"))
+            assert(limiter.allow("a"))
+            assert(!limiter.allow("a"), reason="the third event is over the limit")
+
+    it("does not record a refused event"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut limiter = new_limiter(2, s(10))
+            assert(limiter.allow("a"))
+            assert(limiter.allow("a"))
+            sleep!(s(5))
+            assert(!limiter.allow("a"), reason="refused at 5s")
+            sleep!(s(5))
+            # The refusal at 5s was not recorded, so only the event at 5s
+            # would count; the events at 0s have expired at 10s.
+            assert(limiter.allow("a"), reason="the refusal must not count")
+
+    it("counts an event while now - t is less than the window"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut limiter = new_limiter(1, s(10))
+            assert(limiter.allow("a"))
+            sleep!(ms(9999))
+            assert(!limiter.allow("a"), reason="9.999s old still counts")
+            sleep!(ms(1))
+            assert(limiter.allow("a"), reason="exactly 10s old no longer counts")
+
+    it("slides rather than resetting at fixed boundaries"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut limiter = new_limiter(2, s(10))
+            assert(limiter.allow("a"))
+            sleep!(s(6))
+            assert(limiter.allow("a"))
+            sleep!(s(2))
+            assert(!limiter.allow("a"), reason="0s and 6s both still count at 8s")
+            sleep!(s(2))
+            assert(limiter.allow("a"), reason="only the 6s event still counts at 10s")
+
+    it("keeps keys independent"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut limiter = new_limiter(1, s(10))
+            assert(limiter.allow("a"))
+            assert(limiter.allow("b"))
+            assert(!limiter.allow("a"))
+            assert(!limiter.allow("b"))
+
+    it("refuses everything when max is zero"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut limiter = new_limiter(0, s(10))
+            assert(!limiter.allow("a"))
+
+    fn gaps(c: &mut Choices) -> List[i64]:
+        c.list(40, fn(inner: &mut Choices) -> i64: inner.int(0..=5000))
+
+    it_prop_with("allowed events fit the window", gen=gaps, prop=fn!(steps: List[i64]):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut limiter = new_limiter(3, s(2))
+            let mut allowed: List[i64] = []
+            let mut elapsed = 0i64
+            for step in steps:
+                sleep!(ms(step))
+                elapsed += step
+                if limiter.allow("k"):
+                    allowed.push(elapsed)
+            # Every allowed event t: the allowed events in (t - 2s, t] number at most 3.
+            for i in 0..allowed.len():
+                let t = allowed[i]
+                let mut inside = 0
+                for earlier in allowed.slice(0, i + 1):
+                    if t - earlier < 2000:
+                        inside += 1
+                assert(inside <= 3, reason="${inside} allowed events within 2s of $t")
+    )

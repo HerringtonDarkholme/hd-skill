@@ -1,0 +1,81 @@
+{
+  "task": "11-calc",
+  "package": "calc",
+  "scenario": "parser and interpreter",
+  "selling_points": [
+    "recursive enums",
+    "box",
+    "@error",
+    "match"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 35,
+      "passed": 35,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 20,
+      "passed": 20,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "tree-enum",
+        "desc": "a recursive enum for the syntax tree (boxed children)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "CalcError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "table-test",
+        "desc": "table tests with it_each",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/parser.md",
+      "cli.md"
+    ],
+    "bash": 8,
+    "hd": {
+      "new": 1,
+      "check": 4,
+      "test": 3,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 20,
+    "cost_usd": 0.02706091,
+    "duration_s": 79,
+    "tokens": 885594,
+    "final_message": "The `calc` library is in place in the current directory. `hd check --tests`, `hd test` (35 passing), `hd fmt` and `hd lint` are all clean.\n\n**Layout**\n- `hd.toml`: package `calc`, created with `hd new . --lib --vcs none`.\n- `src/calc.hd`: the evaluator and its unit tests in a `tests:` block.\n- `src/lib.hd`: re-exports `CalcError` and `eval`, so callers write `calc.eval`.\n- `tests/calc.hd`: two integration tests through the public API.\n\n**Design**\n- The lexer turns the source into tokens, each with its byte offset.\n- A recursive-descent parser builds a tree of `Expr` nodes. Binary and unary operands are boxed (`*Expr`) because a variant cannot hold its own type by value.\n- A separate `compute` function walks the tree.\n- Invalid bytes become a `Bad` token rather than failing the lexer. The parser only reports them when it reaches them, so `\"1 2 $\"` gives `Unexpected(2)`, as the grammar requires.\n\n**Choices the spec did not cover**\n- **Whitespace:** space, tab, LF and CR all count as separators, not only the space character.\n- **Overflow:** `+ - * /` wrap around on overflow instead of panicking. `i64::MIN / -1` wraps to `i64::MIN`.\n- **Oversized literals:** a number that does not fit in `i64` is reported as `Unexpected` at the start of that number.\n\nNothing is committed; the repository is not under git.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

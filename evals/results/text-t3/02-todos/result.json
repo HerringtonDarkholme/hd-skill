@@ -1,0 +1,83 @@
+{
+  "task": "02-todos",
+  "package": "todos",
+  "scenario": "JSON in and out",
+  "selling_points": [
+    "derive Serialize/Deserialize",
+    "field defaults",
+    "property tests"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 21,
+      "passed": 21,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-serde",
+        "desc": "JSON through @derive(Serialize, Deserialize)",
+        "ok": true
+      },
+      {
+        "id": "field-default",
+        "desc": "done defaults with a field default",
+        "ok": true
+      },
+      {
+        "id": "prop-test",
+        "desc": "round trip checked with a property test",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "reference/packages.md",
+      "scenarios/configuration.md"
+    ],
+    "bash": 8,
+    "hd": {
+      "help": 4,
+      "check": 5,
+      "test": 4,
+      "new": 1,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {
+      "unsatisfied-trait-bound": 12
+    },
+    "failing_checks": 2,
+    "turns": 20,
+    "cost_usd": 0.019457989999999998,
+    "duration_s": 56,
+    "tokens": 534390,
+    "final_message": "The `todos` library is written and passes `hd check --tests` and `hd test` (21 passed, 0 failed). `hd fmt` and `hd lint` are clean.\n\n**Files**\n- `hd.toml`: package `todos`, created with `hd new . --lib --vcs none`.\n- `src/todos.hd`: the implementation and the unit tests in its `tests:` block.\n- `src/lib.hd`: re-exports `Todo`, `TodoError`, `load`, `dump`, `complete` and `pending`, so callers write `use todos.{...}`. The generated sample `greet` is gone.\n- `tests/todos.hd`: two integration tests through the public API.\n\n**Choices I made**\n- `done` defaults to `false` when absent. Unknown JSON keys are ignored, and a wrong type (for example `\"id\": \"1\"` or `\"done\": \"yes\"`) is rejected.\n- Any decode failure becomes `BadJson` with the parser's message. A non-array top level is also `BadJson`.\n- `complete` with an id that is not in the list returns `UnknownId`. If several todos share the id, all of them are marked done.\n- `dump` uses compact JSON.\n- `Todo` also derives `Arbitrary`, which the property test needs. A property test checks that `dump` then `load` returns the same list for any generated list.\n\n**Notes**\n- `Result` does not implement `Eq` in this version of hd, so the tests compare `.ok()` or `.err()` optionals instead.\n- `hd fmt` reflowed both test files after I wrote them. The content is unchanged.\n- I did not search the machine or the internet for hd-lang sources. I relied on the bundled skill docs and the compiler's diagnostics.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

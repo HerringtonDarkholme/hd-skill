@@ -1,0 +1,8 @@
+[package]
+name = "users"
+
+[capabilities]
+Console = true
+
+[dev-capabilities]
+Process = true

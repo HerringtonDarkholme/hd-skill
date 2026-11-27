@@ -1,0 +1,97 @@
+{
+  "task": "05-users",
+  "package": "users",
+  "scenario": "service with a user-defined effect",
+  "selling_points": [
+    "own effect trait",
+    "$.use",
+    "$.with providers",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 3,
+      "passed": 3,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [],
+        "ok": true,
+        "status": 0,
+        "stdout": "renamed 1 to Ada Lovelace\nerror: no user 2\n",
+        "stderr": ""
+      }
+    ],
+    "idiom": [
+      {
+        "id": "use-effect",
+        "desc": "logic reaches the store with $.use(UserStore)",
+        "ok": true
+      },
+      {
+        "id": "provide-in-main",
+        "desc": "main provides a store with $.with",
+        "ok": true
+      },
+      {
+        "id": "fake-store",
+        "desc": "tests define their own UserStore fake",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "UserError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 10,
+    "hd": {
+      "help": 2,
+      "new": 2,
+      "check": 4,
+      "test": 2,
+      "run": 1,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/text-t2/05-users/users && printf '[package]\\nname = \"users\"\\n\\n[capabilities]\\nConsole = true\\n\\n[dev-capabilities]\\nPr"
+    ],
+    "diagnostic_codes": {
+      "missing-requirement": 1,
+      "missing-capability": 1
+    },
+    "failing_checks": 0,
+    "turns": 17,
+    "cost_usd": 0.023101270000000004,
+    "duration_s": 71,
+    "tokens": 735533,
+    "final_message": "The `users` package is in the current directory. `hd check --tests`, `hd test` (7 cases), `hd lint` and `hd run` all pass, and `hd run` prints the two required lines.\n\nFiles:\n\n- **`src/users.hd`** has `User`, `UserError` (with `@error` messages, so `\"error: $error\"` prints `no user 2`), the `UserStore` trait with bang methods `get!` and `put!`, and `pub fn rename!(...) $ UserStore`. The function checks for a blank name first, so it never reads the store for one. It then looks up the user, returns `NotFound` if missing, and otherwise calls `put!` once and returns the result. Its `tests:` block has a fake store that records `put!` calls. The cases cover trimming with one store write, blank names, the order of the checks, the missing user, the error messages, and a property test over generated names.\n- **`src/main.hd`** defines an in-memory `MemStore` that is provided with `$.with(UserStore=...)`. It renames user 1 to \"Ada Lovelace\" and user 2 to \"Grace\", printing one line for each result.\n- **`tests/users.hd`** is the integration test. It runs the program and checks its exact output and exit status.\n- **`hd.toml`** grants only `Console`, plus `Process` for tests.\n\nChoices I made that you may want to change:\n\n- The package is an app (`hd new --app`), since `src/main.hd` runs.\n- I trimmed the template's unused capability grants (`Args`, `Clock`, `Random`) to keep grants minimal.\n- The in-memory store lives in `main.hd`, not in the library, because the spec did not ask for a pub s",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

@@ -1,0 +1,63 @@
+@derive(Eq, Debug)
+pub struct User:
+    pub id: i64
+    pub name: string
+
+@error
+@derive(Eq, Debug)
+pub enum UserError:
+    @error("no user $id")
+    NotFound(id: i64)
+    @error("a user needs a name")
+    EmptyName
+
+## Where users are kept. The caller provides it with `$.with`.
+pub trait UserStore:
+    fn get!(&mut self, id: i64) -> User?
+    fn put!(&mut self, user: User) -> void
+
+## Rename a user. The name is trimmed; nothing is stored on error.
+pub fn rename!(id: i64, name: string) -> Result[User, UserError] $ UserStore:
+    trimmed := name.trim()
+    if trimmed == "":
+        return .Err(.EmptyName)
+    store := $.use(UserStore)
+    let .Some(user) = store.get!(id) else:
+        return .Err(.NotFound(id))
+    renamed := User { ...user, name: trimmed }
+    store.put!(renamed)
+    .Ok(renamed)
+
+tests:
+    struct FakeStore:
+        users: List[User]
+        puts: List[User]
+
+    impl UserStore for FakeStore:
+        fn get!(&mut self, id: i64) -> User?:
+            for user in self.users:
+                if user.id == id:
+                    return .Some(user)
+            .None
+
+        fn put!(&mut self, user: User) -> void:
+            self.puts.push(user)
+
+    it("renames the user and stores it once"):
+        store := box(FakeStore { users: [User { id: 1, name: "ada" }], puts: [] })
+        $.with(UserStore=store):
+            assert_equal(rename!(1, "  Ada Lovelace "), .Ok(User { id: 1, name: "Ada Lovelace" }))
+        assert_equal(store.puts, [User { id: 1, name: "Ada Lovelace" }])
+
+    it("reports a missing user and stores nothing"):
+        store := box(FakeStore { users: [User { id: 1, name: "ada" }], puts: [] })
+        $.with(UserStore=store):
+            assert_equal(rename!(2, "Grace"), .Err(.NotFound(2)))
+        assert_equal(store.puts, [])
+
+    it("refuses an empty or blank name and stores nothing"):
+        store := box(FakeStore { users: [User { id: 1, name: "ada" }], puts: [] })
+        $.with(UserStore=store):
+            assert_equal(rename!(1, ""), .Err(.EmptyName))
+            assert_equal(rename!(1, "   "), .Err(.EmptyName))
+        assert_equal(store.puts, [])

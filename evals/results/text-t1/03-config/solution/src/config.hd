@@ -1,0 +1,47 @@
+use std.encoding.Deserialize
+use std.encoding.json.{JsonError, decode}
+use std.fs.{FsError, FsRead, read_text}
+use std.host.{Env, HostError, env_as}
+use std.path.Path
+use std.validate.{Validate, ValidationError, length, range}
+
+## The settings a service runs with.
+@derive(Deserialize, Validate, Eq, Debug)
+pub struct Config:
+    @length(1, 253)
+    pub host: string
+    @range(1024, 65535)
+    pub port: i32
+    @range(1, 64)
+    pub workers: i32 = 4
+
+@error
+pub enum ConfigError:
+    @error("cannot read the config file")
+    Read(
+        @from
+        error: FsError,
+    )
+    @error("the config file is not valid JSON: $error")
+    Parse(
+        @from
+        error: JsonError,
+    )
+    @error("$error")
+    Environment(
+        @from
+        error: HostError,
+    )
+    @error("$error")
+    Invalid(
+        @from
+        error: ValidationError,
+    )
+
+## Loads the JSON config at `path`, lets APP_PORT replace the port, then checks the rules.
+pub fn load_config!(path: string) -> Result[Config, ConfigError] $ FsRead + Env:
+    text := read_text!(Path(path))?
+    config := decode::[Config](text)?
+    port := env_as::[i32]("APP_PORT")?
+    settled := Config { ...config, port: port.unwrap_or(config.port) }
+    .Ok(settled.validated()?)

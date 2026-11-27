@@ -1,0 +1,75 @@
+use pkg.{Todo, TodoError, complete, dump, load, pending}
+use std.testing.{Arbitrary, assert_equal, it_prop}
+
+it("loads todos and defaults done to false"):
+    todos := load(
+        "[{\"id\": 1, \"title\": \"milk\"}, {\"id\": 2, \"title\": \"eggs\", \"done\": true}]",
+    )
+        .expect("valid")
+    assert_equal(
+        todos,
+        [Todo { id: 1, title: "milk", done: false }, Todo { id: 2, title: "eggs", done: true }],
+    )
+
+it("loads an empty array"):
+    assert_equal(load("[]").expect("valid"), [])
+
+it("rejects input that is not a todo array"):
+    assert_equal(load("").err().is_some(), true)
+    assert_equal(load("{}").err().is_some(), true)
+    assert_equal(load("[1]").err().is_some(), true)
+    assert_equal(load("[{\"id\": 1}]").err().is_some(), true)
+    assert_equal(load("[{\"id\": \"1\", \"title\": \"x\"}]").err().is_some(), true)
+    assert_equal(load("[{\"id\": 1, \"title\": \"x\", \"done\": null}]").err().is_some(), true)
+    assert_equal(load("[{\"id\": 1.5, \"title\": \"x\"}]").err().is_some(), true)
+    assert_equal(load("[{\"id\": 1, \"title\": \"x\"}").err().is_some(), true)
+
+it("reports BadJson for a missing title"):
+    assert_equal(
+        load("[{\"id\": 1}]").err().expect("error").to_string().starts_with("bad todo JSON"),
+        true,
+    )
+
+it("dump writes JSON that load reads back"):
+    todos := [
+        Todo { id: 1, title: "a \"quoted\" title", done: true },
+        Todo { id: -2, title: "", done: false },
+    ]
+    assert_equal(load(dump(todos)), .Ok(todos))
+
+it("dump of an empty list is an empty array"):
+    assert_equal(dump([]), "[]")
+
+it("complete marks one todo done"):
+    todos := [Todo { id: 1, title: "a", done: false }, Todo { id: 2, title: "b", done: false }]
+    assert_equal(
+        complete(todos, 2),
+        .Ok([Todo { id: 1, title: "a", done: false }, Todo { id: 2, title: "b", done: true }]),
+    )
+
+it("complete reports an unknown id"):
+    todos := [Todo { id: 1, title: "a", done: false }]
+    assert_equal(complete(todos, 7), .Err(TodoError.UnknownId(7)))
+
+it("pending lists undone titles in order"):
+    todos := [
+        Todo { id: 1, title: "a", done: true },
+        Todo { id: 2, title: "b", done: false },
+        Todo { id: 3, title: "c", done: false },
+    ]
+    assert_equal(pending(todos), ["b", "c"])
+    assert_equal(pending([]), [])
+
+it("errors print their messages"):
+    assert_equal(TodoError.UnknownId(3).to_string(), "no todo with id 3")
+
+@derive(Arbitrary, Debug)
+struct Sample:
+    id: i32
+    title: string
+    done: bool
+
+it_prop("dump then load is the identity", prop=fn!(s: Sample):
+    todos := [Todo { id: s.id, title: s.title, done: s.done }]
+    assert_equal(load(dump(todos)), .Ok(todos))
+)

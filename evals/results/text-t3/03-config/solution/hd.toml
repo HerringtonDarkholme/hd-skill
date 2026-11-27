@@ -1,0 +1,6 @@
+[package]
+name = "config"
+
+[capabilities]
+FsRead = true
+Env = ["APP_PORT"]

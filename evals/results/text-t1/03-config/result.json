@@ -1,0 +1,94 @@
+{
+  "task": "03-config",
+  "package": "config",
+  "scenario": "configuration from file and environment",
+  "selling_points": [
+    "derive Validate + field facts",
+    "env_decode",
+    "@from errors",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 13,
+      "passed": 13,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 11,
+      "passed": 11,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-validate",
+        "desc": "rules written as @derive(Validate) field facts",
+        "ok": true
+      },
+      {
+        "id": "field-facts",
+        "desc": "uses @range / @length facts",
+        "ok": true
+      },
+      {
+        "id": "from-errors",
+        "desc": "error variants convert with @from",
+        "ok": true
+      },
+      {
+        "id": "fake-fs-env",
+        "desc": "tests use MemoryFs and ScriptedEnv",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/configuration.md",
+      "reference/packages.md"
+    ],
+    "bash": 10,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 5,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: python3 -I - <<'EOF'\nimport re\np = \"tests/config.hd\"\nsrc = open(p).read()\nsrc = src.replace(\"use pkg.{Config, ConfigError, load_config}\\nuse std.fs.{FsWrite, MemoryFs, write_text}\\nuse std.host."
+    ],
+    "diagnostic_codes": {
+      "unknown-import": 1,
+      "type-mismatch": 4,
+      "unknown-trait": 4,
+      "misplaced-tests-block": 1
+    },
+    "failing_checks": 3,
+    "turns": 25,
+    "cost_usd": 0.028469350000000004,
+    "duration_s": 91,
+    "tokens": 911408,
+    "final_message": "The `config` library is written and `hd check --tests`, `hd test` (13 passed), `hd fmt` and `hd lint` all pass.\n\n**Layout**\n\n- `hd.toml` and `src/lib.hd` came from `hd new --lib`. A library's root must be `src/lib.hd`, so `lib.hd` is one line: `pub use self.config.{Config, ConfigError, load_config}`.\n- `src/config.hd` holds everything else. `hd fmt` reformatted it and the test file after my edits, which changed the layout but not the logic.\n- `tests/config.hd` holds the 13 tests.\n\n**Behaviour**\n\n- `Config` is `pub struct` with `pub` fields. It derives `Deserialize`, `Validate`, `Eq` and `Debug`. `workers` defaults to 4 when absent from the JSON.\n- The rules are `@length(1, 253)` on `host`, `@range(1024, 65535)` on `port`, and `@range(1, 64)` on `workers`. They run after the `APP_PORT` override, so an overridden port is checked too.\n- `APP_PORT` is read with `env_as::[i32]`. A non-integer becomes `Environment`.\n- `ConfigError` has one `@from` field per variant: `Read(FsError)`, `Parse(JsonError)`, `Environment(HostError)`, `Invalid(ValidationError)`.\n- `load_config!` reads the file, decodes it, applies the override, then validates.\n\n**Choices I made**\n\n- The spec's signature uses `path: string`, but `read_text!` takes a `Path`, so the function wraps it with `Path(path)`.\n- If the file is unreadable and `APP_PORT` is also bad, the file error wins, because the file is read first.\n- Tests live in `tests/config.hd` and use the in-memory `MemoryFs` and `ScriptedEnv` fakes. They cov",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

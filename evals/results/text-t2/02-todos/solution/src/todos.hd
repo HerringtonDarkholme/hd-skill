@@ -1,0 +1,104 @@
+use std.encoding.{Deserialize, Serialize}
+use std.encoding.json.{decode, encode}
+
+# One todo. A missing `done` in the JSON reads as false.
+@derive(Eq, Debug, Serialize, Deserialize)
+pub struct Todo:
+    pub id: i32
+    pub title: string
+    pub done: bool = false
+
+# Why a todo operation failed.
+@derive(Eq, Debug)
+@error
+pub enum TodoError:
+    @error("bad JSON: $message")
+    BadJson(message: string)
+    @error("no todo with id $id")
+    UnknownId(id: i32)
+
+# Read a JSON array of {"id", "title", "done"} objects. Anything else is `BadJson`.
+pub fn load(json: string) -> Result[List[Todo], TodoError]:
+    decode::[List[Todo]](json).map_err(fn(e): TodoError.BadJson(e.to_string()))
+
+# The JSON array for `todos`; `load` reads it back unchanged.
+pub fn dump(todos: List[Todo]) -> string:
+    encode(todos)
+
+# The list with the todo `id` marked done, or `UnknownId` when no todo has that id.
+pub fn complete(todos: List[Todo], id: i32) -> Result[List[Todo], TodoError]:
+    if !todos.any(fn(item): item.id == id):
+        return .Err(TodoError.UnknownId(id))
+    let mut out: List[Todo] = []
+    for item in todos:
+        if item.id == id:
+            out.push(Todo { ...item, done: true })
+        else:
+            out.push(item)
+    .Ok(out)
+
+# The titles of the todos that are not done, in order.
+pub fn pending(todos: List[Todo]) -> List[string]:
+    let mut titles: List[string] = []
+    for item in todos:
+        if !item.done:
+            titles.push(item.title)
+    titles
+
+tests:
+    use std.testing.{it_each, it_prop}
+
+    fn bad_json(text: string) -> bool:
+        match load(text):
+            .Err(.BadJson(_)) => true
+            _ => false
+
+    fn sample() -> List[Todo]:
+        [Todo { id: 1, title: "write", done: false }, Todo { id: 2, title: "test", done: true }, Todo { id: 3, title: "ship", done: false }]
+
+    it("loads a JSON array"):
+        assert_equal(load("[{\"id\": 1, \"title\": \"write\", \"done\": true}]"), .Ok([Todo { id: 1, title: "write", done: true }]))
+
+    it("reads a missing done as false"):
+        assert_equal(load("[{\"id\": 1, \"title\": \"write\"}]"), .Ok([Todo { id: 1, title: "write", done: false }]))
+
+    it("accepts an empty array"):
+        assert_equal(load("[]").expect("valid").len(), 0)
+
+    it("rejects input that is not a todo array"):
+        assert(bad_json("not json"))
+        assert(bad_json("{}"))
+        assert(bad_json("[1]"))
+
+    it_each(
+        "rejects a bad todo",
+        [
+            "[{\"title\": \"no id\", \"done\": false}]",
+            "[{\"id\": \"1\", \"title\": \"string id\"}]",
+            "[{\"id\": 1}]",
+            "[{\"id\": 1, \"title\": 2}]",
+            "[{\"id\": 1, \"title\": \"x\", \"done\": \"yes\"}]",
+            "[{\"id\": 1.5, \"title\": \"x\"}]",
+        ],
+        body=fn!(text: string): assert(bad_json(text)),
+    )
+
+    it("dumps to JSON that load reads back"):
+        assert_equal(dump(sample()), "[{\"id\":1,\"title\":\"write\",\"done\":false},{\"id\":2,\"title\":\"test\",\"done\":true},{\"id\":3,\"title\":\"ship\",\"done\":false}]")
+        assert_equal(load(dump(sample())), .Ok(sample()))
+
+    it_prop("load undoes dump", prop=fn!(input: (i32, string, bool)):
+        items := [Todo { id: input._0, title: input._1, done: input._2 }]
+        assert_equal(load(dump(items)), .Ok(items))
+    )
+
+    it("completes only the chosen todo"):
+        assert_equal(complete(sample(), 1), .Ok([Todo { id: 1, title: "write", done: true }, Todo { id: 2, title: "test", done: true }, Todo { id: 3, title: "ship", done: false }]))
+
+    it("reports an unknown id"):
+        assert_equal(complete(sample(), 9), .Err(TodoError.UnknownId(9)))
+
+    it("lists pending titles in order"):
+        assert_equal(pending(sample()), ["write", "ship"])
+        assert_equal(pending(complete(sample(), 1).expect("known id")), ["ship"])
+        assert_equal(pending([]).len(), 0)

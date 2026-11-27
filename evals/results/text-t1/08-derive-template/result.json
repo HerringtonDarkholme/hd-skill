@@ -1,0 +1,79 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 2,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": true
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/derive.md",
+      "reference/packages.md"
+    ],
+    "bash": 6,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 4,
+      "test": 4,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: cat >> tests/fields.hd <<'EOF'\n\n@derive(FieldNames)\nstruct Hidden:\n    secret: string\n    visible: string\n\nit(\"derives for private fields too\"):\n    assert_equal(Hidden { secret: \"s\", visible: \""
+    ],
+    "diagnostic_codes": {
+      "unsatisfied-trait-bound": 2
+    },
+    "failing_checks": 1,
+    "turns": 19,
+    "cost_usd": 0.01805507,
+    "duration_s": 49,
+    "tokens": 606740,
+    "final_message": "The `fields` package is in place. `hd check --tests` and `hd test` both pass: 7 tests, 0 failures. `hd fmt` and `hd lint` are clean too.\n\n**Layout**\n- `hd.toml`: package `fields`, created by `hd new --lib`.\n- `src/fields.hd`: the `FieldNames` trait, the derive template, and in-module tests.\n- `src/lib.hd`: the library root. It re-exports `FieldNames`, so other packages can write `use dep.fields.FieldNames`. I replaced the sample `greet` function.\n- `tests/fields.hd`: integration tests in a separate module.\n\n**How it works**\nThe template is `impl[T] FieldNames for T by Structure`. It walks the struct with a `Walker` that pushes each field's `h.info.name`. Walking goes in declaration order, so no per-struct `impl` is needed. Any module can write `@derive(FieldNames)` after importing `FieldNames` (for example `use pkg.fields.{FieldNames}`), and that includes test modules.\n\n**Choices and findings**\n- **Generic structs:** `@derive` on `struct Wrapper[T]` adds a `T: FieldNames` bound, as Rust does. So `Wrapper[usize]` does not compile. I tested it with a type parameter that derives `FieldNames`. Tell me if you want the bound dropped.\n- **Enums:** I did not test `@derive(FieldNames)` on an enum. The walker only collects struct fields, so an enum would likely return an empty list. The request covered structs only.\n- **Private fields:** a test confirms that a struct with private fields still derives its names.\n\n**Blocked step**\nOne shell command was denied by the permission check, a h",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

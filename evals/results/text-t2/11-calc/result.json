@@ -1,0 +1,83 @@
+{
+  "task": "11-calc",
+  "package": "calc",
+  "scenario": "parser and interpreter",
+  "selling_points": [
+    "recursive enums",
+    "box",
+    "@error",
+    "match"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 34,
+      "passed": 34,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 20,
+      "passed": 20,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "tree-enum",
+        "desc": "a recursive enum for the syntax tree (boxed children)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "CalcError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "table-test",
+        "desc": "table tests with it_each",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/parser.md"
+    ],
+    "bash": 7,
+    "hd": {
+      "help": 2,
+      "new": 1,
+      "check": 2,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: hd help new; echo ---; S=.claude/skills/hd-lang/reference/std-index.txt; grep -n -i -E 'checked|wrapping|saturating|try_from|from_utf8|to_utf8|bytes' $S | head -60; echo ---; grep -n -i -E 'lib\\"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 16,
+    "cost_usd": 0.029664380000000004,
+    "duration_s": 119,
+    "tokens": 580341,
+    "final_message": "The `calc` library is in place: `src/calc.hd` has `CalcError` and `eval` as specified. `hd check --tests` and `hd test` both pass, and `hd test` ran 34 cases with none failing. The formatter ran after the first test run and changed `src/calc.hd` on disk, so I re-ran both required checks and they still pass. `hd lint` reports no warnings.\n\n**Files**\n- `src/calc.hd`: the lexer, a recursive-descent parser (`expr` → `term` → `unary` → `primary`) that builds a boxed syntax tree, the tree evaluator, and the `tests:` block.\n- `src/lib.hd`: re-exports `CalcError` and `eval`, so callers can write `use pkg.{eval}`. The sample `greet` function is gone.\n- `tests/calc.hd`: a short public-API test.\n- `hd.toml`: created by `hd new --lib`. The package name is `calc`.\n\n**Tests:** the table cases cover every example from your spec, plus precedence, left associativity, truncating division with negative operands, `i64` bounds, and each error position. They also check that parse errors take priority over division by zero, so `\"1 / 0 +\"` gives `Unexpected(7)`.\n\n**Choices the spec didn't cover**\n- **Overflow panics.** The spec's error enum has no overflow variant, so I used hd's default operators. `i64::MAX + 1` or `i64::MIN / -1` will panic rather than return an error. If you want an error instead, a new variant or a different error is needed.\n- **Out-of-range literals are `Unexpected`.** A number too big for `i64` reports `Unexpected` at its first digit. That also means `-9223372036854775808` is ",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

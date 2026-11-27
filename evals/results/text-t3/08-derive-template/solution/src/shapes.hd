@@ -1,0 +1,21 @@
+use pkg.fields.FieldNames
+
+@derive(FieldNames)
+pub struct Circle:
+    pub center_x: f64
+    pub center_y: f64
+    pub radius: f64
+
+@derive(FieldNames)
+struct Tag:
+    label: string
+    weight: u32 = 1
+
+## The field names of `Circle`, read through a generic bound.
+pub fn circle_fields() -> List[string]:
+    Circle { center_x: 0.0, center_y: 0.0, radius: 1.0 }.field_names()
+
+tests:
+    it("derives in a sibling module"):
+        assert_equal(circle_fields(), ["center_x", "center_y", "radius"])
+        assert_equal(Tag { label: "a" }.field_names(), ["label", "weight"])

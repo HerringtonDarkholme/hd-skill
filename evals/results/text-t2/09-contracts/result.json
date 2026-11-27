@@ -1,0 +1,79 @@
+{
+  "task": "09-contracts",
+  "package": "bank",
+  "scenario": "invariants",
+  "selling_points": [
+    "require",
+    "ensure"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 18,
+      "passed": 18,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 6,
+      "passed": 6,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "require",
+        "desc": "preconditions with require",
+        "ok": true
+      },
+      {
+        "id": "ensure",
+        "desc": "postconditions with ensure",
+        "ok": true
+      },
+      {
+        "id": "no-raw-panic",
+        "desc": "no hand-written panic( for checks",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 10,
+    "hd": {
+      "test": 4,
+      "help": 2,
+      "new": 1,
+      "check": 3,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/text-t2/09-contracts/bank && H=.claude/skills/hd-lang; sed -n 1,80p $H/reference/packages.md; echo ----; grep -n -i \"re",
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/text-t2/09-contracts/bank && rm -f tests/bank.hd && hd check --tests 2>&1 | head -80"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 18,
+    "cost_usd": 0.01887999,
+    "duration_s": 48,
+    "tokens": 652673,
+    "final_message": "The `bank` package is in place. `hd check --tests`, `hd test` (18 passed), `hd fmt` and `hd lint` all pass.\n\n**What's there**\n- `hd.toml`: package `bank`, created with `hd new --lib --vcs none .` in the current directory.\n- `src/account.hd`: `pub struct Account` with a private `cents: i64` field, plus `open`, `transfer`, and `balance`/`deposit`/`withdraw` in `impl Account`, matching your signatures.\n- `src/lib.hd`: re-exports `Account`, `open`, `transfer` from `bank.account`, so the package root exposes the API.\n- `tests/bank.hd`: three integration tests through the public API.\n- Tests inside `src/account.hd`: cases for each operation, `expect_panic=\"explicit-panic\"` cases for every refused input (negative opening balance, zero or negative deposit, zero withdrawal, overdraft, oversize or non-positive transfer), and a property test that a transfer keeps the total and never goes negative.\n\n**Checks and invariants**\n- Input checks are `require`, which is skipped in release builds.\n- Each mutation has `ensure` checks: a deposit or withdrawal changes the balance by exactly the amount, the balance is never negative, and a transfer keeps the total.\n\n**Decisions to review**\n- **Release cost:** `ensure` runs in every build; the std docs have no debug-only form. So the invariant checks cost something in release, even though the input checks cost nothing. If you wanted zero release cost for the invariants too, they would need a different form, and I didn't find one.\n- **Transfer amount:",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

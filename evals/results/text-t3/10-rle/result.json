@@ -1,0 +1,74 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 20,
+      "passed": 20,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 9,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 3,
+      "test": 5,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: hd test 2>&1 | grep -c -i \"ok\\|pass\" ; hd test --filter \"undoes\" 2>&1 | tail -5\nM=$(mktemp -d) && cp -R hd.toml src tests \"$M\"/ && cd \"$M\" && sed -i '' 's/for _ in 0..run.count:/for _ in 0..run."
+    ],
+    "diagnostic_codes": {
+      "missing-let": 1
+    },
+    "failing_checks": 1,
+    "turns": 21,
+    "cost_usd": 0.021113100000000003,
+    "duration_s": 61,
+    "tokens": 635069,
+    "final_message": "The `rle` package is written and both `hd check --tests` and `hd test` pass (20 tests, 0 failures). `hd fmt` reformatted the test files after my edits; the check and test runs above came after that formatting.\n\n**Files**\n- `src/rle.hd`: `Run` (`pub value: i32`, `pub count: usize`, `@derive(Eq, Debug)`), `encode`, and `decode`. `encode` builds maximal runs by tracking the current run, so no run is empty and neighbours always differ. `decode` expands each run `count` times.\n- `src/lib.hd`: re-exports `Run`, `encode` and `decode` from `rle`, so importers use `pkg.{encode, decode, Run}`. I replaced the scaffold's `greet` function.\n- `tests/rle.hd`: an integration test that exercises the public API, plus a round-trip property.\n\n**Tests in `src/rle.hd`**\n- Example tables for `encode` and `decode`, including empty lists, single elements, alternating values, and a zero-count run in `decode`.\n- Extreme `i32` values and a 1000-element run.\n- Property tests on the full `i32` range: `decode(encode(xs)) == xs`, and each encoding has positive counts, neighbours that differ, and counts summing to the input length.\n- The same properties on a generator of short-valued lists (`-2..=2`, up to 60 items), which produces long runs far more often than the default generator.\n\n**Not verified**\n- I tried a mutation check (deliberately breaking `decode` in a copy to confirm the properties catch it), but the permission system denied that command, so I have not shown that the tests would fail on a broken",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

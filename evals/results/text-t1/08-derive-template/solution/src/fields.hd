@@ -1,0 +1,63 @@
+use std.meta.{Field, Structure, Variant, Walker}
+
+## The names of a struct's fields, in declaration order.
+## `@derive(FieldNames)` writes the implementation for any struct.
+pub trait FieldNames:
+    fn field_names(self) -> List[string]
+
+# The walker the template drives: it is called once per field, in order.
+struct CollectNames:
+    names: List[string]
+
+impl[S] Walker[S] for CollectNames:
+    type Error = void
+
+    fn data_variant(&mut self, v: Variant[S]) -> Result[void, void]:
+        .Ok(())
+
+    fn variant(&mut self, v: Variant[S]) -> Result[void, void]:
+        .Ok(())
+
+    fn data_member[F](&mut self, h: Field[S, F], value: &F) -> Result[void, void]:
+        self.names.push(h.info.name)
+        .Ok(())
+
+    fn member[F](&mut self, h: Field[S, F], value: &F) -> Result[void, void]:
+        self.data_member(h, value)
+
+    fn rest[T](&mut self, h: Field[S, List[T]], items: &List[T]) -> Result[void, void]:
+        .Ok(())
+
+# The template: each `@derive(FieldNames)` instantiates it for that type.
+impl[T] FieldNames for T by Structure:
+    fn field_names(self) -> List[string]:
+        let mut collect = CollectNames { names: [] }
+        _ := Structure::walk(&self, &mut collect)
+        collect.names
+
+tests:
+    @derive(FieldNames)
+    struct Point:
+        y: i32
+        x: i32
+
+    @derive(FieldNames)
+    struct Empty:
+        pass
+
+    @derive(FieldNames)
+    struct Wrapper[T]:
+        inner: T
+        label: string
+
+    it("lists the fields in declaration order"):
+        assert_equal(Point { y: 1, x: 2 }.field_names(), ["y", "x"])
+
+    it("lists nothing for a struct without fields"):
+        assert_equal(Empty {}.field_names(), [])
+
+    it("works for a generic struct"):
+        assert_equal(
+            Wrapper { inner: Point { y: 1, x: 2 }, label: "a" }.field_names(),
+            ["inner", "label"],
+        )

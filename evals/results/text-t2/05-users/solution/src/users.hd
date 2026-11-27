@@ -1,0 +1,89 @@
+## A user: a stable id and a display name.
+@derive(Eq, Debug)
+pub struct User:
+    pub id: i64
+    pub name: string
+
+## Why a rename failed.
+@derive(Eq, Debug)
+@error
+pub enum UserError:
+    @error("no user $id")
+    NotFound(id: i64)
+    @error("the name is empty")
+    EmptyName
+
+## Where users are kept. Callers provide an implementation.
+pub trait UserStore:
+    fn get!(&mut self, id: i64) -> User?
+    fn put!(&mut self, user: User) -> void
+
+## Rename user `id` to `name`, with surrounding whitespace trimmed.
+## A blank name is rejected before the store is read. A missing user is
+## rejected without storing anything. Otherwise the renamed user is stored
+## once and returned.
+pub fn rename!(id: i64, name: string) -> Result[User, UserError] $ UserStore:
+    trimmed := name.trim()
+    if trimmed.is_empty():
+        return .Err(UserError.EmptyName)
+    let .Some(user) = $.use(UserStore).get!(id) else:
+        return .Err(UserError.NotFound(id))
+    renamed := User { id: user.id, name: trimmed }
+    $.use(UserStore).put!(renamed)
+    .Ok(renamed)
+
+tests:
+    use std.testing.it_prop
+
+    struct FakeStore:
+        users: Map[i64, User]
+        puts: List[User]
+
+    impl UserStore for FakeStore:
+        fn get!(&mut self, id: i64) -> User?:
+            self.users.get(id)
+        fn put!(&mut self, user: User) -> void:
+            self.puts.push(user)
+            self.users[user.id] = user
+
+    fn store_with_ada() -> FakeStore:
+        FakeStore { users: { 1: User { id: 1, name: "ada" } }, puts: [] }
+
+    it("trims the name and stores the renamed user once"):
+        store := box(store_with_ada())
+        $.with(UserStore=store):
+            assert_equal(rename!(1, "  Ada Lovelace "), .Ok(User { id: 1, name: "Ada Lovelace" }))
+        assert_equal(store.puts.len(), 1, reason="one put")
+        assert_equal(store.puts[0], User { id: 1, name: "Ada Lovelace" })
+
+    it("rejects a blank name and stores nothing"):
+        store := box(store_with_ada())
+        $.with(UserStore=store):
+            assert_equal(rename!(1, ""), .Err(UserError.EmptyName))
+            assert_equal(rename!(1, "   "), .Err(UserError.EmptyName))
+        assert(store.puts.is_empty(), reason="nothing stored")
+
+    it("checks the name before looking the user up"):
+        store := box(store_with_ada())
+        $.with(UserStore=store):
+            assert_equal(rename!(2, " "), .Err(UserError.EmptyName))
+
+    it("reports a missing user and stores nothing"):
+        store := box(store_with_ada())
+        $.with(UserStore=store):
+            assert_equal(rename!(2, "Grace"), .Err(UserError.NotFound(2)))
+        assert(store.puts.is_empty(), reason="nothing stored")
+
+    it("has a message for each error"):
+        assert_equal("${UserError.NotFound(2)}", "no user 2")
+        assert_equal("${UserError.EmptyName}", "the name is empty")
+
+    it_prop("a non-blank name is stored trimmed", prop=fn!(name: string):
+        store := box(store_with_ada())
+        $.with(UserStore=store):
+            result := rename!(1, name)
+            if name.trim().is_empty():
+                assert_equal(result, .Err(UserError.EmptyName))
+            else:
+                assert_equal(result, .Ok(User { id: 1, name: name.trim() }))
+    )

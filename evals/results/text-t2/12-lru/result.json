@@ -1,0 +1,72 @@
+{
+  "task": "12-lru",
+  "package": "lru",
+  "scenario": "stateful data structure",
+  "selling_points": [
+    "model-based property test",
+    "commands"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 12,
+      "passed": 12,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "model-test",
+        "desc": "a generated-operations test (it_prop / it_prop_with / commands)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/testing.md",
+      "scenarios/project-layout.md"
+    ],
+    "bash": 11,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 5,
+      "test": 5,
+      "fmt": 1,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/text-t2/12-lru/lru && rm tests/lru.hd && rmdir tests && printf '%s\\n' 'pub use self.lru.{Lru, new_lru}' > src/lib.hd &&"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 26,
+    "cost_usd": 0.0323235,
+    "duration_s": 98,
+    "tokens": 1105484,
+    "final_message": "The `lru` package is in place in this directory. `hd check --tests` and `hd test` both pass (12 tests), and `hd fmt` and `hd lint` are clean.\n\n**Layout**\n- `src/lru.hd` holds the cache and its tests.\n- `src/lib.hd` re-exports `Lru` and `new_lru`. A library's root is always `src/lib.hd`, so the spec's `src/lru.hd` is a module under it. Importers see `Lru` and `new_lru` directly.\n- `tests/lru.hd` is an integration test of the public API. I rewrote the sample `greet` test to use it, since `greet` is gone.\n\n**Implementation**\n- The cache is a `List[Entry]` ordered least recent first. `get` on a hit moves the entry to the end, and a miss returns `.None` without touching anything. `put` removes any existing entry for the key, appends the new one, then removes the front entry while over capacity.\n- This is O(n) per operation, which is simple and fine for small caches. A linked list plus map would make it O(1), but hd has no pointer-based linked list without `box`, so I kept the simpler version.\n- A capacity of 0 stores nothing.\n\n**Tests**\n- Six example cases cover misses, update, eviction order, a miss not changing order, updates refreshing recency, and capacity 0.\n- An `it_each` table checks that inserting past capacity keeps only the newest keys.\n- An `it_prop_with` model-based test generates a capacity and up to 40 `get`/`put` operations. It runs them against a separate model (a map plus an ordered key list) and compares every `get` result and the length after each step.\n- To che",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

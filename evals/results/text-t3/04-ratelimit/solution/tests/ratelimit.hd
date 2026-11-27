@@ -1,0 +1,11 @@
+use pkg.{Limiter, new_limiter}
+use std.time.{Clock, ManualClock, Timestamp, s}
+
+it("limits through the public API"):
+    clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+    $.with(Clock=clock):
+        let mut limiter: Limiter = new_limiter(2, s(60))
+        assert(limiter.allow("user-1"))
+        assert(limiter.allow("user-1"))
+        assert(!limiter.allow("user-1"), reason="over the limit")
+        assert(limiter.allow("user-2"), reason="keys are independent")

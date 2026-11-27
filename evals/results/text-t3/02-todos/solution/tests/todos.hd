@@ -1,0 +1,16 @@
+use pkg.{Todo, TodoError, complete, dump, load, pending}
+use std.testing.assert_equal
+
+it("a list completed and dumped reads back through the public API"):
+    todos := load("[{\"id\": 1, \"title\": \"milk\"}, {\"id\": 2, \"title\": \"eggs\"}]")
+        .ok()
+        .expect("a valid list")
+    done := complete(todos, 1).ok().expect("id 1 exists")
+    assert_equal(pending(done), ["eggs"])
+    assert_equal(
+        load(dump(done)).ok(),
+        .Some([Todo { id: 1, title: "milk", done: true }, Todo { id: 2, title: "eggs" }]),
+    )
+
+it("an unknown id is reported through the public error type"):
+    assert_equal(complete([], 3).err(), .Some(TodoError.UnknownId(3)))

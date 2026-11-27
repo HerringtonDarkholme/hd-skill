@@ -1,0 +1,93 @@
+{
+  "task": "03-config",
+  "package": "config",
+  "scenario": "configuration from file and environment",
+  "selling_points": [
+    "derive Validate + field facts",
+    "env_decode",
+    "@from errors",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 12,
+      "passed": 12,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 11,
+      "passed": 11,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-validate",
+        "desc": "rules written as @derive(Validate) field facts",
+        "ok": false
+      },
+      {
+        "id": "field-facts",
+        "desc": "uses @range / @length facts",
+        "ok": false
+      },
+      {
+        "id": "from-errors",
+        "desc": "error variants convert with @from",
+        "ok": true
+      },
+      {
+        "id": "fake-fs-env",
+        "desc": "tests use MemoryFs and ScriptedEnv",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.6
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/configuration.md",
+      "reference/packages.md"
+    ],
+    "bash": 11,
+    "hd": {
+      "help": 5,
+      "new": 1,
+      "check": 5,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: hd help new; echo ---; hd help test; echo ---; hd help check; echo ---; S=.claude/skills/hd-lang; sed -n 1,200p $S/reference/packages.md | head -150; echo ---; grep -n -i -E \"env|JsonError|read_",
+      "Bash: sed -i '' 's/use std.fs.{FsError, FsRead, MemoryFs, read_text, write_text}/use std.fs.{FsError, FsRead, FsWrite, MemoryFs, read_text, write_text}/; s/load_config!}/load_config}/' src/config.hd &"
+    ],
+    "diagnostic_codes": {
+      "unknown-trait": 3,
+      "syntax-error": 2
+    },
+    "failing_checks": 2,
+    "turns": 26,
+    "cost_usd": 0.0325769,
+    "duration_s": 86,
+    "tokens": 1027211,
+    "final_message": "The `config` package is written and passes `hd check --tests` and `hd test` (12 tests, all passing). `hd fmt` and `hd lint` also ran clean.\n\n**Files**\n- `src/config.hd`: `Config`, `ConfigError`, `load_config!`, the private helpers, and the unit tests in a `tests:` block.\n- `src/lib.hd`: re-exports `Config`, `ConfigError` and `load_config`, so the package's public interface is those three names.\n- `tests/config.hd`: one integration test that goes through the public API.\n- `hd.toml`: created by `hd new --lib`, unchanged. The library grants nothing itself, because tests use fakes; a program that uses it must grant `FsRead` and `Env`.\n\n**Choices I made where the spec was open**\n- **Environment override:** `APP_PORT` is parsed as `i64`. A non-integer (including empty) gives `Environment`. An integer outside 1024 to 65535 gives `Invalid`, so a huge value doesn't wrap around when it's narrowed to `i32`.\n- **Host length:** counted in characters (`chars().count()`), not bytes, as the spec says.\n- **Error payloads:** `Read` and `Parse` wrap the std error types (`FsError`, `JsonError`) through `@from`. `Environment` and `Invalid` hold a `string` message.\n- **Defaults:** `workers` defaults to 4 in the struct, so a file that omits it still parses. `host` and `port` are required, so missing ones give `Parse`.\n- **Validation:** written by hand in `check`, not with `@derive(Validate)`, so the character-count and inclusive-bound rules match the spec exactly.\n\n**Things that happened along the ",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

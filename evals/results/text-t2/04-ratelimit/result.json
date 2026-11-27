@@ -1,0 +1,79 @@
+{
+  "task": "04-ratelimit",
+  "package": "ratelimit",
+  "scenario": "time-dependent logic",
+  "selling_points": [
+    "Clock requirement",
+    "ManualClock fake"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "manual-clock",
+        "desc": "tests control time with ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/effects.md",
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 15,
+    "hd": {
+      "doc": 6,
+      "new": 2,
+      "check": 2,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: ls -la && find . -path ./.claude -prune -o -type f -print | head -50; S=.claude/skills/hd-lang/reference/std-index.txt; grep -n -i \"time\\|Timestamp\\|Duration\\|Clock\" $S | head -120",
+      "Bash: D=$(mktemp -d) && cd \"$D\" && hd new ratelimit --lib && cd ratelimit && find . -type f | sort && cat hd.toml && cat src/lib.hd && cat tests/*.hd && hd doc std.time 2>&1 | head -200",
+      "Bash: find /tmp/rl-scratch/ratelimit -type f | sort; cat /tmp/rl-scratch/ratelimit/hd.toml; cat /tmp/rl-scratch/ratelimit/src/lib.hd; cat /tmp/rl-scratch/ratelimit/tests/ratelimit.hd",
+      "Read: /tmp/rl-scratch/ratelimit/src/lib.hd",
+      "Read: /tmp/rl-scratch/ratelimit/hd.toml",
+      "Read: /tmp/rl-scratch/ratelimit/tests/ratelimit.hd",
+      "Bash: hd doc std.time 2>&1 | grep -n -A12 'ManualClock\\|^## `Instant`\\|Duration`$' | head -150"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 29,
+    "cost_usd": 0.03899755000000001,
+    "duration_s": 67,
+    "tokens": 1635093,
+    "final_message": "The `ratelimit` package is in this directory, and `hd check --tests`, `hd lint` and `hd test` all pass (6 tests, 0 failed).\n\nFiles:\n- `hd.toml`: package `ratelimit`, no capability grants. The limiter itself needs none, since time comes from the `Clock` requirement.\n- `src/limiter.hd`: `Limiter`, `new_limiter` and `allow`, plus the tests in a `tests:` block.\n- `src/lib.hd`: re-exports `Limiter` and `new_limiter` as the library root.\n\nThe design:\n- `Limiter` keeps, per key, the list of timestamps of allowed events. `allow` drops timestamps that are at least `window` old, counts what is left, and records the event only if the count is below `max`. A refused event is not stored.\n- `allow` has the signature `$ Clock` and calls `now()`, so tests control time through a `ManualClock`.\n\nTests cover:\n- the `max` limit, then refusal\n- sliding-window behaviour, not fixed buckets\n- the exact boundary: an event 999 ms old still counts, one 1000 ms old does not\n- a refused event not being recorded\n- independent keys\n- `max = 0` refusing everything\n\nChoices I made:\n- Tests advance time with `sleep!`, because `ManualClock` has no documented method to set or advance time. The hd-lang docs say sleeps finish at once in virtual time.\n- I added `src/lib.hd` because the package layout expects a library root.\n- I ran `hd fmt`, which changed some comment spacing in `limiter.hd`. Tests still pass after it.\n\nKnown limitation: a key's entry stays in the map after its events expire, until that key is cal",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

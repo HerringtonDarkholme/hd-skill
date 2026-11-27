@@ -1,0 +1,114 @@
+use std.collections.Deque
+use std.time.{Clock, Duration, Timestamp, now}
+
+## A sliding-window rate limiter. Each key keeps the times of its allowed
+## events; an event at time t counts while now - t < window.
+pub struct Limiter:
+    max: usize
+    window: Duration
+    events: Map[string, Deque[Timestamp]]
+
+pub fn new_limiter(max: usize, window: Duration) -> Limiter:
+    Limiter { max, window, events: {} }
+
+impl Limiter:
+    pub fn allow(&mut self, key: string) -> bool $ Clock:
+        at := now()
+        max := self.max
+        window := self.window
+        queue := self.events.get_or_insert(key, Deque::new())
+        expire(queue, at, window)
+        if queue.len() >= max:
+            return false
+        queue.push_back(at)
+        true
+
+# Drops the events that no longer count at `at`, oldest first.
+fn expire(queue: &mut Deque[Timestamp], at: Timestamp, window: Duration) -> void:
+    while true:
+        let .Some(oldest) = queue.front() else:
+            return
+        if at.since(oldest) < window:
+            return
+        _ := queue.pop_front()
+
+tests:
+    use std.time.{ManualClock, ms, s, sleep}
+    use std.testing.{Choices, it_prop_with}
+
+    fn burst(c: &mut Choices) -> (usize, usize):
+        (c.int(0..=5), c.int(0..=12))
+
+    it("allows up to max events, then refuses"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        let mut limiter = new_limiter(2, 10s)
+        $.with(Clock=clock):
+            assert(limiter.allow("a"), reason="first")
+            assert(limiter.allow("a"), reason="second")
+            assert(!limiter.allow("a"), reason="third is over the limit")
+
+    it("a refused event is not recorded"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        let mut limiter = new_limiter(1, 10s)
+        $.with(Clock=clock):
+            assert(limiter.allow("a"))
+            sleep!(5s)
+            assert(!limiter.allow("a"), reason="still inside the window")
+            sleep!(5s)
+            # only the t=0 event was recorded, and it has now expired
+            assert(limiter.allow("a"), reason="refused event at t=5s must not count")
+
+    it("an event counts while now - t < window"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        let mut limiter = new_limiter(1, 10s)
+        $.with(Clock=clock):
+            assert(limiter.allow("a"))
+            sleep!(9999ms)
+            assert(!limiter.allow("a"), reason="9.999 s after t=0 is inside")
+            sleep!(1ms)
+            assert(limiter.allow("a"), reason="exactly 10 s after t=0 has expired")
+
+    it("the window slides past old events"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        let mut limiter = new_limiter(2, 10s)
+        $.with(Clock=clock):
+            assert(limiter.allow("a")) # t=0
+            sleep!(4s)
+            assert(limiter.allow("a")) # t=4
+            sleep!(4s)
+            assert(!limiter.allow("a")) # t=8: two events inside
+            sleep!(2s)
+            assert(limiter.allow("a")) # t=10: the t=0 event has expired
+            sleep!(2s)
+            assert(!limiter.allow("a")) # t=12: t=4 and t=10 are inside
+            sleep!(2s)
+            assert(limiter.allow("a")) # t=14: t=4 has expired
+
+    it("keys are independent"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        let mut limiter = new_limiter(1, 10s)
+        $.with(Clock=clock):
+            assert(limiter.allow("a"))
+            assert(!limiter.allow("a"))
+            assert(limiter.allow("b"), reason="b has its own budget")
+            assert(!limiter.allow("b"))
+
+    it("a zero maximum refuses everything"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        let mut limiter = new_limiter(0, 10s)
+        $.with(Clock=clock):
+            assert(!limiter.allow("a"))
+            assert(!limiter.allow("a"))
+
+    it_prop_with("a burst allows exactly min(max, attempts)", gen=burst, prop=fn!(
+        input: (usize, usize),
+    ):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        let mut limiter = new_limiter(input._0, 10s)
+        let mut allowed: usize = 0
+        $.with(Clock=clock):
+            for _ in 0..input._1:
+                if limiter.allow("k"):
+                    allowed += 1
+        assert_equal(allowed, if input._0 < input._1: input._0 else: input._1)
+    )

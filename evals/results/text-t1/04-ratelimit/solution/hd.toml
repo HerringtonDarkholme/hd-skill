@@ -1,0 +1,5 @@
+[package]
+name = "ratelimit"
+
+[capabilities]
+Clock = true

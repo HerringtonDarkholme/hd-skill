@@ -1,0 +1,6 @@
+use pkg.{eval, CalcError}
+
+it("evaluates through the public interface"):
+    assert_equal(eval("2 * (3 + 4) - 10 / 3"), .Ok(11))
+    assert_equal(eval("1 / 0"), .Err(CalcError.DivideByZero))
+    assert_equal(eval("1 +"), .Err(CalcError.Unexpected(3)))

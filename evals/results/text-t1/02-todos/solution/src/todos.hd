@@ -1,0 +1,37 @@
+use std.encoding.{Deserialize, Serialize}
+use std.encoding.json.{decode, encode}
+
+## One todo item. `done` is false when the JSON leaves it out.
+@derive(Eq, Debug, Serialize, Deserialize)
+pub struct Todo:
+    pub id: i32
+    pub title: string
+    pub done: bool = false
+
+@derive(Eq, Debug)
+@error
+pub enum TodoError:
+    @error("bad todo JSON: $message")
+    BadJson(message: string)
+    @error("no todo with id $id")
+    UnknownId(id: i32)
+
+## Reads a JSON array of todo objects.
+pub fn load(json: string) -> Result[List[Todo], TodoError]:
+    match decode::[List[Todo]](json):
+        .Ok(todos) => .Ok(todos)
+        .Err(error) => .Err(TodoError.BadJson(error.to_string()))
+
+## Writes the todos as compact JSON that `load` reads back unchanged.
+pub fn dump(todos: List[Todo]) -> string:
+    encode(todos)
+
+## Marks the todo with `id` as done.
+pub fn complete(todos: List[Todo], id: i32) -> Result[List[Todo], TodoError]:
+    if !todos.any(fn(t): t.id == id):
+        return .Err(TodoError.UnknownId(id))
+    .Ok([for t in todos => (if t.id == id: Todo { ...t, done: true } else: t)])
+
+## The titles of the todos not yet done, in order.
+pub fn pending(todos: List[Todo]) -> List[string]:
+    [for t in todos if !t.done => t.title]

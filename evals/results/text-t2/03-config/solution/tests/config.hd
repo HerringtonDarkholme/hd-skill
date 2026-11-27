@@ -1,0 +1,14 @@
+use pkg.{Config, ConfigError, load_config}
+use std.fs.{FsRead, FsWrite, MemoryFs, write_text}
+use std.host.{Env, ScriptedEnv}
+use std.path.Path
+
+it("loads a config through the public API"):
+    fs := MemoryFs::new()
+    $.with(FsWrite=fs):
+        _ := write_text!(Path("config.json"), "{\"host\": \"example.com\", \"port\": 8080}")
+    $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+        assert_equal(
+            load_config!("config.json").ok(),
+            .Some(Config { host: "example.com", port: 8080, workers: 4 }),
+        )

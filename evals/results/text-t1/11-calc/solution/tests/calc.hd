@@ -1,0 +1,8 @@
+use pkg.{CalcError, eval}
+use std.testing.assert_equal
+
+it("evaluates through the public API"):
+    assert_equal(eval("(1 + 2) * -3"), .Ok(-9))
+
+it("reports a failure through the public API"):
+    assert_equal(eval("4 / 0"), .Err(CalcError.DivideByZero))

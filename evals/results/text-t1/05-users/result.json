@@ -1,0 +1,98 @@
+{
+  "task": "05-users",
+  "package": "users",
+  "scenario": "service with a user-defined effect",
+  "selling_points": [
+    "own effect trait",
+    "$.use",
+    "$.with providers",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 3,
+      "passed": 3,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 3,
+      "passed": 3,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [],
+        "ok": true,
+        "status": 0,
+        "stdout": "renamed 1 to Ada Lovelace\nerror: no user 2\n",
+        "stderr": ""
+      }
+    ],
+    "idiom": [
+      {
+        "id": "use-effect",
+        "desc": "logic reaches the store with $.use(UserStore)",
+        "ok": true
+      },
+      {
+        "id": "provide-in-main",
+        "desc": "main provides a store with $.with",
+        "ok": true
+      },
+      {
+        "id": "fake-store",
+        "desc": "tests define their own UserStore fake",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "UserError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/project-layout.md",
+      "design/testing.md",
+      "design/effects.md",
+      "reference/packages.md",
+      "design/derive.md"
+    ],
+    "bash": 3,
+    "hd": {
+      "help": 1,
+      "check": 2,
+      "test": 2,
+      "run": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 16,
+    "cost_usd": 0.01755053,
+    "duration_s": 40,
+    "tokens": 385233,
+    "final_message": "The `users` package is in this directory and passes `hd check --tests`, `hd test`, and `hd fmt` plus `hd lint`. `hd run` prints the two required lines.\n\nFiles:\n- `hd.toml`: package `users`, with `Console = true` as the only grant.\n- `src/users.hd`: `User` and `UserError` (with `@error` messages, so `$error` prints `no user 2`), the `UserStore` trait, and `rename!` (`$ UserStore`). `rename!` trims the name, returns `EmptyName` for an empty result, and `NotFound` for a missing user. Otherwise it calls `put!` once and returns the renamed user. It also has a `tests:` block with three cases: a successful rename that stores once, a missing user that stores nothing, and empty or blank names that store nothing.\n- `src/main.hd`: an in-memory `MemoryStore` provided with `$.with(UserStore=...)`. It renames user 1 to \"Ada Lovelace\" and user 2 to \"Grace\", and prints the two lines.\n\nChoices I made:\n- When the name is empty and the user is also missing, `rename!` reports `EmptyName`. The check runs before the lookup, so `get!` is never called for an empty name.\n- `MemoryStore` lives in `main.hd`, not the library, so the library only defines the interface.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

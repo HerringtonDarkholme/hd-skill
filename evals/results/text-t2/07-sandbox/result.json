@@ -1,0 +1,99 @@
+{
+  "task": "07-sandbox",
+  "package": "linecount",
+  "scenario": "sandboxed program",
+  "selling_points": [
+    "scoped capability grants",
+    "minimal capabilities"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 10,
+      "passed": 10,
+      "failed": []
+    },
+    "hidden": {},
+    "runs": [
+      {
+        "args": [
+          "data/a.txt",
+          "data/b.txt"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "3 data/a.txt\n1 data/b.txt\n4 total\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "data/a.txt",
+          "hd.toml"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "3 data/a.txt\n3 total\n",
+        "stderr": "linecount: hd.toml: not allowed: files must be under data/\n"
+      },
+      {
+        "args": [
+          "data/nope.txt"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "0 total\n",
+        "stderr": "linecount: data/nope.txt: no such file\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "minimal-caps",
+        "desc": "[capabilities] grants only Console, Args and FsRead",
+        "ok": true
+      },
+      {
+        "id": "scoped-fsread",
+        "desc": "FsRead scoped to data/",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/files-and-directories.md",
+      "scenarios/cli-tool.md",
+      "design/capabilities.md",
+      "reference/packages.md",
+      "design/testing.md"
+    ],
+    "bash": 8,
+    "hd": {
+      "help": 2,
+      "new": 1,
+      "check": 3,
+      "test": 3,
+      "run": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 24,
+    "cost_usd": 0.027545260000000005,
+    "duration_s": 71,
+    "tokens": 866517,
+    "final_message": "The `linecount` package is in the current directory. `hd check --tests` and `hd test` both pass (10 tests, 7 unit and 3 integration), and `hd fmt` and `hd lint` are clean.\n\nI read the file arguments as paths relative to the package folder, so the program is run as `hd run -- data/three.txt`, not with bare names. If you meant bare names that get prefixed with `data/`, that is a small change in `count_file!`.\n\n- **Access limit:** `hd.toml` grants `FsRead = [\"data/\"]` and nothing else beyond `Args` and `Console`. Paths like `../hd.toml` are refused by the runtime, not by string checks in the program, and the refusal is reported as a failed file.\n- **Counting:** the program reads the raw bytes and counts `\\n`, plus one for a final line without a newline. Bytes rather than text means files that are not valid UTF-8 still count.\n- **Errors:** an unreadable file prints `linecount: <file>: <reason>` to standard error, is skipped, and makes the exit status 1. The reasons are \"no such file\", \"not allowed: files must be under data/\", \"is a directory\", \"permission denied\", or the raw error text for anything else.\n- **Tests:** unit tests in `src/main.hd` use in-memory fakes for the file system and console. `tests/linecount.hd` runs the built program against `data/three.txt`, a missing file, and `../hd.toml`. The unit tests cannot check the `data/` restriction, because the fake does not enforce capability scopes.\n\nFiles:\n- `hd.toml`\n- `src/main.hd`\n- `tests/linecount.hd`\n- `data/three.txt` ",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

@@ -1,0 +1,75 @@
+## A line that cannot be summed. Lines are numbered from 1.
+@error
+@derive(Eq, Debug)
+pub enum SumError:
+    @error("line $line: missing column")
+    MissingColumn(line: usize)
+    @error("line $line: not a number: $text")
+    NotANumber(line: usize, text: string)
+
+## Column `column` (1-based) of a line's fields, trimmed. Column 0 never exists.
+fn cell(fields: List[string], column: usize, line: usize) -> Result[string, SumError]:
+    if column == 0 || column > fields.len():
+        return .Err(.MissingColumn(line))
+    .Ok(fields[column - 1].trim())
+
+## Sums the `value` column of each line, grouped by the `key` column.
+## Blank lines are ignored, and the first line is skipped when `skip_header`.
+## The rows come back sorted by key.
+pub fn summarize(
+    text: string,
+    key: usize,
+    value: usize,
+    skip_header: bool,
+) -> Result[List[(string, i64)], SumError]:
+    let mut totals: Map[string, i64] = {}
+    for (index, raw) in text.lines().iter().enumerate():
+        line := index + 1
+        if (skip_header && line == 1) || raw.trim() == "":
+            continue
+        fields := raw.split(",")
+        name := cell(fields, key, line)?
+        number := cell(fields, value, line)?
+        amount := match number.parse::[i64]():
+            .Ok(amount) => amount
+            .Err(_) => return .Err(.NotANumber(line, number))
+        *totals.get_or_insert(name, 0) += amount
+    .Ok(totals.entries().sorted_by_key(fn(entry): entry._0))
+
+tests:
+    it("sums the value column per key, sorted by key"):
+        assert_equal(
+            summarize("ada,3\ngrace,4\nada,-1\n", 1, 2, false),
+            .Ok([("ada", 2), ("grace", 4)]),
+        )
+
+    it("skips the first line only when asked"):
+        text := "name,amount\nada,3\n"
+        assert_equal(summarize(text, 1, 2, true), .Ok([("ada", 3)]))
+        assert_equal(summarize(text, 1, 2, false), .Err(.NotANumber(1, "amount")))
+
+    it("ignores blank lines but counts them in line numbers"):
+        assert_equal(summarize("a,1\n\n   \na,2\n", 1, 2, false), .Ok([("a", 3)]))
+        assert_equal(summarize("a,1\n\nb,x\n", 1, 2, false), .Err(.NotANumber(3, "x")))
+
+    it("trims spaces around keys and values"):
+        assert_equal(summarize(" a , 5 \n", 1, 2, false), .Ok([("a", 5)]))
+
+    it("uses the columns it is given"):
+        assert_equal(summarize("1,x,2\n", 2, 3, false), .Ok([("x", 2)]))
+
+    it("reports a line with too few columns"):
+        assert_equal(summarize("a,1\nb\n", 1, 2, false), .Err(.MissingColumn(2)))
+        assert_equal(summarize("a,1\n", 0, 2, false), .Err(.MissingColumn(1)))
+
+    it("reports a value that is not an integer, trimmed"):
+        assert_equal(summarize("a, 1.5 \n", 1, 2, false), .Err(.NotANumber(1, "1.5")))
+        assert_equal(summarize("a,\n", 1, 2, false), .Err(.NotANumber(1, "")))
+
+    it("gives no rows for empty input"):
+        assert_equal(summarize("", 1, 2, false), .Ok([]))
+
+    it("compares and prints errors"):
+        assert(SumError.MissingColumn(2) == SumError.MissingColumn(2))
+        assert(SumError.MissingColumn(2) != SumError.MissingColumn(3))
+        assert_equal(debug(SumError.NotANumber(4, "x")), "SumError.NotANumber(line=4, text=\"x\")")

@@ -1,0 +1,29 @@
+use std.process.Command
+use std.testing.{assert_equal, hd_run}
+
+# Integration: the built program, reading the committed fixtures in data/.
+
+it("counts the fixtures under data/"):
+    let out = hd_run!(
+        *Command::new("linecount").args(["data/one.txt", "data/no-newline.txt", "data/empty.txt"]),
+    )
+    assert_equal(out.stdout, "2 data/one.txt\n2 data/no-newline.txt\n0 data/empty.txt\n4 total\n")
+    assert_equal(out.stderr, "")
+    assert_equal(out.status, 0)
+
+it("refuses a file outside data/ and exits 1"):
+    let out = hd_run!(
+        *Command::new("linecount").args(["data/one.txt", "../hd.toml", "data/../hd.toml"]),
+    )
+    assert_equal(out.stdout, "2 data/one.txt\n2 total\n")
+    assert(out.stderr.contains("linecount: ../hd.toml: "), reason="the refused file is named")
+    assert(
+        out.stderr.contains("linecount: data/../hd.toml: "),
+        reason="a dot-dot path is refused too",
+    )
+    assert_equal(out.status, 1)
+
+it("treats a name that looks like an option as a file"):
+    let out = hd_run!(*Command::new("linecount").args(["--help"]))
+    assert_equal(out.status, 1)
+    assert(out.stderr.contains("linecount: --help: "), reason="--help is a file name")

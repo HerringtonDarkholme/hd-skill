@@ -1,0 +1,2 @@
+## The `FieldNames` trait and its `@derive` template, re-exported for users.
+pub use self.fields.{FieldNames}

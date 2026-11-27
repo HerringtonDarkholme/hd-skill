@@ -1,0 +1,18 @@
+use pkg.{Account, open, transfer}
+use std.testing.assert_equal
+
+it("opens, deposits, withdraws through the public API"):
+    let mut acct = open(1000)
+    acct.deposit(250)
+    acct.withdraw(50)
+    assert_equal(acct.balance(), 1200)
+
+it("transfers between public accounts keep the total"):
+    let mut a = open(800)
+    let mut b = open(0)
+    transfer(&mut a, &mut b, 300)
+    assert_equal(a.balance() + b.balance(), 800)
+
+it("an overdraft through the public API stops the program", expect_panic="explicit-panic"):
+    let mut acct = open(5)
+    acct.withdraw(6)

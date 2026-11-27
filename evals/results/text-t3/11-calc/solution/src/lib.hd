@@ -1,0 +1,2 @@
+## Integer expression evaluator: `+ - * /`, parentheses and unary minus.
+pub use self.calc.{CalcError, eval}

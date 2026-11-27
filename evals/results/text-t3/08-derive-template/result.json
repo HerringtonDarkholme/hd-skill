@@ -1,0 +1,77 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 2,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": true
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/derive.md",
+      "reference/packages.md"
+    ],
+    "bash": 8,
+    "hd": {
+      "check": 4,
+      "test": 3,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: ls -la && (command -v hd && hd --version) 2>&1"
+    ],
+    "diagnostic_codes": {
+      "private-member": 1
+    },
+    "failing_checks": 1,
+    "turns": 20,
+    "cost_usd": 0.01478142,
+    "duration_s": 38,
+    "tokens": 420518,
+    "final_message": "The `fields` package is in place. `hd check --tests` and `hd test` both pass: 7 tests, 0 failures.\n\n**What's there**\n\n- `hd.toml`: package `fields`.\n- `src/fields.hd`: the `pub trait FieldNames` with `fn field_names(self) -> List[string]`, plus a derive template, `impl[T] FieldNames for T by Structure`. The template walks the fields with a small `Walker` and collects each name, so `@derive(FieldNames)` needs no per-struct impl. The file also has 3 unit tests (ordered names, empty struct, generic bound).\n- `src/shapes.hd`: a sibling module that derives on a `pub struct` and a private struct, with one test.\n- `tests/fields.hd`: an integration test that derives on structs declared in the test module, and uses a struct from `shapes`.\n\n**Choices I made**\n\n- The template lives in the trait's own module, `src/fields.hd`. The skill's rules require this, so `@derive(FieldNames)` works in any module that imports the trait.\n- The `Circle` struct in `shapes.hd` has `pub` fields. The checker rejects building a struct from another module when its fields are private (`private-member`), and that is hd's documented rule, not something the derive could avoid.\n- I did not add a `src/lib.hd`. The skill's package layout uses it as a library root, but you asked for `src/fields.hd`.\n\n**Not verified**\n\n- Other packages importing `dep.fields.{FieldNames}`. I did not test this, and it may need a `src/lib.hd` that re-exports the trait.\n- Deriving on an enum. The template should work through the walker'",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

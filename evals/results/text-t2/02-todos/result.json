@@ -1,0 +1,78 @@
+{
+  "task": "02-todos",
+  "package": "todos",
+  "scenario": "JSON in and out",
+  "selling_points": [
+    "derive Serialize/Deserialize",
+    "field defaults",
+    "property tests"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 15,
+      "passed": 15,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-serde",
+        "desc": "JSON through @derive(Serialize, Deserialize)",
+        "ok": true
+      },
+      {
+        "id": "field-default",
+        "desc": "done defaults with a field default",
+        "ok": true
+      },
+      {
+        "id": "prop-test",
+        "desc": "round trip checked with a property test",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": false,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "reference/packages.md",
+      "design/derive.md",
+      "design/testing.md",
+      "std.md"
+    ],
+    "bash": 1,
+    "hd": {},
+    "denied": [
+      "Bash: ls -la && (test -f hd.toml && cat hd.toml; test -d src && ls -R src; true)"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 12,
+    "cost_usd": 0.02103697,
+    "duration_s": 62,
+    "tokens": 214709,
+    "final_message": "I wrote the `todos` package, but I could not run `hd check --tests` or `hd test`. The shell was denied, so nothing is verified by the compiler yet.\n\nFiles created in the current directory:\n\n- `hd.toml`: `[package] name = \"todos\"`. No capabilities, since the code is pure.\n- `src/todos.hd`: the module you specified, with `Todo`, `TodoError`, `load`, `dump`, `complete`, `pending`, and a `tests:` block.\n- `src/lib.hd`: a one-line `pub use pkg.todos.{...}` re-export. I added it because the hd docs say a library's root is `src/lib.hd`. Delete it if you want the package to contain only `src/todos.hd`.\n\nDesign choices:\n\n- `Todo` and `TodoError` derive `Eq` and `Debug`. `Todo` also derives `Serialize` and `Deserialize`, and `done: bool = false` gives the default for a missing field.\n- `TodoError` is an `@error` enum with a message per variant.\n- `load` calls `decode::[List[Todo]]` and maps any JSON error to `BadJson`. Extra fields are ignored.\n- `dump` is `encode`, so it writes compact JSON.\n- Tests cover valid input, a missing `done`, an empty array, a table of bad todos, exact dump output, a property test that `load` undoes `dump`, `complete` on a known and an unknown id, and `pending` ordering.\n\nPlaces I'm least sure of, which the compiler may reject:\n\n- `decode::[List[Todo]]` at the top level.\n- `.map_err(...)` with `e.to_string()` on the JSON error.\n- The exact compact-JSON string in the `dump` test.\n- The `\"id\": 1.5` case in the bad-todo table.\n- `.Ok([])` style literals; I avoi",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

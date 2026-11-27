@@ -1,0 +1,12 @@
+[package]
+name = "linecount"
+
+# Only what the program uses: arguments, standard output and error, and
+# reading files under data/. Nothing else (no network, env, clock, or processes).
+[capabilities]
+Args = true
+Console = true
+FsRead = ["data/"]
+
+[dev-capabilities]
+Process = true

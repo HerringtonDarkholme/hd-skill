@@ -1,0 +1,13 @@
+use pkg.fields.FieldNames
+use pkg.records.Invoice
+
+@derive(FieldNames)
+struct Point:
+    x: i32
+    y: i32
+
+it("derives in an integration test"):
+    assert_equal(Point { x: 1, y: 2 }.field_names(), ["x", "y"])
+
+it("works for a struct from another module"):
+    assert_equal(Invoice { number: "B-2", total_cents: 9 }.field_names(), ["number", "total_cents"])

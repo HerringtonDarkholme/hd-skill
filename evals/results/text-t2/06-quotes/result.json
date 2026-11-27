@@ -1,0 +1,92 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 8,
+      "passed": 8,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": true
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/concurrency.md",
+      "design/effects.md",
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 9,
+    "hd": {
+      "new": 1,
+      "check": 3,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: ls -la && which hd && hd --version; S=.claude/skills/hd-lang/reference/std-index.txt; grep -n -i -E \"yield|Backoff|map_join|ManualClock|retry|attempt\" $S | head -60"
+    ],
+    "diagnostic_codes": {
+      "mixed-signedness": 1
+    },
+    "failing_checks": 1,
+    "turns": 21,
+    "cost_usd": 0.0265564,
+    "duration_s": 65,
+    "tokens": 862752,
+    "final_message": "The `quotes` package is written and passes: `hd check --tests` is clean, `hd test` reports 8 passed, and `hd fmt` and `hd lint` are clean.\n\nFiles:\n- **`src/quotes.hd`** holds `QuoteError`, the `Quotes` trait and `order_total!`, plus a `tests:` block.\n- **`src/lib.hd`** is the library root, which re-exports `QuoteError`, `Quotes` and `order_total` from `quotes`. `hd new --lib` requires this file, so your `src/quotes.hd` is the module `pkg.quotes`.\n- **`hd.toml`** is the scaffolded manifest, unchanged.\n- I deleted the scaffolded `tests/quotes.hd`, which tested a `greet` function that no longer exists.\n\nChoices I made where the spec was open:\n- **Concurrency:** `map_join!(skus, 4, ...)` caps in-flight calls at 4, and each sku runs `apply!(retry(Backoff { attempts: 3, initial: 10ms, factor: 1 }))`. `factor: 1` keeps the wait at a flat 10 ms; the default factor of 2 would grow it.\n- **Retries:** every error is retried, including `Unknown`, since the spec says each sku gets three attempts before its error counts.\n- **Errors:** I added `@error` messages to `QuoteError`, as the skill's error guidance asks. `Eq` and `Debug` are derived as specified.\n- **Error order:** results are folded in list order with `?`, so the first failing sku in the list decides the error, whatever finishes first.\n\nWhat the tests cover: an empty order, summing prices, retrying a busy sku, the three-attempt cap, retrying and reporting an unknown sku, list-order error selection, and a sku that succeeds on retry",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

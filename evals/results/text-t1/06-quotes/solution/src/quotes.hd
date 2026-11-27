@@ -1,0 +1,120 @@
+use std.task.{Backoff, apply, map_join, retry}
+use std.time.{Clock, ms}
+
+## Why a sku could not be priced.
+@error
+@derive(Eq, Debug)
+pub enum QuoteError:
+    @error("quote service is busy")
+    Busy
+    @error("unknown sku $sku")
+    Unknown(sku: string)
+
+## A quote service that prices one sku at a time.
+pub trait Quotes:
+    fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]
+
+## The total price of `skus`, in cents.
+##
+## Each sku is quoted with up to 3 attempts, 10 ms apart, and at most 4
+## skus are in flight at once. The first failing sku in list order decides
+## the error.
+pub fn order_total!(skus: List[string]) -> Result[i64, QuoteError] $ Quotes + Clock:
+    results := map_join!(
+        skus,
+        4,
+        fn!(sku: string) -> Result[i64, QuoteError] $ Quotes + Clock: quote_sku!(sku)
+    )
+    let total: i64 = 0
+    for result in results:
+        match result:
+            .Ok(cents) => total += cents
+            .Err(error) => return .Err(error)
+    .Ok(total)
+
+fn quote_sku!(sku: string) -> Result[i64, QuoteError] $ Quotes + Clock:
+    apply!(retry(Backoff { attempts: 3, initial: 10ms, factor: 1, max: 10ms })):
+        $.use(Quotes).quote!(sku)
+
+tests:
+    use std.time.{ManualClock, Timestamp, now}
+
+    struct Scripted:
+        prices: Map[string, i64]
+        busy: Map[string, i32]
+
+    impl Quotes for Scripted:
+        fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]:
+            let left = self.busy.get(sku).unwrap_or(0)
+            if left > 0:
+                self.busy[sku] = left - 1
+                return .Err(.Busy)
+            match self.prices.get(sku):
+                .Some(cents) => .Ok(cents)
+                .None => .Err(.Unknown(sku))
+
+    fn clock() -> *mut ManualClock:
+        ManualClock::new(Timestamp::from_unix_milliseconds(0))
+
+    fn prices(entries: List[(string, i64)]) -> Map[string, i64]:
+        let mut map: Map[string, i64] = {}
+        for (sku, cents) in entries:
+            map[sku] = cents
+        map
+
+    fn busy(entries: List[(string, i32)]) -> Map[string, i32]:
+        let mut map: Map[string, i32] = {}
+        for (sku, times) in entries:
+            map[sku] = times
+        map
+
+    it("an empty order totals 0"):
+        $.with(Quotes=box(Scripted { prices: {}, busy: {} }), Clock=clock()):
+            assert_equal(order_total!([]), .Ok(0))
+
+    it("sums the price of every sku, repeats included"):
+        quotes := Scripted { prices: prices([("tea", 100), ("cake", 250)]), busy: {} }
+        $.with(Quotes=box(quotes), Clock=clock()):
+            assert_equal(order_total!(["tea", "cake", "tea"]), .Ok(450))
+
+    it("retries a busy sku and counts its later answer"):
+        scripted := Scripted { prices: prices([("tea", 100)]), busy: busy([("tea", 2)]) }
+        $.with(Quotes=box(scripted), Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Ok(100))
+
+    it("gives up after three busy attempts"):
+        scripted := Scripted { prices: prices([("tea", 100)]), busy: busy([("tea", 3)]) }
+        $.with(Quotes=box(scripted), Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Err(.Busy))
+
+    it("waits 10 ms between the attempts"):
+        scripted := Scripted { prices: prices([("tea", 100)]), busy: busy([("tea", 2)]) }
+        manual := clock()
+        $.with(Quotes=box(scripted), Clock=manual):
+            start := now().unix_milliseconds()
+            assert_equal(order_total!(["tea"]), .Ok(100))
+            assert_equal(now().unix_milliseconds() - start, 20, reason="two waits of 10 ms")
+
+    it("an unknown sku fails without retries"):
+        $.with(Quotes=box(Scripted { prices: {}, busy: {} }), Clock=clock()):
+            assert_equal(order_total!(["ghost"]), .Err(.Unknown("ghost")))
+
+    it("reports the first failing sku in list order, not the first to finish"):
+        scripted := Scripted { prices: prices([("ok", 5)]), busy: busy([("slow", 3)]) }
+        $.with(Quotes=box(scripted), Clock=clock()):
+            assert_equal(order_total!(["slow", "ghost", "ok"]), .Err(.Busy))
+            assert_equal(order_total!(["ok", "ghost", "slow"]), .Err(.Unknown("ghost")))
+
+    it("runs at most four skus at once"):
+        # Six skus, each busy once: four wait 10 ms, then the last two wait
+        # 10 ms, so the total is 20 ms of virtual time, not 10.
+        names := ["a", "b", "c", "d", "e", "f"]
+        scripted := Scripted {
+            prices: prices([("a", 1), ("b", 1), ("c", 1), ("d", 1), ("e", 1), ("f", 1)]),
+            busy: busy([("a", 1), ("b", 1), ("c", 1), ("d", 1), ("e", 1), ("f", 1)]),
+        }
+        manual := clock()
+        $.with(Quotes=box(scripted), Clock=manual):
+            start := now().unix_milliseconds()
+            assert_equal(order_total!(names), .Ok(6))
+            assert_equal(now().unix_milliseconds() - start, 20, reason="limit of four in flight")

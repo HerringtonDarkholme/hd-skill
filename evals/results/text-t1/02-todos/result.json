@@ -1,0 +1,85 @@
+{
+  "task": "02-todos",
+  "package": "todos",
+  "scenario": "JSON in and out",
+  "selling_points": [
+    "derive Serialize/Deserialize",
+    "field defaults",
+    "property tests"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 11,
+      "passed": 11,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-serde",
+        "desc": "JSON through @derive(Serialize, Deserialize)",
+        "ok": true
+      },
+      {
+        "id": "field-default",
+        "desc": "done defaults with a field default",
+        "ok": true
+      },
+      {
+        "id": "prop-test",
+        "desc": "round trip checked with a property test",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md"
+    ],
+    "bash": 11,
+    "hd": {
+      "help": 2,
+      "doc": 2,
+      "new": 1,
+      "check": 4,
+      "test": 4,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {
+      "syntax-error": 2,
+      "unknown-import": 2,
+      "type-mismatch": 4,
+      "local-reference-escapes": 2
+    },
+    "failing_checks": 2,
+    "turns": 21,
+    "cost_usd": 0.023518149999999998,
+    "duration_s": 62,
+    "tokens": 665857,
+    "final_message": "The `todos` package is in the current directory and both `hd check --tests` and `hd test` pass (11 tests, 0 failures). `hd lint` is clean.\n\nFiles:\n- `hd.toml`: the package manifest, created by `hd new --lib --vcs none .`.\n- `src/todos.hd`: the implementation.\n- `src/lib.hd`: re-exports `Todo`, `TodoError`, `load`, `dump`, `complete` and `pending`, so they are the package's public interface. The scaffold's sample `greet` is gone.\n- `tests/todos.hd`: tests through the public interface, including a property test that `load(dump(x))` round-trips.\n\nDesign choices:\n- `Todo` derives `Eq`, `Debug`, `Serialize` and `Deserialize`. `done: bool = false` is the field default, so the JSON decoder treats an absent `done` as false.\n- `load` maps any decode failure to `BadJson` with the decoder's message. That covers non-arrays, missing `id` or `title`, wrong types, `null` for `done`, non-integer ids, and malformed JSON.\n- `dump` writes compact JSON with `encode`.\n- `TodoError` is an `@error` enum, so it also has `to_string()`.\n- Unknown JSON fields are ignored.\n\nNot decided by the spec, so I left them open:\n- Duplicate ids are accepted. `complete` marks every todo with the given id.\n- `complete` marks the todo done in a new list and does not change the input list.\n\n`hd fmt` reformatted the test file after I wrote it. The tests still pass after the reformat. The `build/` directory holds test output, so don't commit it. The directory is not a git repository, so nothing was committed.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

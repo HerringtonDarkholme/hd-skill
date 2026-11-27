@@ -1,0 +1,2 @@
+## The `fields` library: `@derive(FieldNames)` gives a struct its field names.
+pub use self.fields.{FieldNames}

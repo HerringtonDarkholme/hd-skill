@@ -1,0 +1,15 @@
+use pkg.{Run, decode, encode}
+use std.testing.{it_prop}
+
+it("round-trips a list through the public API"):
+    xs := [4, 4, 4, 0, -1, -1]
+    assert_equal(decode(encode(xs)), xs)
+    assert_equal(
+        encode(xs),
+        [Run { value: 4, count: 3 }, Run { value: 0, count: 1 }, Run { value: -1, count: 2 }],
+    )
+
+it_prop(
+    "public decode undoes public encode",
+    prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)), xs)
+)

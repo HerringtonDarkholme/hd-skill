@@ -1,0 +1,73 @@
+## Errors found while summing a CSV text.
+@error
+@derive(Eq, Debug)
+pub enum SumError:
+    @error("missing column")
+    MissingColumn(line: usize)
+    @error("not a number: $text")
+    NotANumber(line: usize, text: string)
+
+impl SumError:
+    ## The 1-based line the error is about.
+    pub fn line(&self) -> usize:
+        match self:
+            .MissingColumn(line) => line
+            .NotANumber(line, _) => line
+
+## Sum the `value` column grouped by the `key` column of CSV text.
+## Columns are 1-based. Returns `key,total` pairs sorted by key.
+pub fn summarize(
+    text: string,
+    key: usize,
+    value: usize,
+    skip_header: bool,
+) -> Result[List[(string, i64)], SumError]:
+    let mut totals: Map[string, i64] = {}
+    for (index, line) in text.lines().iter().enumerate():
+        number := index + 1
+        if (skip_header && index == 0) || line.trim() == "":
+            continue
+        fields := line.split(",")
+        let .Some(raw_key) = fields.get(key - 1) else:
+            return .Err(.MissingColumn(number))
+        let .Some(raw_value) = fields.get(value - 1) else:
+            return .Err(.MissingColumn(number))
+        amount := match raw_value.trim().parse::[i64]():
+            .Ok(amount) => amount
+            .Err(_) => return .Err(.NotANumber(number, raw_value.trim()))
+        *totals.get_or_insert(raw_key.trim(), 0) += amount
+    .Ok(totals.entries().sorted_by_key(fn(entry): entry._0))
+
+tests:
+    it("sums values grouped by key, sorted by key"):
+        text := "tea,3\ncake,4\ntea,5\n"
+        assert_equal(summarize(text, 1, 2, false), .Ok([("cake", 4), ("tea", 8)]))
+
+    it("honors column numbers and skips the header"):
+        text := "id,name,qty\n1,tea,3\n2,tea,-1\n3,jam,10\n"
+        assert_equal(summarize(text, 2, 3, true), .Ok([("jam", 10), ("tea", 2)]))
+
+    it("ignores blank lines and trims spaces"):
+        text := "  tea , 3 \n\n   \ntea,4\n"
+        assert_equal(summarize(text, 1, 2, false), .Ok([("tea", 7)]))
+
+    it("keeps empty input empty"):
+        assert_equal(summarize("", 1, 2, false), .Ok([]))
+
+    it("reports a short line with its number"):
+        assert_equal(summarize("tea,1\njam\n", 1, 2, false), .Err(.MissingColumn(2)))
+
+    it("counts the header and blank lines in line numbers"):
+        assert_equal(summarize("k,v\n\ntea\n", 1, 2, true), .Err(.MissingColumn(3)))
+
+    it("reports a value that is not an integer, trimmed"):
+        assert_equal(summarize("tea, x 1 \n", 1, 2, false), .Err(.NotANumber(1, "x 1")))
+
+    it("accepts signed values"):
+        assert_equal(summarize("a,+2\na,-5\n", 1, 2, false), .Ok([("a", -3)]))
+
+    it("error values print their line and text"):
+        error := SumError.NotANumber(4, "x")
+        assert_equal(error.line(), 4)
+        assert_equal(error.to_string(), "not a number: x")
+        assert_equal(debug(error), "SumError.NotANumber(line=4, text=\"x\")")

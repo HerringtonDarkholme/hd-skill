@@ -1,0 +1,2 @@
+# The package's public interface.
+pub use pkg.config.{Config, ConfigError, load_config}

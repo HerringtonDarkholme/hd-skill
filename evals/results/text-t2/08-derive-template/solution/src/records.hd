@@ -1,0 +1,12 @@
+use pkg.fields.FieldNames
+
+## A record that other modules can read; its field names are derived.
+@derive(FieldNames)
+pub struct Invoice:
+    pub number: string
+    pub total_cents: i64
+
+tests:
+    it("derives in a source module, and reads its own fields"):
+        invoice := Invoice { number: "A-1", total_cents: 500 }
+        assert_equal(invoice.field_names(), ["number", "total_cents"])

@@ -1,0 +1,66 @@
+use std.meta.{Field, Structure, Variant, Walker}
+
+## The names of a struct's fields, in declaration order.
+##
+## Derive it on any struct: `@derive(FieldNames)`.
+pub trait FieldNames:
+    fn field_names(self) -> List[string]
+
+# The walker the template drives: one call per field, in declaration order.
+struct Collect:
+    names: List[string]
+
+impl[S] Walker[S] for Collect:
+    type Error = void
+
+    fn data_variant(&mut self, v: Variant[S]) -> Result[void, void]:
+        .Ok(())
+
+    fn variant(&mut self, v: Variant[S]) -> Result[void, void]:
+        .Ok(())
+
+    fn data_member[F](&mut self, h: Field[S, F], value: &F) -> Result[void, void]:
+        self.names.push(h.info.name)
+        .Ok(())
+
+    fn member[F](&mut self, h: Field[S, F], value: &F) -> Result[void, void]:
+        self.data_member(h, value)
+
+    fn rest[T](&mut self, h: Field[S, List[T]], items: &List[T]) -> Result[void, void]:
+        .Ok(())
+
+# The template: each `@derive(FieldNames)` instantiates it for that type.
+impl[T] FieldNames for T by Structure:
+    fn field_names(self) -> List[string]:
+        let mut collect = Collect { names: [] }
+        _ := Structure::walk(&self, &mut collect)
+        collect.names
+
+tests:
+    @derive(FieldNames)
+    struct Account:
+        id: u64
+        owner: string
+        balance: i64
+
+    @derive(FieldNames)
+    struct Empty:
+        pass
+
+    @derive(FieldNames)
+    struct Wrapper[T]:
+        value: T
+        label: string
+
+    it("lists fields in declaration order"):
+        assert_equal(
+            Account { id: 1, owner: "ada", balance: 0 }.field_names(),
+            ["id", "owner", "balance"],
+        )
+
+    it("gives no names for a struct with no fields"):
+        assert_equal(Empty {}.field_names(), [])
+
+    it("works for a generic struct whose parameter also derives it"):
+        inner := Account { id: 1, owner: "ada", balance: 0 }
+        assert_equal(Wrapper { value: inner, label: "x" }.field_names(), ["value", "label"])

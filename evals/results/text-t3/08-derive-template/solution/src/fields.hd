@@ -1,0 +1,70 @@
+use std.meta.{Field, Structure, Variant, Walker}
+
+## The names of a struct's fields, in declaration order.
+## `@derive(FieldNames)` on any struct gives it this method.
+pub trait FieldNames:
+    fn field_names(self) -> List[string]
+
+# The walker the template drives: one call per field, in declaration order.
+struct Collect:
+    names: List[string]
+
+impl[S] Walker[S] for Collect:
+    type Error = void
+
+    fn data_variant(&mut self, v: Variant[S]) -> Result[void, void]:
+        .Ok(())
+
+    fn variant(&mut self, v: Variant[S]) -> Result[void, void]:
+        .Ok(())
+
+    fn data_member[F](&mut self, h: Field[S, F], value: &F) -> Result[void, void]:
+        self.names.push(h.info.name)
+        .Ok(())
+
+    fn member[F](&mut self, h: Field[S, F], value: &F) -> Result[void, void]:
+        self.data_member(h, value)
+
+    fn rest[T](&mut self, h: Field[S, List[T]], items: &List[T]) -> Result[void, void]:
+        .Ok(())
+
+# The template: each `@derive(FieldNames)` instantiates it for that type.
+impl[T] FieldNames for T by Structure:
+    fn field_names(self) -> List[string]:
+        let mut collect = Collect { names: [] }
+        _ := Structure::walk(&self, &mut collect)
+        collect.names
+
+tests:
+    @derive(FieldNames)
+    struct Point:
+        x: i32
+        y: i32
+
+    @derive(FieldNames)
+    struct Empty:
+        pass
+
+    @derive(FieldNames)
+    struct Mixed:
+        zeta: string
+        alpha: List[i32]
+        middle: Map[string, i32]
+        last: bool?
+
+    it("lists fields in declaration order"):
+        assert_equal(Point { x: 1, y: 2 }.field_names(), ["x", "y"])
+        assert_equal(
+            Mixed { zeta: "", alpha: [], middle: {}, last: .None }.field_names(),
+            ["zeta", "alpha", "middle", "last"],
+        )
+
+    it("gives an empty list for a struct with no fields"):
+        assert_equal(Empty {}.field_names(), [])
+
+    it("works through a generic bound"):
+        names := describe_fields(Point { x: 0, y: 0 })
+        assert_equal(names, ["x", "y"])
+
+fn describe_fields[T < FieldNames](value: T) -> List[string]:
+    value.field_names()

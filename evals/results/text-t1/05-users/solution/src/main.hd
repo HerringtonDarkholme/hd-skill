@@ -1,0 +1,29 @@
+use pkg.users.{User, UserStore, rename}
+
+struct MemoryStore:
+    users: List[User]
+
+impl UserStore for MemoryStore:
+    fn get!(&mut self, id: i64) -> User?:
+        for user in self.users:
+            if user.id == id:
+                return .Some(user)
+        .None
+
+    fn put!(&mut self, user: User) -> void:
+        let mut kept: List[User] = []
+        for other in self.users:
+            if other.id != user.id:
+                kept.push(other)
+        kept.push(user)
+        self.users = kept
+
+pub fn main!() -> void $ Console:
+    store := box(MemoryStore { users: [User { id: 1, name: "ada" }] })
+    $.with(UserStore=store):
+        match rename!(1, "Ada Lovelace"):
+            .Ok(user) => println("renamed ${user.id} to ${user.name}")
+            .Err(error) => println("error: $error")
+        match rename!(2, "Grace"):
+            .Ok(user) => println("renamed ${user.id} to ${user.name}")
+            .Err(error) => println("error: $error")

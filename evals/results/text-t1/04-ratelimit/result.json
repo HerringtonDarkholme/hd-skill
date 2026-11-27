@@ -1,0 +1,73 @@
+{
+  "task": "04-ratelimit",
+  "package": "ratelimit",
+  "scenario": "time-dependent logic",
+  "selling_points": [
+    "Clock requirement",
+    "ManualClock fake"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "manual-clock",
+        "desc": "tests control time with ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/effects.md",
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 5,
+    "hd": {
+      "check": 3,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: ls -la && S=.claude/skills/hd-lang/reference/std-index.txt && grep -n -i -E \"timestamp|duration|ManualClock|Clock|now\\b\" $S | head -80"
+    ],
+    "diagnostic_codes": {
+      "private-module": 1
+    },
+    "failing_checks": 1,
+    "turns": 19,
+    "cost_usd": 0.14296249,
+    "duration_s": 56,
+    "tokens": 935946,
+    "final_message": "The `ratelimit` package is in place. `hd check --tests`, `hd lint` and `hd test` all pass, with 7 tests passing and 0 failing.\n\nFiles created in the package directory:\n- `hd.toml`: package `ratelimit`, grants `Clock = true`.\n- `src/limiter.hd`: `Limiter`, `new_limiter`, `allow`, and a private `expire` helper, plus a `tests:` block.\n- `src/lib.hd`: re-exports `Limiter` and `new_limiter` as the library interface.\n\nHow it works:\n- Each key holds a `Deque[Timestamp]` of its allowed events, so the limiter does not scan all keys on every call.\n- `allow` reads `now()`, which takes the `Clock` requirement. It first drops events where `now - t >= window`, then refuses if the count is already at `max`. Only allowed events are recorded.\n- With `max = 0`, every call is refused.\n\nTests:\n- Up to `max` events are allowed, then refused.\n- A refused event is not recorded: an event at t=5s that was refused does not keep the t=0 event alive.\n- Window boundary: an event at t counts at 9.999s and expires exactly at 10s.\n- The window slides past old events.\n- Keys are independent.\n- `max = 0` refuses everything.\n- A property test: a burst of `n` calls at one instant allows exactly `min(max, n)`.\n\nTwo things I ran into: `std.collections.deque` is private, so I imported `Deque` from `std.collections`. After `hd fmt` the limiter file changed on disk; I took that as the current state and re-ran the checks, which still pass.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

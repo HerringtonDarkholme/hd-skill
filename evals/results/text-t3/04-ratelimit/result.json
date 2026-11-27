@@ -1,0 +1,77 @@
+{
+  "task": "04-ratelimit",
+  "package": "ratelimit",
+  "scenario": "time-dependent logic",
+  "selling_points": [
+    "Clock requirement",
+    "ManualClock fake"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 8,
+      "passed": 8,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "manual-clock",
+        "desc": "tests control time with ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/effects.md",
+      "design/testing.md",
+      "scenarios/project-layout.md",
+      "reference/packages.md",
+      "cli.md"
+    ],
+    "bash": 11,
+    "hd": {
+      "new": 2,
+      "doc": 3,
+      "check": 3,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: S=.claude/skills/hd-lang; grep -n -i -E 'duration|clock|timestamp|instant' $S/reference/std-index.txt | head -80; echo ---; grep -n -i -E 'lib|new' $S/reference/packages.md | head -40; echo ---;"
+    ],
+    "diagnostic_codes": {
+      "unknown-trait": 1
+    },
+    "failing_checks": 1,
+    "turns": 28,
+    "cost_usd": 0.22355266999999998,
+    "duration_s": 75,
+    "tokens": 2156867,
+    "final_message": "The `ratelimit` package is in the current directory. `hd check --tests` passes, `hd test` passes 8 of 8, and `hd fmt` and `hd lint` are clean.\n\n- **`src/limiter.hd`**: `pub struct Limiter`, `pub fn new_limiter(max, window)`, and `pub fn allow(&mut self, key) -> bool $ Clock`. `allow` reads `now()` from the `Clock` requirement, drops this key's events older than the window, and records the new event only if it is allowed.\n- **`src/lib.hd`**: re-exports `Limiter` and `new_limiter`, so `pkg` and `dep.ratelimit` users can import them without naming `limiter`. I added this beyond the spec; delete it if you want only the module path.\n- **Tests**: seven unit cases in `src/limiter.hd`, covering the limit, refused events not being recorded, the exact window boundary (9.999s counts, 10s does not), sliding rather than fixed windows, key independence, `max = 0`, and a property test that no window holds more than `max` allowed events. `tests/ratelimit.hd` checks the public API through `pkg`.\n\nTwo things to know:\n- Keys are never evicted from the map, so a limiter keyed by many one-off values grows without bound. Fixing that means removing empty entries or adding a sweep, which the spec did not ask for.\n- The package has no git repository, so I did not commit. Nothing was run against the internet or other hd sources; the std API details came from the skill's bundled docs.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

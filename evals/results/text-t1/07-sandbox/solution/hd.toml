@@ -1,0 +1,13 @@
+[package]
+name = "linecount"
+
+# Only what the program uses: writing to standard output and error, reading
+# its arguments, and reading files under data/. Nothing else is granted.
+[capabilities]
+Console = true
+Args = true
+FsRead = ["data/"]
+
+# Integration tests run the built program, and nothing else.
+[dev-capabilities]
+Process = ["linecount"]

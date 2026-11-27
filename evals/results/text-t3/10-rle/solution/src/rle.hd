@@ -1,0 +1,113 @@
+## One maximal run: `count` copies of `value` in a row.
+@derive(Eq, Debug)
+pub struct Run:
+    pub value: i32
+    pub count: usize
+
+## Encodes `xs` as maximal runs: no run is empty, and neighbouring runs differ.
+pub fn encode(xs: List[i32]) -> List[Run]:
+    let mut runs: List[Run] = []
+    let mut current: Run? = .None
+    for x in xs:
+        current = match current:
+            .Some(run) if run.value == x => .Some(Run { value: x, count: run.count + 1 })
+            .Some(run) =>
+                runs.push(run)
+                .Some(Run { value: x, count: 1 })
+            .None => .Some(Run { value: x, count: 1 })
+    match current:
+        .Some(run) => runs.push(run)
+        .None => pass
+    runs
+
+## Expands runs back into the list they encode.
+pub fn decode(runs: List[Run]) -> List[i32]:
+    let mut xs: List[i32] = []
+    for run in runs:
+        for _ in 0..run.count:
+            xs.push(run.value)
+    xs
+
+tests:
+    use std.num.Integer
+    use std.testing.{Choices, it_each, it_prop, it_prop_with}
+
+    fn r(value: i32, count: usize) -> Run:
+        Run { value, count }
+
+    # Lists that mostly repeat values, so long runs are common.
+    fn small_list(c: &mut Choices) -> List[i32]:
+        c.list(60, fn(d: &mut Choices) -> i32: d.int(-2..=2))
+
+    it_each(
+        "encodes example lists into maximal runs",
+        [
+            ([], []),
+            ([7], [r(7, 1)]),
+            ([1, 1, 2, 2, 2, 1], [r(1, 2), r(2, 3), r(1, 1)]),
+            ([-3, -3, -3], [r(-3, 3)]),
+            ([0, 1, 2, 3], [r(0, 1), r(1, 1), r(2, 1), r(3, 1)]),
+            ([4, 4, 5, 4, 4], [r(4, 2), r(5, 1), r(4, 2)]),
+        ],
+        body=fn!(row: (List[i32], List[Run])): assert_equal(encode(row._0), row._1)
+    )
+
+    it_each(
+        "decodes example runs",
+        [
+            ([], []),
+            ([r(7, 1)], [7]),
+            ([r(1, 2), r(2, 3), r(1, 1)], [1, 1, 2, 2, 2, 1]),
+            ([r(5, 0), r(1, 2)], [1, 1]),
+        ],
+        body=fn!(row: (List[Run], List[i32])): assert_equal(decode(row._0), row._1)
+    )
+
+    it("handles the extreme i32 values"):
+        xs := [i32::max_value(), i32::max_value(), i32::min_value()]
+        assert_equal(encode(xs), [r(i32::max_value(), 2), r(i32::min_value(), 1)])
+        assert_equal(decode(encode(xs)), xs)
+
+    it("a single long run is one run"):
+        let mut xs: List[i32] = []
+        for _ in 0..1000:
+            xs.push(9)
+        assert_equal(encode(xs), [r(9, 1000)])
+
+    it_prop("decode undoes encode", prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)), xs))
+
+    it_prop_with(
+        "decode undoes encode on repetitive lists",
+        gen=small_list,
+        prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)), xs)
+    )
+
+    it_prop("encode gives maximal runs covering the whole input", prop=fn!(xs: List[i32]):
+        runs := encode(xs)
+        let mut total: usize = 0
+        for run in runs:
+            assert(run.count > 0, reason="no empty run")
+            total += run.count
+        assert_equal(total, xs.len())
+        for i in 1..runs.len():
+            assert(runs[i - 1].value != runs[i].value, reason="neighbours differ")
+        assert(runs.len() <= xs.len())
+    )
+
+    it_prop_with("encode gives maximal runs on repetitive lists", gen=small_list, prop=fn!(
+        xs: List[i32],
+    ):
+        runs := encode(xs)
+        let mut total: usize = 0
+        for run in runs:
+            assert(run.count > 0, reason="no empty run")
+            total += run.count
+        assert_equal(total, xs.len())
+        for i in 1..runs.len():
+            assert(runs[i - 1].value != runs[i].value, reason="neighbours differ")
+    )
+
+    it_prop(
+        "decode keeps the length of the runs' counts",
+        prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)).len(), xs.len())
+    )

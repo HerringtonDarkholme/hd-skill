@@ -1,0 +1,9 @@
+use pkg.{open, transfer}
+use std.testing.assert_equal
+
+it("moves money between two accounts through the library interface"):
+    let mut source = open(10_000)
+    let mut target = open(0)
+    transfer(&mut source, &mut target, 2_550)
+    assert_equal(source.balance(), 7_450)
+    assert_equal(target.balance(), 2_550)

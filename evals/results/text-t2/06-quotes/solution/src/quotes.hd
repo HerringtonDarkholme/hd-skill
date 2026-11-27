@@ -1,0 +1,103 @@
+use std.task.{Backoff, apply, map_join, retry}
+use std.time.{Clock, ms}
+
+## Why one sku could not be priced.
+@error
+@derive(Eq, Debug)
+pub enum QuoteError:
+    @error("quote service busy")
+    Busy
+    @error("unknown sku $sku")
+    Unknown(sku: string)
+
+pub trait Quotes:
+    fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]
+
+## The sum of every sku's price. Each sku gets up to three attempts, about
+## 10 ms apart, before its error counts; at most four skus are in flight.
+## The first failing sku in list order decides the error.
+pub fn order_total!(skus: List[string]) -> Result[i64, QuoteError] $ Quotes + Clock:
+    results := map_join!(skus, 4, fn!(sku: string) -> Result[i64, QuoteError] $ Quotes + Clock:
+        quotes := $.use(Quotes)
+        apply!(retry(Backoff { attempts: 3, initial: 10ms, factor: 1 })):
+            quotes.quote!(sku)
+    )
+    let total: i64 = 0
+    for result in results:
+        total += result?
+    .Ok(total)
+
+tests:
+    use std.time.{ManualClock, Timestamp, now}
+
+    struct Script:
+        prices: Map[string, i64]
+        busy: Map[string, i64] # the first N attempts for a sku answer Busy
+        calls: List[string]
+
+    impl Quotes for Script:
+        fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]:
+            attempt := self.calls.filter(fn(s): s == sku).len()
+            self.calls.push(sku)
+            if i64(attempt) < self.busy.get(sku).unwrap_or(0):
+                return .Err(.Busy)
+            match self.prices.get(sku):
+                .Some(price) => .Ok(price)
+                .None => .Err(.Unknown(sku))
+
+    fn clock() -> *mut ManualClock:
+        ManualClock::new(Timestamp::from_unix_milliseconds(0))
+
+    fn attempts(script: *mut Script, sku: string) -> usize:
+        script.calls.filter(fn(s): s == sku).len()
+
+    it("an empty order totals zero without asking"):
+        script := box(Script { prices: {}, busy: {}, calls: [] })
+        $.with(Quotes=script, Clock=clock()):
+            assert_equal(order_total!([]), .Ok(0))
+        assert_equal(script.calls.len(), 0)
+
+    it("sums every price"):
+        script := box(Script { prices: { "tea": 3, "jam": 12 }, busy: {}, calls: [] })
+        $.with(Quotes=script, Clock=clock()):
+            assert_equal(order_total!(["tea", "jam", "tea"]), .Ok(18))
+        assert_equal(attempts(script, "tea"), 2)
+        assert_equal(attempts(script, "jam"), 1)
+
+    it("retries a busy sku and then prices it"):
+        script := box(Script { prices: { "tea": 3 }, busy: { "tea": 2 }, calls: [] })
+        $.with(Quotes=script, Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Ok(3))
+        assert_equal(attempts(script, "tea"), 3)
+
+    it("waits about 10 ms between attempts"):
+        script := box(Script { prices: { "tea": 3 }, busy: { "tea": 2 }, calls: [] })
+        virtual := clock()
+        $.with(Quotes=script, Clock=virtual):
+            start := now()
+            assert_equal(order_total!(["tea"]), .Ok(3))
+            assert_equal(now().unix_milliseconds() - start.unix_milliseconds(), 20)
+
+    it("gives up on a sku after three attempts"):
+        script := box(Script { prices: { "tea": 3 }, busy: { "tea": 9 }, calls: [] })
+        $.with(Quotes=script, Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Err(.Busy))
+        assert_equal(attempts(script, "tea"), 3)
+
+    it("retries an unknown sku too, then reports it"):
+        script := box(Script { prices: {}, busy: {}, calls: [] })
+        $.with(Quotes=script, Clock=clock()):
+            assert_equal(order_total!(["ghost"]), .Err(.Unknown("ghost")))
+        assert_equal(attempts(script, "ghost"), 3)
+
+    it("reports the first failing sku in list order"):
+        script := box(Script { prices: { "tea": 3 }, busy: {}, calls: [] })
+        $.with(Quotes=script, Clock=clock()):
+            assert_equal(order_total!(["nope", "tea", "ghost"]), .Err(.Unknown("nope")))
+            assert_equal(order_total!(["tea", "ghost", "nope"]), .Err(.Unknown("ghost")))
+
+    it("a sku that succeeds on a retry counts in the sum"):
+        script := box(Script { prices: { "tea": 3, "ghost": 4 }, busy: { "ghost": 1 }, calls: [] })
+        $.with(Quotes=script, Clock=clock()):
+            assert_equal(order_total!(["tea", "ghost"]), .Ok(7))
+        assert_equal(attempts(script, "ghost"), 2)

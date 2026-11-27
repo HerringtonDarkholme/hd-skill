@@ -1,0 +1,37 @@
+use pkg.fields.{FieldNames}
+
+@derive(FieldNames)
+struct Account:
+    pub id: string
+    pub owner: string
+    pub balance: i64
+
+@derive(FieldNames)
+pub struct Config:
+    pub name: string
+    pub retries: u32
+    pub verbose: bool
+
+it("derives field names in a test module, in declaration order"):
+    assert_equal(
+        Account { id: "a1", owner: "ada", balance: 0 }.field_names(),
+        ["id", "owner", "balance"],
+    )
+
+it("derives for a pub struct with pub fields"):
+    assert_equal(
+        Config { name: "x", retries: 3, verbose: false }.field_names(),
+        ["name", "retries", "verbose"],
+    )
+
+it("the derived names match a hand-written list"):
+    expected := ["id", "owner", "balance"]
+    assert_equal(Account { id: "", owner: "", balance: 0 }.field_names(), expected)
+
+@derive(FieldNames)
+struct Hidden:
+    secret: string
+    visible: string
+
+it("derives for private fields too"):
+    assert_equal(Hidden { secret: "s", visible: "v" }.field_names(), ["secret", "visible"])

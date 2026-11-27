@@ -1,0 +1,118 @@
+{
+  "task": "01-colsum",
+  "package": "colsum",
+  "scenario": "CLI over standard input",
+  "selling_points": [
+    "derive Cli",
+    "@error",
+    "Result"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 12,
+      "passed": 12,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [
+          "--skip-header"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "a,1\nb,7\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 2: not a number: zz\n"
+      },
+      {
+        "args": [
+          "--key",
+          "2",
+          "--value",
+          "3"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "x,-2\ny,8\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 1: missing column\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "derive-cli",
+        "desc": "options parsed with @derive(Cli)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "SumError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/text-records.md",
+      "scenarios/cli-tool.md",
+      "scenarios/stdin-filter.md",
+      "packages.md",
+      "reference/packages.md"
+    ],
+    "bash": 9,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 3,
+      "test": 3,
+      "run": 5,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: H=.claude/skills/hd-lang; sed -n 1,200p $H/reference/packages.md | head -150; echo ----; grep -nE \"read_all|eprintln|ExitCode|args\\(|fn parse|split|trim|sorted|entries|get_or_insert|lines|enumer"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 22,
+    "cost_usd": 0.03052555,
+    "duration_s": 71,
+    "tokens": 986810,
+    "final_message": "The `colsum` package is in the current directory and both `hd check --tests` and `hd test` pass (12 tests). I also ran it end to end against the spec, and `hd fmt` and `hd lint` are clean.\n\nFiles:\n- `src/sum.hd`: the public `SumError` enum (`MissingColumn(line)`, `NotANumber(line, text)`, with `@derive(Eq, Debug)`) and `summarize`, with the signature you specified.\n- `src/main.hd`: the CLI. It is derived with `@derive(Cli)`, so `--key`, `--value` and `--skip-header` come from the struct, along with `--help`. It reads standard input, prints `key,total` lines, and on a `SumError` prints `colsum: line N: ...` to standard error with exit status 1.\n- `hd.toml`: grants only `Args`, `Console` and `ConsoleInput`.\n\nChecked by running the binary: a good input prints sorted totals with exit 0, a short line gives `colsum: line 2: missing column` with exit 1, and a non-number gives `colsum: line 1: not a number: x` with exit 1.\n\nChoices I made that you may want to change:\n- **Column 0:** `--key 0` or `--value 0` is treated as a column that never exists, so the first data line fails with `MissingColumn`. I did not add a separate usage error.\n- **Header skipping:** `--skip-header` skips line 1 even if it is blank.\n- **Tests:** I removed the scaffold's `tests/colsum.hd`, which ran the installed binary. The tests now live in `src/sum.hd` and `src/main.hd`.\n- **Capabilities:** I dropped the scaffold's `Clock`, `Random` and `Process` grants, since the program uses none of them.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

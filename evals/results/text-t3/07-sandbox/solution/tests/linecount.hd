@@ -1,0 +1,28 @@
+use std.process.Command
+use std.testing.{assert, assert_equal, hd_run}
+
+it("counts a file under data/, including a final line with no newline"):
+    let out = hd_run!(*Command::new("linecount").arg("data/sample.txt"))
+    assert_equal(
+        out.stdout,
+        "3 data/sample.txt\n3 total\n",
+        reason="three lines, the last unterminated",
+    )
+    assert_equal(out.stderr, "", reason="nothing was skipped")
+    assert_equal(out.status, 0, reason="every file was read")
+
+it("refuses a path that escapes data/ and exits 1"):
+    let out = hd_run!(*Command::new("linecount").arg("data/../hd.toml").arg("data/sample.txt"))
+    assert_equal(
+        out.stdout,
+        "3 data/sample.txt\n3 total\n",
+        reason="the good file is still counted",
+    )
+    assert(out.stderr.starts_with("linecount: data/../hd.toml: "), reason="the refusal is reported")
+    assert_equal(out.status, 1, reason="a skipped file makes the status 1")
+
+it("refuses an absolute path outside data/"):
+    let out = hd_run!(*Command::new("linecount").arg("/etc/hosts"))
+    assert(out.stderr.starts_with("linecount: /etc/hosts: "), reason="the refusal is reported")
+    assert_equal(out.stdout, "0 total\n", reason="nothing was counted")
+    assert_equal(out.status, 1)

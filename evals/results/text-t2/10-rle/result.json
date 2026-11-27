@@ -1,0 +1,72 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 20,
+      "passed": 20,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 11,
+    "hd": {
+      "new": 1,
+      "check": 6,
+      "test": 6,
+      "file": 2,
+      "fmt": 4,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: cp src/rle.hd /tmp/rle_good.hd && sed 's/        if count > 0 \\&\\& x == value:/        if count > 0 \\&\\& x == value \\&\\& count < 3:/' /tmp/rle_good.hd > src/rle.hd && hd test 2>&1 | grep -E 'FAI"
+    ],
+    "diagnostic_codes": {
+      "trait-used-as-type": 1,
+      "missing-capability": 1,
+      "doc-comment-without-target": 5
+    },
+    "failing_checks": 1,
+    "turns": 24,
+    "cost_usd": 0.02335348,
+    "duration_s": 53,
+    "tokens": 832367,
+    "final_message": "The `rle` package is in the project directory. `hd check --tests` and `hd test` both pass (20 tests), and `hd fmt --check` and `hd lint` are clean.\n\n**Layout**\n- `src/rle.hd` holds `Run`, `encode`, `decode`, the generators, and the tests.\n- `src/lib.hd` is the library root. It re-exports `Run`, `encode` and `decode`, because `hd new --lib` makes `lib.hd` the root, so the public API is `pkg`.\n- `tests/rle.hd` is an integration test that checks the same round trip through the public API.\n- `hd.toml` came from `hd new . --lib`. The package needs no capabilities.\n\n**Implementation**\n- `Run` is `@derive(Eq, Debug)` with `pub value: i32` and `pub count: usize`.\n- `encode` builds maximal runs in one pass. An empty list gives no runs.\n- `decode` expands each run `count` times.\n\n**Tests**\n- Examples cover the empty list, a single element, merging, separated equal values, extreme `i32` values, and a 1000-element run.\n- `it_each` tables cover `decode` and `encode`.\n- Property tests:\n  - `decode(encode(xs)) == xs` on the default `List[i32]` generator (`it_prop`, in the integration test).\n  - `decode(encode(xs)) == xs` on a small-alphabet generator, so long runs are common.\n  - `encode(decode(runs)) == runs` on generated maximal run lists.\n  - Output is maximal (no empty run, no equal neighbours) and the counts sum to the input length.\n  - `encode` never returns more runs than the input has elements.\n\n**Not verified**\n- I tried to plant a bug in `encode` to confirm the property tests catc",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

@@ -1,0 +1,27 @@
+[package]
+name = "linecount"
+
+# The program may print, read its arguments, and read files under data/.
+# Everything else is denied outright: a program that tries to write, read
+# the environment, use the clock, or reach the network is refused before
+# it starts. `Process` is not denied here only because the integration
+# test needs to spawn the program; `main` does not name it, so the
+# program itself cannot reach it.
+[capabilities]
+Console = true
+Args = true
+FsRead = ["data/"]
+FsWrite = false
+ConsoleInput = false
+Clock = false
+Random = false
+Env = false
+Sys = false
+Http = false
+Net = false
+Signals = false
+Workers = false
+
+# Integration tests run the program itself, so they need to spawn it.
+[dev-capabilities]
+Process = true

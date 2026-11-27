@@ -1,0 +1,25 @@
+use pkg.fields.FieldNames
+use pkg.shapes.{Circle}
+
+@derive(FieldNames)
+struct Account:
+    id: u64
+    owner: string
+    notes: List[string]
+
+@derive(FieldNames)
+pub struct Config:
+    pub host: string
+    pub port: u16
+
+it("derives in an integration test module"):
+    assert_equal(Account { id: 1, owner: "ada", notes: [] }.field_names(), ["id", "owner", "notes"])
+
+it("derives on a pub struct imported from another module"):
+    assert_equal(
+        Circle { center_x: 0.0, center_y: 0.0, radius: 2.0 }.field_names(),
+        ["center_x", "center_y", "radius"],
+    )
+
+it("keeps declaration order for public fields"):
+    assert_equal(Config { host: "localhost", port: 8080 }.field_names(), ["host", "port"])

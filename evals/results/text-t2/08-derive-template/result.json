@@ -1,0 +1,80 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 2,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": true
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "reference/packages.md",
+      "design/testing.md"
+    ],
+    "bash": 9,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 4,
+      "doc": 1,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: hd new --lib --vcs none . ; echo \"exit $?\"; find . -path ./.claude -prune -o -type f -print; for f in hd.toml src/lib.hd tests/*.hd; do echo \"== $f\"; cat \"$f\"; done"
+    ],
+    "diagnostic_codes": {
+      "unsatisfied-trait-bound": 1,
+      "unknown-method": 1
+    },
+    "failing_checks": 2,
+    "turns": 22,
+    "cost_usd": 0.023840390000000003,
+    "duration_s": 60,
+    "tokens": 757651,
+    "final_message": "The `fields` package is written and passes `hd check --tests`, `hd fmt`, `hd lint`, and `hd test` (6 passed).\n\n**What's there**\n\n- `src/fields.hd` defines `pub trait FieldNames` with `fn field_names(self) -> List[string]`. It also has the derive template, `impl[T] FieldNames for T by Structure`, which walks the struct's fields in declaration order. Users write `@derive(FieldNames)` and get no per-struct impl.\n- `src/lib.hd` re-exports `FieldNames`, so other packages can import it as `dep.fields.FieldNames`.\n- `hd.toml` declares the package name `fields`.\n- Tests:\n  - `tests:` block in `src/fields.hd`: field order, a struct with no fields, and a generic struct.\n  - `src/records.hd`: a derive in a non-trait source module, with its own test.\n  - `tests/fields.hd`: an integration test deriving in a test file and using a struct from another module.\n\n**Decisions and things to know**\n\n- I wrote the package files by hand. My first `hd new --lib --vcs none .` was denied by the permission system, so I did not run it or retry it. The layout follows the `hd new --lib` shape from `packages.md`.\n- Generic structs: `@derive` adds a `T: FieldNames` bound on each type parameter. `Wrapper[usize]` and `Wrapper[string]` failed with `unsatisfied-trait-bound` and `no method`. `Wrapper[Account]` works, because `Account` derives `FieldNames`. So a generic struct only gets `field_names` when its type arguments also derive it. If you want generic structs to work for any argument, that needs a differen",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

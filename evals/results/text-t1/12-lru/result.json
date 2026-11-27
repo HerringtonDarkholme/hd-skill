@@ -1,0 +1,76 @@
+{
+  "task": "12-lru",
+  "package": "lru",
+  "scenario": "stateful data structure",
+  "selling_points": [
+    "model-based property test",
+    "commands"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 14,
+      "passed": 14,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "model-test",
+        "desc": "a generated-operations test (it_prop / it_prop_with / commands)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 16,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 4,
+      "test": 5,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: rm -rf /tmp/lru-mut && cp -R /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/text-t1/12-lru/lru /tmp/lru-mut && rm -rf /tmp/lru-mut/.claude && cd /tmp/lru-mut && python3 "
+    ],
+    "diagnostic_codes": {
+      "unknown-type": 2,
+      "unknown-name": 1,
+      "syntax-error": 1
+    },
+    "failing_checks": 1,
+    "turns": 31,
+    "cost_usd": 0.03733037,
+    "duration_s": 112,
+    "tokens": 1219719,
+    "final_message": "The `lru` package is in the current directory. `hd check --tests` passes and `hd test` runs 14 tests, all passing.\n\n**What's there**\n- `src/lru.hd` has the `Lru` struct, `new_lru`, `get`, `put` and `len` with the signatures you specified.\n- `src/lib.hd` re-exports `Lru` and `new_lru` so `pkg.{Lru, new_lru}` works from outside. This is needed because a library's root is `lib.hd`.\n- `tests/lru.hd` is an integration test that uses only the public API.\n\n**Design choice:** the cache is a `Map[string, i64]` plus a `List[string]` of keys, least recent first. Every `get` hit and every `put` scans that list, so each operation costs O(capacity). I picked this over a linked list because hd's value semantics make pointer-style linked structures awkward, and the simpler version is easy to check. If large capacities matter, that's the thing to revisit.\n\n**Tests**\n- Example cases cover: a miss on an empty cache, put then get, updating a key, eviction of the least recent key, a hit refreshing recency, a miss changing nothing, a put refreshing recency, and capacity 0.\n- An `it_each` table checks that `len` is capped at capacity.\n- `it_prop_with` runs generated sequences of `Get`/`Put` over a small key set and capacity 0 to 4. It compares every `get` result and the length against a plain-list model.\n\n**Mutation check:** I broke `get` so it doesn't refresh recency, and the example test and the model test both failed, so the tests do catch that bug. I reverted it afterwards. That run left a shru",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

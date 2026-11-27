@@ -1,0 +1,86 @@
+{
+  "task": "09-contracts",
+  "package": "bank",
+  "scenario": "invariants",
+  "selling_points": [
+    "require",
+    "ensure"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 15,
+      "passed": 15,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 6,
+      "passed": 6,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "require",
+        "desc": "preconditions with require",
+        "ok": true
+      },
+      {
+        "id": "ensure",
+        "desc": "postconditions with ensure",
+        "ok": false
+      },
+      {
+        "id": "no-raw-panic",
+        "desc": "no hand-written panic( for checks",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.75
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/contracts.md",
+      "reference/packages.md",
+      "design/testing.md",
+      "design/errors.md"
+    ],
+    "bash": 8,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "file": 1,
+      "check": 2,
+      "test": 4,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: for f in hd.toml .gitignore src/lib.hd tests/bank.hd; do echo \"== $f\"; cat \"$f\"; done; git status --short | head; git log 2>&1 | head -2",
+      "Bash: hd test --release 2>&1 | tail -30; echo \"exit ${PIPESTATUS[0]}\""
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 22,
+    "cost_usd": 0.02634766,
+    "duration_s": 81,
+    "tokens": 747439,
+    "final_message": "The `bank` library is written and `hd check --tests` and `hd test` both pass (15 cases).\n\n**Files**\n- `src/account.hd`: `Account`, `open`, `transfer`, and the `balance`, `deposit` and `withdraw` methods, with the 15 tests in a `tests:` block.\n- `src/lib.hd`: re-exports `Account`, `open` and `transfer` as the package interface.\n- `tests/bank.hd`: one integration test through the library interface.\n- `hd.toml` and `.gitignore` came from `hd new --lib`, which I ran in this directory.\n\n**Design choices**\n- **Caller rules** (non-negative opening balance, positive deposit/withdrawal/transfer, withdrawal or transfer no larger than the balance) use `require`. Those panic with `explicit-panic` in debug and test builds and are skipped in release.\n- **Balance never negative** is a private `invariant` helper, a `require`, called at the end of every mutator.\n- **Transfer keeps the total** is a `require` placed after the transfer body. I did not use `ensure` for either invariant: the docs say `ensure` is checked in every build, which would break the release-cost requirement.\n- **Overflow**: I added two preconditions you didn't ask for. A deposit must not overflow the balance, and a transfer's combined total must fit in an `i64`. Without them, release builds could wrap and break the non-negative invariant.\n- **Property test**: an `it_prop_with` test generates transfers and checks that the total is kept and no balance goes negative.\n\n**Not verified**\n- Release-build behaviour is from the doc",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

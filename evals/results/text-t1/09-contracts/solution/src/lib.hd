@@ -1,0 +1,2 @@
+# The public interface of the bank library.
+pub use self.account.{Account, open, transfer}

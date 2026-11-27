@@ -1,0 +1,122 @@
+{
+  "task": "01-colsum",
+  "package": "colsum",
+  "scenario": "CLI over standard input",
+  "selling_points": [
+    "derive Cli",
+    "@error",
+    "Result"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 14,
+      "passed": 14,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [
+          "--skip-header"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "a,1\nb,7\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 2: not an integer: zz\n"
+      },
+      {
+        "args": [
+          "--key",
+          "2",
+          "--value",
+          "3"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "x,-2\ny,8\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 1: missing column\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "derive-cli",
+        "desc": "options parsed with @derive(Cli)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "SumError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/cli-tool.md",
+      "scenarios/stdin-filter.md",
+      "scenarios/text-records.md",
+      "reference/packages.md"
+    ],
+    "bash": 15,
+    "hd": {
+      "help": 8,
+      "new": 1,
+      "check": 4,
+      "test": 2,
+      "run": 6,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: hd help new; hd help test; hd help check; hd help build; echo ---; sed -n 1,120p /Users/hd/.claude/skills/../../../.claude/skills/hd-lang/reference/packages.md 2>/dev/null | head -5; echo ---; S",
+      "Bash: SK=.claude/skills/hd-lang; grep -nE '^(std\\.|.*)(split|trim|parse|lines|read_all|eprintln|exit|ExitCode|ScriptedInput|ConsoleInput|read_all!|Args|Cli|expect)' $SK/reference/std-index.txt | head ",
+      "Bash: rm tests/colsum.hd && rmdir tests && cat > hd.toml <<'EOF'\n[package]\nname = \"colsum\"\n\n[capabilities]\nArgs = true\nConsole = true\nConsoleInput = true\nEOF\nhd check --tests",
+      "Bash: printf 'name,amount\\nwest,5\\neast, 2\\nwest,-1\\n' | hd run -- --skip-header --key 1 --value 2; echo \"status=$?\"; printf 'a,1\\nb,x\\n' | hd run; echo \"status=$?\"; printf 'a,1\\n' | hd run -- --value"
+    ],
+    "diagnostic_codes": {
+      "missing-contextual-enum-type": 2
+    },
+    "failing_checks": 1,
+    "turns": 30,
+    "cost_usd": 0.03244515,
+    "duration_s": 65,
+    "tokens": 1276066,
+    "final_message": "The `colsum` package is in the current directory, and `hd check --tests`, `hd test` (14 passed), `hd fmt` and `hd lint` all pass.\n\n**Files**\n- `src/sum.hd`: `pub fn summarize(...)` and the public `@error` enum `SumError` with `MissingColumn(line)` and `NotANumber(line, text)`. It derives `Eq` and `Debug`, and each variant has a message (`line N: missing column`, `line N: not an integer: T`).\n- `src/main.hd`: the CLI. `@derive(Cli)` on `Options` gives `--key` (default 1), `--value` (default 2) and `--skip-header`. Errors go to standard error as `colsum: <message>` with exit status 1, and nothing is written to standard output in that case.\n- `hd.toml`: grants only `Args`, `Console` and `ConsoleInput`.\n- I deleted the integration test that `hd new` generated, because it ran an installed `colsum` binary rather than testing this code.\n\n**Tests**\n- `src/sum.hd` has 10 cases covering grouping and sorting, column selection, header skipping, blank lines, trimming, signed values, missing columns and bad numbers, and error text.\n- `src/main.hd` has 4 cases covering option parsing, a full run over scripted input, and a bad row producing stderr output and status 1.\n\n**Choices I made**\n- A key or value column of `0` is treated as a missing column, not a usage error, so `--key 0` reports `line 1: missing column`.\n- Output is sorted by plain string order of the key, so `10` sorts before `5`.\n- A blank line is one that is empty after trimming.\n\nI also ran the binary on piped input. It printed",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

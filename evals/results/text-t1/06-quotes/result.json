@@ -1,0 +1,93 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 8,
+      "passed": 8,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": true
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/concurrency.md",
+      "design/effects.md",
+      "design/testing.md",
+      "design/errors.md",
+      "reference/packages.md"
+    ],
+    "bash": 10,
+    "hd": {
+      "help": 4,
+      "doc": 3,
+      "new": 1,
+      "check": 2,
+      "test": 3,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: ls -la && hd help 2>&1 | head -50 && S=.claude/skills/hd-lang && sed -n 1,200p $S/reference/packages.md"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 22,
+    "cost_usd": 0.024752560000000003,
+    "duration_s": 66,
+    "tokens": 726158,
+    "final_message": "The `quotes` library is written in `src/quotes.hd`, and `hd check --tests` and `hd test` both pass (8 tests).\n\n- **Package:** created with `hd new --lib --vcs none .` in the current directory, so `hd.toml` names it `quotes`. I deleted the generated sample `tests/quotes.hd` and replaced the sample `src/lib.hd` with a re-export of `QuoteError`, `Quotes` and `order_total`.\n- **Implementation:** `order_total!` runs `map_join!` with a limit of 4. Each sku goes through `apply!(retry(Backoff { attempts: 3, initial: 10ms, factor: 1, max: 10ms }))`, which gives 3 attempts with a constant 10 ms wait. The results are then scanned in list order, so the first failing sku's error wins, and an empty list gives `.Ok(0)`.\n- **Errors:** `QuoteError` has `@error` messages and `@derive(Eq, Debug)`.\n- **Tests:** they use a scripted `Quotes` fake and `ManualClock`, and cover the empty order, summing with repeats, retry success and exhaustion, the 10 ms wait, unknown skus, error ordering by list position, and the 4-in-flight cap.\n- **Cap check:** I temporarily raised the limit to 6, and the cap test failed (10 ms vs 20 ms expected). I then restored 4. `hd fmt` was run after that and the final `check` and `test` passed.\n\nI did not run `hd lint` successfully: the command produced no output in the last run, so I have no lint result to report. I also did not run `hd fmt` as a separate verification step beyond formatting. The project is not a git repository, so nothing was committed.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

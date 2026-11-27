@@ -1,0 +1,86 @@
+{
+  "task": "11-calc",
+  "package": "calc",
+  "scenario": "parser and interpreter",
+  "selling_points": [
+    "recursive enums",
+    "box",
+    "@error",
+    "match"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 36,
+      "passed": 36,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 20,
+      "passed": 20,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "tree-enum",
+        "desc": "a recursive enum for the syntax tree (boxed children)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "CalcError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "table-test",
+        "desc": "table tests with it_each",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/parser.md",
+      "reference/packages.md"
+    ],
+    "bash": 11,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 8,
+      "test": 5,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: printf '%s\\n%s\\n' '## Why an expression could not be evaluated.' > /dev/null; python3 -I -c \"\nimport pathlib\np=pathlib.Path('src/calc.hd'); s=p.read_text()\np.write_text('use std.testing.it_each\\"
+    ],
+    "diagnostic_codes": {
+      "invalid-test-statement": 2
+    },
+    "failing_checks": 1,
+    "turns": 28,
+    "cost_usd": 0.0288173,
+    "duration_s": 90,
+    "tokens": 1014771,
+    "final_message": "The `calc` package is in the current directory. `hd check --tests` passes, `hd test` passes 36 of 36, and `hd lint` is clean.\n\nFiles:\n- `src/calc.hd`: the evaluator, a tokenizer, a recursive-descent parser into a boxed `Expr` tree, a separate `evaluate` pass, and the `tests:` block.\n- `src/lib.hd`: re-exports `CalcError` and `eval` as the package interface.\n- `tests/calc.hd`: two integration tests that go through `pkg`.\n- `hd.toml`: created by `hd new --lib`.\n\nThe grammar is `expr := term (('+'|'-') term)*`, `term := unary (('*'|'/') unary)*`, `unary := '-' unary | primary`, `primary := INT | '(' expr ')'`. Errors use the first token the grammar can't accept, or `src.len()` at end of input. Invalid characters become a `Bad` token that the parser reports only when it reaches it, so `\"1 2 $\"` gives `Unexpected(2)`.\n\nChoices the spec didn't cover, which you may want to change:\n- **Overflow wraps, not errors.** `CalcError` has only the two variants you specified, so I used wrapping i64 arithmetic. `i64::MIN / -1` gives `MIN`. If you want an overflow error, the enum needs a third variant.\n- **Literals must fit in i64.** A literal that doesn't fit is `Unexpected` at its start. As a result, `-9223372036854775808` is rejected, since the positive literal doesn't fit.\n- **Only spaces are whitespace.** A tab is an invalid character, so `\"1\\t+ 2\"` gives `Unexpected(1)`.\n\nI didn't use git: the directory isn't a repository, so there was nothing to commit.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}
