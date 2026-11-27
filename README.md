@@ -37,6 +37,7 @@ skills/hd-lang/
   SKILL.md                  when to use it, the edit-check loop, the rules that surprise, the index
   references/
     how-to/                 one page per scenario: a complete, tested program and its pieces
+      common-operations.md  strings, numbers, lists, maps, trees, scanners, with the clues
       cli-tool.md           options, --help, exit status
       stdin-filter.md       read standard input and transform it
       text-records.md       parse a text or CSV file into typed records
@@ -61,6 +62,7 @@ skills/hd-lang/
       suspension.md         `!` functions, join!, race!, timeouts
       modules.md            files as modules, pub, use
     std/
+      api/                  every public std module, generated from `hd doc` (scripts/gen-std-api.mjs)
       imports.md            the prelude, and the import line for everything else
       text.md               string methods, parsing, building text, regex
       collections.md        list, map, iterator, optional and result methods
@@ -89,6 +91,7 @@ trusted by eye:
 node scripts/check-examples.mjs                   # uses `hd` on PATH
 HD=/path/to/hd node scripts/check-examples.mjs
 node scripts/check-examples.mjs language/         # only paths that contain a word
+HD=/path/to/hd node scripts/gen-std-api.mjs       # regenerate references/std/api/ after std changes
 ```
 
 - Each `hd` block in the skill must pass `hd check`. With a `tests:` block
