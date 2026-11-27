@@ -1,0 +1,53 @@
+use std.cli.{Args, Cli, ScriptedArgs}
+use std.console.{ConsoleInput, MemoryConsole, ScriptedInput, eprintln, read_all}
+use std.process.ExitCode
+use pkg.sum.{summarize}
+
+## Sum one CSV column grouped by another, read from standard input
+@derive(Cli)
+struct Options:
+    ## the 1-based column to group by
+    key: usize = 1
+    ## the 1-based column to sum, as a signed integer
+    value: usize = 2
+    ## ignore the first line
+    skip_header: bool
+
+pub fn main!() -> ExitCode $ Args + Console + ConsoleInput:
+    options := match Options::parse_args():
+        .Ok(options) => options
+        .Err(error) => return error.exit()
+    if options.key == 0 || options.value == 0:
+        eprintln("colsum: columns start at 1")
+        return ExitCode(2)
+    text := match read_all!():
+        .Ok(text) => text
+        .Err(error) =>
+            eprintln("colsum: $error")
+            return ExitCode(1)
+    match summarize(text, options.key, options.value, options.skip_header):
+        .Ok(totals) =>
+            for (key, total) in totals:
+                println("$key,$total")
+            ExitCode(0)
+        .Err(error) =>
+            eprintln("colsum: $error")
+            ExitCode(1)
+
+tests:
+    it("prints one total per key"):
+        input := ScriptedInput::new(["id,amount", "b,2", "a,3", "b,5"])
+        arguments := box(ScriptedArgs::new("colsum", ["--skip-header"]))
+        console := MemoryConsole::new()
+        $.with(Args=arguments, ConsoleInput=input, Console=console):
+            assert_equal(main!(), ExitCode(0))
+        assert_equal(console.output().join(""), "a,3\nb,7\n")
+
+    it("reports a bad line on standard error and prints nothing"):
+        input := ScriptedInput::new(["a,1", "b,x"])
+        arguments := box(ScriptedArgs::new("colsum", []))
+        console := MemoryConsole::new()
+        $.with(Args=arguments, ConsoleInput=input, Console=console):
+            assert_equal(main!(), ExitCode(1))
+        assert_equal(console.output().join(""), "")
+        assert_equal(console.error_output().join(""), "colsum: line 2: not a number: x\n")

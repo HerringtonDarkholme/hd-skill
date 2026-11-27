@@ -1,0 +1,16 @@
+use pkg.{Config, ConfigError, load_config}
+use std.fs.{FsRead, FsWrite, MemoryFs, write_text}
+use std.host.{Env, ScriptedEnv}
+use std.path.Path
+
+it("loads a file through the public interface"):
+    fs := MemoryFs::new()
+    $.with(FsWrite=fs):
+        _ := write_text!(Path("config.json"), "{\"host\": \"api.local\", \"port\": 3000}")
+    $.with(FsRead=fs, Env=box(ScriptedEnv::new({ "APP_PORT": "4000" }))):
+        config := load_config!("config.json").ok().expect("a valid config")
+        assert_equal(config, Config { host: "api.local", port: 4000, workers: 4 })
+
+it("reports a missing file through the public interface"):
+    $.with(FsRead=MemoryFs::new(), Env=box(ScriptedEnv::new({}))):
+        assert(load_config!("missing.json").is_err())

@@ -1,0 +1,116 @@
+use std.task.{Backoff, apply, map_join, retry}
+use std.time.{Clock, ms}
+
+## Why a quote failed.
+@derive(Eq, Debug)
+@error
+pub enum QuoteError:
+    @error("quote service busy")
+    Busy
+    @error("unknown sku $sku")
+    Unknown(sku: string)
+
+## A source of per-sku prices.
+pub trait Quotes:
+    fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]
+
+## One sku's price, with up to 3 attempts and 10 ms between them.
+fn quote_one!(sku: string) -> Result[i64, QuoteError] $ Quotes + Clock:
+    apply!(retry(Backoff { attempts: 3, initial: 10ms, factor: 1, max: 10ms })):
+        $.use(Quotes).quote!(sku)
+
+## The total of every sku's price, quoting at most 4 skus at a time.
+## The first failing sku in the list's order decides the error.
+pub fn order_total!(skus: List[string]) -> Result[i64, QuoteError] $ Quotes + Clock:
+    prices := map_join!(
+        skus,
+        4,
+        fn!(sku: string) -> Result[i64, QuoteError] $ Quotes + Clock: quote_one!(sku)
+    )
+    let total: i64 = 0
+    for price in prices:
+        total += price?
+    .Ok(total)
+
+tests:
+    use std.time.{ManualClock, Timestamp, now}
+
+    # Prices for known skus; `busy` answers Busy that many times first.
+    struct FakeQuotes:
+        prices: Map[string, i64]
+        busy: Map[string, i32]
+        calls: Map[string, i32]
+
+    impl Quotes for FakeQuotes:
+        fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]:
+            seen := self.calls.get(sku).unwrap_or(0)
+            self.calls[sku] = seen + 1
+            if self.busy.get(sku).unwrap_or(0) > seen:
+                return .Err(.Busy)
+            match self.prices.get(sku):
+                .Some(price) => .Ok(price)
+                .None => .Err(.Unknown(sku))
+
+    fn clock() -> *mut ManualClock:
+        ManualClock::new(Timestamp::from_unix_milliseconds(0))
+
+    it("an empty order totals 0"):
+        quotes := box(FakeQuotes { prices: {}, busy: {}, calls: {} })
+        $.with(Quotes=quotes, Clock=clock()):
+            assert_equal(order_total!([]), .Ok(0))
+        assert_equal(quotes.calls.len(), 0)
+
+    it("sums every sku's price"):
+        quotes := box(FakeQuotes { prices: { "tea": 3, "cake": 5, "jam": 7 }, busy: {}, calls: {} })
+        $.with(Quotes=quotes, Clock=clock()):
+            assert_equal(order_total!(["tea", "cake", "jam"]), .Ok(15))
+        assert_equal(quotes.calls.get("cake"), .Some(1))
+
+    it("sums more skus than the 4 in flight at once"):
+        prices := { "a": 1, "b": 2, "c": 3, "d": 4, "e": 5, "f": 6 }
+        quotes := box(FakeQuotes { prices, busy: {}, calls: {} })
+        $.with(Quotes=quotes, Clock=clock()):
+            assert_equal(order_total!(["a", "b", "c", "d", "e", "f"]), .Ok(21))
+
+    it("retries a busy sku until it answers"):
+        quotes := box(FakeQuotes { prices: { "tea": 3 }, busy: { "tea": 2 }, calls: {} })
+        $.with(Quotes=quotes, Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Ok(3))
+        assert_equal(quotes.calls.get("tea"), .Some(3))
+
+    it("waits 10 ms between attempts"):
+        quotes := box(FakeQuotes { prices: { "tea": 3 }, busy: { "tea": 2 }, calls: {} })
+        $.with(Quotes=quotes, Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Ok(3))
+            assert_equal(now().unix_milliseconds(), 20, reason="two waits of 10 ms")
+
+    it("gives up after 3 attempts"):
+        quotes := box(FakeQuotes { prices: { "tea": 3 }, busy: { "tea": 3 }, calls: {} })
+        $.with(Quotes=quotes, Clock=clock()):
+            assert_equal(order_total!(["tea"]), .Err(.Busy))
+        assert_equal(quotes.calls.get("tea"), .Some(3))
+
+    it("reports an unknown sku after 3 attempts"):
+        quotes := box(FakeQuotes { prices: {}, busy: {}, calls: {} })
+        $.with(Quotes=quotes, Clock=clock()):
+            assert_equal(order_total!(["nope"]), .Err(.Unknown("nope")))
+        assert_equal(quotes.calls.get("nope"), .Some(3))
+
+    it("reports the first failing sku in list order"):
+        first := box(FakeQuotes { prices: { "tea": 3 }, busy: { "gone": 3 }, calls: {} })
+        $.with(Quotes=first, Clock=clock()):
+            assert_equal(order_total!(["tea", "nope", "gone"]), .Err(.Unknown("nope")))
+        second := box(FakeQuotes { prices: { "tea": 3 }, busy: { "gone": 3 }, calls: {} })
+        $.with(Quotes=second, Clock=clock()):
+            assert_equal(order_total!(["tea", "gone", "nope"]), .Err(.Busy))
+
+    it("a failing sku does not stop the others from being quoted"):
+        quotes := box(FakeQuotes { prices: { "tea": 3, "cake": 5 }, busy: { "tea": 3 }, calls: {} })
+        $.with(Quotes=quotes, Clock=clock()):
+            assert_equal(order_total!(["tea", "cake"]), .Err(.Busy))
+        assert_equal(quotes.calls.get("cake"), .Some(1))
+
+    it("compares and prints errors"):
+        assert_equal(QuoteError.Unknown("x"), .Unknown("x"))
+        assert(QuoteError.Busy != .Unknown("x"), reason="variants differ")
+        assert_equal(debug(QuoteError.Unknown("x")), "QuoteError.Unknown(sku=\"x\")")

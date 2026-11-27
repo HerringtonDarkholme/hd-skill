@@ -1,0 +1,13 @@
+use pkg.fields.FieldNames
+
+@derive(FieldNames)
+struct Address:
+    street: string
+    city: string
+    zip: string
+
+it("derives field names in a test module"):
+    assert_equal(
+        Address { street: "1 Main", city: "Paris", zip: "75001" }.field_names(),
+        ["street", "city", "zip"],
+    )

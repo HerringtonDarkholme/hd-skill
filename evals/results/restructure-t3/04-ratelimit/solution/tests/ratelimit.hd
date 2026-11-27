@@ -1,0 +1,12 @@
+use pkg.{Limiter, new_limiter}
+use std.testing.assert_equal
+use std.time.{Clock, ManualClock, Timestamp, s}
+
+it("limits each key through the public interface"):
+    let mut limiter: Limiter = new_limiter(2, 60s)
+    clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+    $.with(Clock=clock):
+        assert_equal(limiter.allow("user-1"), true)
+        assert_equal(limiter.allow("user-1"), true)
+        assert_equal(limiter.allow("user-1"), false)
+        assert_equal(limiter.allow("user-2"), true)

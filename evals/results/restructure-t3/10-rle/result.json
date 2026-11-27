@@ -1,0 +1,74 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 18,
+      "passed": 18,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/testing.md"
+    ],
+    "bash": 9,
+    "hd": {
+      "new": 1,
+      "help": 2,
+      "file": 1,
+      "check": 4,
+      "test": 3,
+      "fmt": 2,
+      "lint": 3
+    },
+    "denied": [
+      "Bash: for f in hd.toml src/lib.hd tests/rle.hd; do echo \"== $f\"; cat \"$f\"; done; grep -n \"Run\\|debug\\|Debug\" /dev/null; hd help check | head -20"
+    ],
+    "diagnostic_codes": {
+      "syntax-error": 1
+    },
+    "failing_checks": 1,
+    "turns": 26,
+    "cost_usd": 0.02386521,
+    "duration_s": 73,
+    "tokens": 787986,
+    "final_message": "The `rle` package is written and passes `hd check --tests`, `hd test` (18 passed), `hd fmt --check` and `hd lint`.\n\n**Layout**\n\n- `src/rle.hd` holds the implementation and the unit tests.\n  - `pub struct Run` has public `value: i32` and `count: usize`, with `@derive(Eq, Debug)`.\n  - `encode` produces maximal runs in one pass. An empty list gives `[]`.\n  - `decode` expands each run `count` times.\n- `src/lib.hd` re-exports `Run`, `encode` and `decode` from the package root. I replaced the scaffold's sample `greet` with this.\n- `tests/rle.hd` is a small integration test through the package root. I replaced the scaffold's `greet` test with it.\n\n**Tests**\n\n- Examples cover the empty list, one value, equal values, a value returning after a run, negatives, a 1000-element run, a run with count 0, and `==` and `debug` on `Run`.\n- An `it_each` table covers three fixed examples, checking both directions.\n- Property tests:\n  - `decode(encode(xs)) == xs` over generated `List[i32]`.\n  - The same round trip over lists of small values, which produce long runs.\n  - Encoding gives maximal runs (no empty run, neighbours differ) whose counts sum to the input length.\n  - Re-encoding any generated run list yields a maximal list that decodes to the same values. When the input runs are already maximal, it also returns them unchanged.\n\n**Notes**\n\n- `hd check` first reported a syntax error: a multi-statement closure inside a call argument list. I moved the assertion into a helper function.\n- `hd lint ",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

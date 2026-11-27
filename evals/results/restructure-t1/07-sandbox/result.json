@@ -1,0 +1,105 @@
+{
+  "task": "07-sandbox",
+  "package": "linecount",
+  "scenario": "sandboxed program",
+  "selling_points": [
+    "scoped capability grants",
+    "minimal capabilities"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 13,
+      "passed": 13,
+      "failed": []
+    },
+    "hidden": {},
+    "runs": [
+      {
+        "args": [
+          "data/a.txt",
+          "data/b.txt"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "3 data/a.txt\n1 data/b.txt\n4 total\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "data/a.txt",
+          "hd.toml"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "3 data/a.txt\n3 total\n",
+        "stderr": "linecount: hd.toml: access to hd.toml is not granted\n"
+      },
+      {
+        "args": [
+          "data/nope.txt"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "0 total\n",
+        "stderr": "linecount: data/nope.txt: not found: data/nope.txt\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "minimal-caps",
+        "desc": "[capabilities] grants only Console, Args and FsRead",
+        "ok": true
+      },
+      {
+        "id": "scoped-fsread",
+        "desc": "FsRead scoped to data/",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/files-and-directories.md",
+      "scenarios/cli-tool.md",
+      "design/capabilities.md",
+      "reference/packages.md",
+      "design/testing.md"
+    ],
+    "bash": 13,
+    "hd": {
+      "help": 2,
+      "new": 1,
+      "check": 4,
+      "test": 3,
+      "run": 1,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: ls -la && S=.claude/skills/hd-lang/reference/std-index.txt && grep -nE \"lines|eprintln|ExitCode|Args|read_text|args\\(|FsError|count\" $S | head -80 && hd help new 2>&1 | head -30",
+      "Bash: mkdir -p data && printf 'alpha\\nbeta\\ngamma\\n' > data/three.txt && : > data/empty.txt && ls -la data tests && cat tests/*.hd"
+    ],
+    "diagnostic_codes": {
+      "unknown-trait": 4,
+      "missing-requirement": 1
+    },
+    "failing_checks": 1,
+    "turns": 34,
+    "cost_usd": 0.028559730000000005,
+    "duration_s": 67,
+    "tokens": 1067756,
+    "final_message": "The `linecount` package is in the current directory, and `hd check --tests` and `hd test` both pass (13 tests).\n\n**Files**\n- `hd.toml`: capabilities are `Console = true`, `Args = true`, and `FsRead = [\"data/\"]`. Clock and Random from the generated template are removed. `[dev-capabilities]` has `Process = true` so the integration tests can run the built program.\n- `src/main.hd`: `count_lines` returns `text.lines().len()`. `main!` reads each argument with `read_text!(Path(name))`, prints `<lines> <file>`, and on failure prints `linecount: <file>: <reason>` to stderr and skips the file. It prints `<total> total` at the end and exits 1 if any file was skipped, otherwise 0.\n- `tests/linecount.hd`: integration tests that run the built binary against the real grants. They cover counting, a missing file, refused paths (`hd.toml`, `data/../hd.toml`, `/etc/hosts`), and zero files.\n- `data/three.txt` (3 lines) and `data/empty.txt` (0 lines) are fixtures for those tests.\n- Unit tests in `src/main.hd` use `MemoryFs`, `ScriptedArgs` and `MemoryConsole`.\n\n**Checks**\n- `hd run -- data/three.txt data/empty.txt data/nope.txt ../hd.toml` prints the two counts, then the two errors on stderr, then `3 total`, and exits 1. The `..` path is refused by the grant.\n- `hd fmt` ran and reformatted the test files. `hd test` still passes after it.\n\n**Choices to review**\n- Line counting: a final line without a newline counts as a line, so `\"a\"` is 1 and `\"a\\nb\"` is 2. This differs from `wc -l`, which would ",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

@@ -1,0 +1,2 @@
+## The bank library: accounts that hold cents and move them between each other.
+pub use self.account.{Account, open, transfer}

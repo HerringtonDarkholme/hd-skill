@@ -1,0 +1,92 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 10,
+      "passed": 10,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": true
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/concurrency.md",
+      "design/effects.md",
+      "design/testing.md",
+      "design/errors.md"
+    ],
+    "bash": 8,
+    "hd": {
+      "help": 1,
+      "new": 2,
+      "doc": 1,
+      "check": 3,
+      "test": 3,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: hd new --lib --vcs none . 2>&1; echo \"exit $?\"; find . -path ./.claude -prune -o -type f -print; cat hd.toml 2>/dev/null; S=.claude/skills/hd-lang/reference/std-index.txt; grep -n -i -E \"Backoff"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 19,
+    "cost_usd": 0.026360660000000005,
+    "duration_s": 74,
+    "tokens": 694603,
+    "final_message": "The `quotes` package is in the current directory, and `hd check --tests` and `hd test` both pass (10 tests, 0 failures). I didn't commit anything, since the directory isn't a git repository.\n\n- **`src/quotes.hd`** has `QuoteError` (`@derive(Eq, Debug)` and `@error`), the `Quotes` trait, and `order_total!`.\n- **Retries:** each sku runs `retry(Backoff { attempts: 3, initial: 10ms, factor: 1, max: 10ms })`, so it gets 3 total attempts with 10 ms between them.\n- **Concurrency:** `map_join!(skus, 4, ...)` quotes at most 4 skus at once and returns results in list order. The total then walks those results and returns the first error, so the first failing sku in list order wins. An empty list totals 0.\n- **`src/lib.hd`** re-exports `Quotes`, `QuoteError` and `order_total`, so consumers can import the package root. I replaced the scaffold's `greet` sample with this.\n- **Tests** cover the empty order, summing, more than 4 skus, retry success, 3-attempt give-up for busy and unknown skus, first-failure ordering, a failing sku not stopping the others, the 20 ms virtual-clock wait, and `==` and debug output.\n\nTwo things to know:\n\n- **The 4-in-flight limit is not tested.** The `Quotes` trait has no row, so a fake cannot suspend and I could not observe concurrency. The limit is enforced by `map_join!`, but nothing in the tests verifies it.\n- **One test bug was mine.** The first draft reused one fake across two calls, so the second call saw an exhausted retry counter. I split it into two fake",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

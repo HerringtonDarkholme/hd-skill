@@ -1,0 +1,84 @@
+{
+  "task": "11-calc",
+  "package": "calc",
+  "scenario": "parser and interpreter",
+  "selling_points": [
+    "recursive enums",
+    "box",
+    "@error",
+    "match"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 27,
+      "passed": 27,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 20,
+      "passed": 20,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "tree-enum",
+        "desc": "a recursive enum for the syntax tree (boxed children)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "CalcError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "table-test",
+        "desc": "table tests with it_each",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "scenarios/parser.md"
+    ],
+    "bash": 11,
+    "hd": {
+      "help": 3,
+      "new": 1,
+      "check": 5,
+      "file": 1,
+      "test": 3,
+      "fmt": 6,
+      "lint": 3
+    },
+    "denied": [
+      "Bash: rm -f src/lib.hd tests/calc.hd && cat > src/lib.hd <<'EOF'\npub use self.calc.{CalcError, eval}\nEOF\ncat > tests/calc.hd <<'EOF'\nuse pkg.{eval, CalcError}\nuse std.testing.assert_equal\n\nit(\"evaluat",
+      "Bash: sed -n 61p src/calc.hd && sed -i '' '61s/let mut i/let i/' src/calc.hd && hd fmt src/calc.hd && hd fmt --check; echo \"fmt $?\"; hd lint --format json; hd check --tests --format json && hd test --"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 20,
+    "cost_usd": 0.03196977,
+    "duration_s": 113,
+    "tokens": 750310,
+    "final_message": "The `calc` library is in place: `hd check --tests` reports no errors or warnings, `hd test` passes 27 of 27, `hd lint` is clean, and `hd fmt --check` passes.\n\n**Files**\n- `src/calc.hd` has `CalcError`, `eval`, and the lexer, parser and evaluator, with the unit tests in a `tests:` block.\n- `src/lib.hd` re-exports `CalcError` and `eval` as the package's public interface.\n- `tests/calc.hd` is an integration test that uses the public API.\n- `hd.toml` and the `hd new --lib` scaffold were created in this directory. It is not a git repository, so nothing was committed.\n\n**Design**\n- The lexer produces tokens with byte offsets. Invalid bytes and numbers that overflow `i64` become a `Bad` token, and lexing stops there. The parser then reports the first token the grammar rejects, so `\"1 2 $\"` gives `Unexpected(2)`, not the `$`.\n- The parser is recursive descent (`expr → term → unary → primary`), building a tree of `Expr` values. Division by zero is checked only after the whole input parses, so syntax errors win over `DivideByZero`.\n\n**Choices the spec did not cover**\n- **Overflow wraps.** The enum has only the two specified variants, and hd panics on overflow by default. Arithmetic uses `wrapping_*`, and `MIN / -1` wraps to `MIN`.\n- **`i64::MIN` cannot be written.** `-9223372036854775808` fails because the magnitude does not fit `i64`, so it reports `Unexpected(1)`. Fixing this means lexing magnitudes as `u64`, which I did not do.\n\nI hit two permission denials: one for a combined Bash ",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

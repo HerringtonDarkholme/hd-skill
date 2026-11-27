@@ -1,0 +1,137 @@
+use std.encoding.Deserialize
+use std.encoding.json.{JsonError, decode}
+use std.fs.{FsError, FsRead, FsWrite, MemoryFs, read_text, write_text}
+use std.host.{Env, HostError, ScriptedEnv, env_as}
+use std.path.Path
+use std.testing.assert_equal
+use std.validate.{Validate, ValidationError, length, range}
+
+## The service settings, read from a JSON file and checked by their rules.
+@derive(Deserialize, Validate, Eq, Debug)
+pub struct Config:
+    @length(1, 253)
+    pub host: string
+    @range(1024, 65535)
+    pub port: i32
+    @range(1, 64)
+    pub workers: i32 = 4
+
+@error
+pub enum ConfigError:
+    @error("cannot read the config file")
+    Read(
+        @from
+        error: FsError,
+    )
+    @error("the config file is not valid JSON: $error")
+    Parse(
+        @from
+        error: JsonError,
+    )
+    @error("$error")
+    Environment(
+        @from
+        error: HostError,
+    )
+    @error("$error")
+    Invalid(
+        @from
+        error: ValidationError,
+    )
+
+## Loads the config at `path`. `APP_PORT`, when set, replaces the port;
+## then the rules on the fields are checked.
+pub fn load_config!(path: string) -> Result[Config, ConfigError] $ FsRead + Env:
+    text := read_text!(Path(path))?
+    config := decode::[Config](text)?
+    configured := match env_as::[i32]("APP_PORT")?:
+        .Some(port) => Config { ...config, port: port }
+        .None => config
+    .Ok(configured.validated()?)
+
+# Writes `text` as config.json in a fresh in-memory file system.
+fn file_with!(text: string) -> *mut MemoryFs:
+    fs := MemoryFs::new()
+    $.with(FsWrite=fs):
+        _ := write_text!(Path("config.json"), text)
+    fs
+
+# Loads config.json from `fs` with the environment `env`.
+fn load!(fs: *mut MemoryFs, env: Map[string, string]) -> Result[Config, ConfigError]:
+    $.with(FsRead=fs, Env=box(ScriptedEnv::new(env))):
+        return load_config!("config.json")
+
+fn kind(result: Result[Config, ConfigError]) -> string:
+    match result:
+        .Ok(_) => "ok"
+        .Err(ConfigError.Read(_)) => "read"
+        .Err(ConfigError.Parse(_)) => "parse"
+        .Err(ConfigError.Environment(_)) => "environment"
+        .Err(ConfigError.Invalid(_)) => "invalid"
+
+# Checks that the file with text `json` gives the outcome named `expected`.
+fn check_json!(json: string, expected: string) -> void:
+    assert_equal(kind(load!(file_with!(json), {})), expected)
+
+tests:
+    use std.testing.it_each
+
+    it("reads the file and defaults workers to 4"):
+        fs := file_with!("{\"host\": \"localhost\", \"port\": 8080}")
+        config := load!(fs, {}).ok().expect("a valid config")
+        assert_equal(config, Config { host: "localhost", port: 8080, workers: 4 })
+
+    it("keeps workers from the file"):
+        fs := file_with!("{\"host\": \"localhost\", \"port\": 8080, \"workers\": 8}")
+        config := load!(fs, {}).ok().expect("a valid config")
+        assert_equal(config.workers, 8)
+
+    it("lets APP_PORT replace the port"):
+        fs := file_with!("{\"host\": \"localhost\", \"port\": 8080}")
+        config := load!(fs, { "APP_PORT": "9000" }).ok().expect("a valid config")
+        assert_equal(config.port, 9000)
+        assert_equal(config.host, "localhost")
+
+    it("reports a missing file as Read"):
+        assert_equal(kind(load!(MemoryFs::new(), {})), "read")
+
+    it("reports text that is not JSON as Parse"):
+        check_json!("{\"host\": \"localhost\"", "parse")
+
+    it("reports a missing required field as Parse"):
+        check_json!("{\"host\": \"localhost\"}", "parse")
+
+    it("reports a non-integer APP_PORT as Environment"):
+        fs := file_with!("{\"host\": \"localhost\", \"port\": 8080}")
+        assert_equal(kind(load!(fs, { "APP_PORT": "http" })), "environment")
+
+    it("reports an overridden port outside the range as Invalid"):
+        fs := file_with!("{\"host\": \"localhost\", \"port\": 8080}")
+        assert_equal(kind(load!(fs, { "APP_PORT": "80" })), "invalid")
+
+    it_each(
+        "checks the port range",
+        [("1023", "invalid"), ("1024", "ok"), ("65535", "ok"), ("65536", "invalid")],
+        body=fn!(row: (string, string)):
+            check_json!("{\"host\": \"localhost\", \"port\": ${row._0}}", row._1)
+    )
+
+    it_each(
+        "checks the host length",
+        [("", "invalid"), ("h", "ok"), ("h".repeat(253), "ok"), ("h".repeat(254), "invalid")],
+        body=fn!(row: (string, string)):
+            check_json!("{\"host\": \"${row._0}\", \"port\": 8080}", row._1)
+    )
+
+    it_each(
+        "checks the worker range",
+        [("0", "invalid"), ("1", "ok"), ("64", "ok"), ("65", "invalid")],
+        body=fn!(row: (string, string)):
+            check_json!("{\"host\": \"localhost\", \"port\": 8080, \"workers\": ${row._0}}", row._1)
+    )
+
+    it("compares configs by value and prints them"):
+        a := Config { host: "a", port: 2000, workers: 1 }
+        assert_equal(a, Config { host: "a", port: 2000, workers: 1 })
+        assert(a != Config { host: "a", port: 2001, workers: 1 })
+        assert_equal(debug(a), "Config { host: \"a\", port: 2000, workers: 1 }")

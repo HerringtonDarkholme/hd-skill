@@ -1,0 +1,12 @@
+[package]
+name = "linecount"
+
+# What `main` uses: arguments, standard output and error, and reads under data/ only.
+[capabilities]
+Args = true
+Console = true
+FsRead = ["data/"]
+
+# Integration tests run the built program, so they need to start it.
+[dev-capabilities]
+Process = ["linecount"]

@@ -1,0 +1,9 @@
+use pkg.{Account, open, transfer}
+use std.testing.assert_equal
+
+it("a transfer between two accounts from the outside"):
+    let mut rent = open(90000)
+    let mut savings = open(0)
+    transfer(&mut rent, &mut savings, 25000)
+    assert_equal(rent.balance(), 65000)
+    assert_equal(savings.balance(), 25000)

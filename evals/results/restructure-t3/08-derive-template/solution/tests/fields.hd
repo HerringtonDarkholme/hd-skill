@@ -1,0 +1,14 @@
+use pkg.fields.FieldNames
+use std.testing.assert_equal
+
+@derive(FieldNames)
+struct Customer:
+    name: string
+    email: string
+    vip: bool
+
+it("derives in an integration test module"):
+    assert_equal(
+        Customer { name: "ada", email: "a@example.com", vip: true }.field_names(),
+        ["name", "email", "vip"],
+    )

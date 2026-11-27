@@ -1,0 +1,73 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 25,
+      "passed": 25,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md"
+    ],
+    "bash": 13,
+    "hd": {
+      "help": 4,
+      "new": 2,
+      "check": 4,
+      "test": 4,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: hd new --lib --vcs none . 2>&1; ls -la; cat hd.toml 2>/dev/null; find src tests -type f 2>/dev/null | xargs -I{} sh -c 'echo \"== {}\"; cat \"{}\"'",
+      "Bash: hd fmt 2>&1 | tail -5; hd lint 2>&1 | tail -20; hd check --tests 2>&1 | tail -3; hd test 2>&1 | tail -3; rm -rf /tmp/rle-mut && mkdir /tmp/rle-mut && cp -R hd.toml src tests /tmp/rle-mut/ && sed"
+    ],
+    "diagnostic_codes": {
+      "syntax-error": 1
+    },
+    "failing_checks": 1,
+    "turns": 26,
+    "cost_usd": 0.02210642,
+    "duration_s": 63,
+    "tokens": 756743,
+    "final_message": "The `rle` library is in place. `hd check --tests` passes, `hd test` reports 25 passed, 0 failed, and `hd fmt` and `hd lint` ran clean.\n\n**Layout.** `hd new --lib` created the package. The `hd` library entry point is `src/lib.hd`, so it only re-exports the public API from `src/rle.hd`, which holds the implementation and its tests. Callers write `use pkg.{Run, encode, decode}` inside the package, or `dep.rle` from outside.\n\n- **`Run`**: `pub struct` with `pub value: i32` and `pub count: usize`, derived `Eq` and `Debug`.\n- **`encode`**: pops the last run and extends it when the value matches, otherwise starts a new run. It produces maximal runs with no empty run and no equal neighbours.\n- **`decode`**: expands each run `count` times. A run with count 0 decodes to nothing.\n\n**Tests** (in `src/rle.hd`, plus one integration test in `tests/rle.hd`):\n- Example cases: empty input, single element, repeated values, value changes, negative and extreme `i32` values, `Run` equality and debug output, and a table of encoding examples.\n- Round-trip properties: `decode(encode(xs)) == xs` for arbitrary `List[i32]`. Random `i32` lists rarely repeat a value, so a second property draws from a small alphabet (-2..=2) to exercise long runs.\n- Invariant properties: the output is canonical, counts sum to the input length, and the run count never exceeds the element count.\n- Canonical-input property: `encode(decode(runs)) == runs` for generated canonical run lists.\n\n**Not verified:** I tried a mutation",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

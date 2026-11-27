@@ -1,0 +1,100 @@
+{
+  "task": "07-sandbox",
+  "package": "linecount",
+  "scenario": "sandboxed program",
+  "selling_points": [
+    "scoped capability grants",
+    "minimal capabilities"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 9,
+      "passed": 9,
+      "failed": []
+    },
+    "hidden": {},
+    "runs": [
+      {
+        "args": [
+          "data/a.txt",
+          "data/b.txt"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "3 data/a.txt\n1 data/b.txt\n4 total\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "data/a.txt",
+          "hd.toml"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "3 data/a.txt\n3 total\n",
+        "stderr": "linecount: hd.toml: access to hd.toml is not granted\n"
+      },
+      {
+        "args": [
+          "data/nope.txt"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "0 total\n",
+        "stderr": "linecount: data/nope.txt: not found: data/nope.txt\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "minimal-caps",
+        "desc": "[capabilities] grants only Console, Args and FsRead",
+        "ok": true
+      },
+      {
+        "id": "scoped-fsread",
+        "desc": "FsRead scoped to data/",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/files-and-directories.md",
+      "scenarios/cli-tool.md",
+      "design/capabilities.md",
+      "reference/packages.md",
+      "design/testing.md"
+    ],
+    "bash": 4,
+    "hd": {
+      "check": 3,
+      "test": 2,
+      "run": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {
+      "unknown-trait": 3,
+      "missing-requirement": 1
+    },
+    "failing_checks": 1,
+    "turns": 20,
+    "cost_usd": 0.02223789,
+    "duration_s": 65,
+    "tokens": 470816,
+    "final_message": "The `linecount` package is in this directory. `hd check --tests`, `hd test` (9 passed), `hd fmt` and `hd lint` all pass.\n\n**Layout**\n- `hd.toml`: the package manifest.\n- `src/main.hd`: the program and its unit tests.\n- `tests/linecount.hd`: integration tests that run the built program.\n- `data/three.txt` and `data/empty.txt`: fixtures for the integration tests.\n\n**Sandbox**\n- `main` uses `$ Args + Console + FsRead`. Only `FsRead = [\"data/\"]` is granted, so reads outside `data/` are refused, including `../` paths. The run prints `linecount: ../hd.toml: access to ../hd.toml is not granted` and exits 1.\n- Every other capability is set to `false` except `Process`, which is only in `[dev-capabilities]`. A `false` in `[capabilities]` would also deny the integration tests' `hd_run!`.\n\n**Choices I made**\n- **Line count:** I used `text.lines().len()`. A last line without a newline still counts, so `\"a\"` is 1 line and `\"a\\nb\"` is 2. This differs from `wc -l`, which counts only newline characters.\n- **Output:** each file prints `<lines> <file>`, then `<total> total` on standard output. Errors go to standard error as `linecount: <file>: <reason>`.\n- **Exit status:** 1 if any file failed, otherwise 0. No file arguments prints `0 total` and exits 0.\n- **Setup:** I wrote the files directly rather than running `hd new`, because the directory was not empty.\n- **Formatting:** `hd fmt` reformatted one test in `src/main.hd` after I wrote it. Tests were re-run after that and still pass.\n\nNothing ",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

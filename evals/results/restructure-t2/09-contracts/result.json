@@ -1,0 +1,80 @@
+{
+  "task": "09-contracts",
+  "package": "bank",
+  "scenario": "invariants",
+  "selling_points": [
+    "require",
+    "ensure"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 19,
+      "passed": 19,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 6,
+      "passed": 6,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "require",
+        "desc": "preconditions with require",
+        "ok": true
+      },
+      {
+        "id": "ensure",
+        "desc": "postconditions with ensure",
+        "ok": true
+      },
+      {
+        "id": "no-raw-panic",
+        "desc": "no hand-written panic( for checks",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/contracts.md",
+      "reference/packages.md",
+      "design/testing.md"
+    ],
+    "bash": 10,
+    "hd": {
+      "new": 1,
+      "check": 3,
+      "test": 2,
+      "fmt": 3,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 21,
+    "cost_usd": 0.02466984,
+    "duration_s": 76,
+    "tokens": 676228,
+    "final_message": "The `bank` package is in the current directory. `hd check --tests` and `hd test` both pass (19 tests), and `hd lint` and `hd fmt --check` are clean.\n\n**Layout**\n- `src/account.hd` holds `Account`, `open`, `transfer`, and the `balance`/`deposit`/`withdraw` methods. The balance field is private.\n- `src/lib.hd` re-exports `Account`, `open` and `transfer`, so callers write `use dep.bank.{Account, open, transfer}`.\n- `tests/bank.hd` is a small integration test through the public API.\n\n**Checks**\n- Caller errors use `require`, so they stop the program in debug and test builds and are skipped in release. They cover a negative opening balance, a non-positive deposit or withdrawal or transfer, an overdraft, and a deposit or transfer that would overflow `i64`.\n- Each method states its guarantee with `ensure`. Deposit and withdraw check the exact change to the balance and that it stays non-negative. Transfer checks that the amount leaving the source is the amount arriving at the target, which keeps the total.\n- The tests include `expect_panic=\"explicit-panic\"` cases for each refused call, plus two property tests: deposit-then-withdraw restores the balance, and a transfer keeps the total.\n\n**Decision for you:** `ensure` runs in release builds too, per the hd docs. So the invariant checks cost a few comparisons in release, which goes against \"cost nothing in release\". The caller-error checks are free in release as asked. If you want the invariant checks gone from release too, I can drop t",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

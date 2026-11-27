@@ -1,0 +1,74 @@
+use std.contract.require
+
+## A line that cannot be summed, with its 1-based line number.
+@derive(Eq, Debug)
+@error
+pub enum SumError:
+    @error("line $line: missing column")
+    MissingColumn(line: usize)
+    @error("line $line: not a number: $text")
+    NotANumber(line: usize, text: string)
+
+## Sums the value column for each key, sorted by key.
+pub fn summarize(
+    text: string,
+    key: usize,
+    value: usize,
+    skip_header: bool,
+) -> Result[List[(string, i64)], SumError]:
+    require("columns are numbered from 1"):
+        key >= 1 && value >= 1
+    let mut totals: Map[string, i64] = {}
+    let number = 0
+    for line in text.lines():
+        number += 1
+        if skip_header && number == 1:
+            continue
+        if line.trim().is_empty():
+            continue
+        fields := line.split(",")
+        if fields.len() < key || fields.len() < value:
+            return .Err(.MissingColumn(number))
+        name := fields[key - 1].trim()
+        raw := fields[value - 1].trim()
+        let .Ok(amount) = raw.parse::[i64]() else:
+            return .Err(.NotANumber(number, raw))
+        totals[name] = totals.get(name).unwrap_or(0) + amount
+    .Ok(totals.entries().sorted_by_key(fn(pair): pair._0))
+
+tests:
+    it("sums the value column for each key, sorted by key"):
+        assert_equal(summarize("tea,3\njam,2\ntea,4", 1, 2, false), .Ok([("jam", 2), ("tea", 7)]))
+
+    it("groups by any column and sums any column"):
+        assert_equal(summarize("1,tea,4\n2,jam,9", 2, 3, false), .Ok([("jam", 9), ("tea", 4)]))
+
+    it("trims spaces from keys and values"):
+        assert_equal(summarize(" tea , 3 \ntea,4", 1, 2, false), .Ok([("tea", 7)]))
+
+    it("reads signed values"):
+        assert_equal(summarize("a,-5\na,2", 1, 2, false), .Ok([("a", -3)]))
+
+    it("ignores blank lines and counts them in line numbers"):
+        assert_equal(summarize("\ntea,1\n   \n\ntea,x", 1, 2, false), .Err(.NotANumber(5, "x")))
+
+    it("skips the first line when asked"):
+        assert_equal(summarize("item,amount\ntea,1", 1, 2, true), .Ok([("tea", 1)]))
+
+    it("counts the header line in line numbers when it is kept"):
+        assert_equal(summarize("item,amount\ntea,1", 1, 2, false), .Err(.NotANumber(1, "amount")))
+
+    it("reports a line with too few columns"):
+        assert_equal(summarize("a,1\nb", 1, 2, false), .Err(.MissingColumn(2)))
+
+    it("reports a value that is not an integer, trimmed"):
+        assert_equal(summarize("a,1\nb, 2.5 ", 1, 2, false), .Err(.NotANumber(2, "2.5")))
+
+    it("gives an empty result for empty input"):
+        assert_equal(summarize("", 1, 2, false), .Ok([]))
+
+    it("describes each error with its line"):
+        missing := SumError.MissingColumn(3)
+        bad := SumError.NotANumber(4, "x")
+        assert_equal("${missing}", "line 3: missing column")
+        assert_equal("${bad}", "line 4: not a number: x")

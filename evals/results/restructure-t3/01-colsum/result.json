@@ -1,0 +1,121 @@
+{
+  "task": "01-colsum",
+  "package": "colsum",
+  "scenario": "CLI over standard input",
+  "selling_points": [
+    "derive Cli",
+    "@error",
+    "Result"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 16,
+      "passed": 16,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [
+          "--skip-header"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "a,1\nb,7\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 2: not an integer: zz\n"
+      },
+      {
+        "args": [
+          "--key",
+          "2",
+          "--value",
+          "3"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "x,-2\ny,8\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 1: missing column\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "derive-cli",
+        "desc": "options parsed with @derive(Cli)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "SumError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "cli.md",
+      "scenarios/cli-tool.md",
+      "scenarios/text-records.md",
+      "reference/packages.md",
+      "scenarios/stdin-filter.md",
+      "design/contracts.md"
+    ],
+    "bash": 9,
+    "hd": {
+      "new": 1,
+      "check": 5,
+      "test": 2,
+      "run": 5,
+      "fmt": 2,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: rm tests/colsum.hd && rmdir tests && cat > hd.toml <<'EOF'\n[package]\nname = \"colsum\"\n\n[capabilities]\nArgs = true\nConsole = true\nConsoleInput = true\nEOF\nhd check --format json --tests; echo \"exit"
+    ],
+    "diagnostic_codes": {
+      "unknown-name": 1,
+      "missing-capability": 2
+    },
+    "failing_checks": 2,
+    "turns": 25,
+    "cost_usd": 0.02443288,
+    "duration_s": 63,
+    "tokens": 686432,
+    "final_message": "The `colsum` package is in the current directory. `hd check --tests` and `hd test` both pass (16 tests), and `hd fmt --check` and `hd lint` are clean.\n\n**Files**\n- `hd.toml`: package `colsum`, granting only `Args`, `Console` and `ConsoleInput`.\n- `src/sum.hd`: the public `SumError` enum (`MissingColumn(line: usize)`, `NotANumber(line: usize, text: string)`, with `@derive(Eq, Debug)` and `@error` messages) and `pub fn summarize(...)` with the signature you specified. It has 11 tests.\n- `src/main.hd`: a `@derive(Cli)` options struct (`--key`, `--value`, `--skip-header`, defaults 1, 2, false) and `main!`. It reads stdin, prints `key,total` lines, and on error prints `colsum: line N: ...` to stderr with exit 1 and nothing on stdout. It has 5 tests.\n\n**Checked end to end with `hd run --`:** normal sums, `--skip-header`, a non-integer value, a short line, and `--key 0`.\n\n**Choices I made**\n- `--key 0` or `--value 0` is a usage error: message `colsum: columns start at 1`, exit 2. `summarize` has a `require` for the same rule, which is skipped in release builds.\n- Argument errors and `--help` come from `std.cli` and exit 2 and 0 respectively. The spec did not cover these.\n- Values are read as `i64` with `parse`, so a leading `+` is accepted.\n- The `i64` sum panics on overflow rather than reporting an error. The spec did not cover this.\n\n**Needs your action:** I could not delete `tests/colsum.hd`. The scaffold's integration test expected the old \"hello, world\" program and failed. A sh",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

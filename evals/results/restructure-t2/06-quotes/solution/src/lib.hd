@@ -1,0 +1,2 @@
+## The quotes library: price an order through a caller-supplied `Quotes` service.
+pub use self.quotes.{Quotes, QuoteError, order_total}

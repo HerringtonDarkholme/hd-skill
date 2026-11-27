@@ -1,0 +1,16 @@
+use pkg.fields.FieldNames
+use std.testing.assert_equal
+
+## An order, used to check that the derive works in another module.
+@derive(FieldNames)
+pub struct Order:
+    pub sku: string
+    pub quantity: u32
+    pub note: string?
+
+tests:
+    it("derives in a module other than fields.hd"):
+        assert_equal(
+            Order { sku: "tea", quantity: 2, note: .None }.field_names(),
+            ["sku", "quantity", "note"],
+        )

@@ -1,0 +1,140 @@
+use std.encoding.Deserialize
+use std.encoding.json.{JsonError, decode}
+use std.fs.{FsError, FsRead, FsWrite, MemoryFs, read_text, write_text}
+use std.host.{Env, HostError, ScriptedEnv, env_as}
+use std.path.Path
+use std.validate.{Validate, ValidationError, length, range}
+
+## The service's settings: read from a JSON file, with `APP_PORT` overriding the port.
+@derive(Deserialize, Validate, Eq, Debug)
+pub struct Config:
+    @length(1, 253)
+    pub host: string
+    @range(1024, 65535)
+    pub port: i32
+    @range(1, 64)
+    pub workers: i32 = 4
+
+## Why a configuration could not be loaded.
+@error
+pub enum ConfigError:
+    @error("cannot read the config file: $error")
+    Read(
+        @from
+        error: FsError,
+    )
+    @error("the config file is not a valid Config: $error")
+    Parse(
+        @from
+        error: JsonError,
+    )
+    @error("$error")
+    Environment(
+        @from
+        error: HostError,
+    )
+    @error("$error")
+    Invalid(
+        @from
+        error: ValidationError,
+    )
+
+## Reads the JSON file at `path`, lets `APP_PORT` replace the port, then checks the rules.
+pub fn load_config!(path: string) -> Result[Config, ConfigError] $ FsRead + Env:
+    config := decode::[Config](read_text!(Path(path))?)?
+    env_port := env_as::[i32]("APP_PORT")?
+    overridden := Config { ...config, port: env_port.unwrap_or(config.port) }
+    .Ok(overridden.validated()?)
+
+tests:
+    # Writes `text` as config.json, then loads it with the given environment.
+    fn load_with!(text: string, env: Map[string, string]) -> Result[Config, ConfigError]:
+        fs := MemoryFs::new()
+        $.with(FsWrite=fs):
+            _ := write_text!(Path("config.json"), text)
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new(env))):
+            return load_config!("config.json")
+
+    # The kind of error, or "ok", so each test names the variant it expects.
+    fn kind(result: Result[Config, ConfigError]) -> string:
+        match result:
+            .Ok(_) => "ok"
+            .Err(.Read(_)) => "read"
+            .Err(.Parse(_)) => "parse"
+            .Err(.Environment(_)) => "environment"
+            .Err(.Invalid(_)) => "invalid"
+
+    it("reads host and port, with workers defaulting to 4"):
+        config := load_with!("{\"host\": \"example.com\", \"port\": 8080}", {})
+            .ok()
+            .expect("a config")
+        assert_equal(config, Config { host: "example.com", port: 8080, workers: 4 })
+
+    it("reads an explicit workers value"):
+        config := load_with!("{\"host\": \"a\", \"port\": 2000, \"workers\": 16}", {})
+            .ok()
+            .expect("a config")
+        assert_equal(config.workers, 16)
+
+    it("lets APP_PORT replace the file's port"):
+        config := load_with!("{\"host\": \"a\", \"port\": 2000}", { "APP_PORT": "9000" })
+            .ok()
+            .expect("a config")
+        assert_equal(config.port, 9000)
+
+    it("reports a missing file as Read"):
+        fs := MemoryFs::new()
+        $.with(FsRead=fs, Env=box(ScriptedEnv::new({}))):
+            assert_equal(kind(load_config!("missing.json")), "read")
+
+    it("reports text that is not JSON as Parse"):
+        assert_equal(kind(load_with!("not json", {})), "parse")
+
+    it("reports a missing required host as Parse"):
+        assert_equal(kind(load_with!("{\"port\": 8080}", {})), "parse")
+
+    it("reports a non-integer APP_PORT as Environment"):
+        assert_equal(
+            kind(load_with!("{\"host\": \"a\", \"port\": 8080}", { "APP_PORT": "http" })),
+            "environment",
+        )
+
+    it("reports an overridden port that breaks the rule as Invalid"):
+        assert_equal(
+            kind(load_with!("{\"host\": \"a\", \"port\": 8080}", { "APP_PORT": "80" })),
+            "invalid",
+        )
+
+    it("accepts a host of 1 and of 253 characters"):
+        assert_equal(kind(load_with!("{\"host\": \"a\", \"port\": 8080}", {})), "ok")
+        long := "a".repeat(253)
+        assert_equal(kind(load_with!("{\"host\": \"$long\", \"port\": 8080}", {})), "ok")
+
+    it("rejects an empty host and one of 254 characters"):
+        assert_equal(kind(load_with!("{\"host\": \"\", \"port\": 8080}", {})), "invalid")
+        long := "a".repeat(254)
+        assert_equal(kind(load_with!("{\"host\": \"$long\", \"port\": 8080}", {})), "invalid")
+
+    it("accepts the port bounds 1024 and 65535, and rejects 1023 and 65536"):
+        assert_equal(kind(load_with!("{\"host\": \"a\", \"port\": 1024}", {})), "ok")
+        assert_equal(kind(load_with!("{\"host\": \"a\", \"port\": 65535}", {})), "ok")
+        assert_equal(kind(load_with!("{\"host\": \"a\", \"port\": 1023}", {})), "invalid")
+        assert_equal(kind(load_with!("{\"host\": \"a\", \"port\": 65536}", {})), "invalid")
+
+    it("accepts the workers bounds 1 and 64, and rejects 0 and 65"):
+        assert_equal(
+            kind(load_with!("{\"host\": \"a\", \"port\": 8080, \"workers\": 1}", {})),
+            "ok",
+        )
+        assert_equal(
+            kind(load_with!("{\"host\": \"a\", \"port\": 8080, \"workers\": 64}", {})),
+            "ok",
+        )
+        assert_equal(
+            kind(load_with!("{\"host\": \"a\", \"port\": 8080, \"workers\": 0}", {})),
+            "invalid",
+        )
+        assert_equal(
+            kind(load_with!("{\"host\": \"a\", \"port\": 8080, \"workers\": 65}", {})),
+            "invalid",
+        )

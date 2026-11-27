@@ -1,0 +1,72 @@
+use std.contract.require
+
+# A failure names the 1-based line it came from; the count includes headers and blank lines.
+@error
+@derive(Eq, Debug)
+pub enum SumError:
+    @error("line $line: missing column")
+    MissingColumn(line: usize)
+    @error("line $line: not an integer: $text")
+    NotANumber(line: usize, text: string)
+
+## Sums the value column of each row, grouped by the key column.
+## Columns are 1-based; blank lines are skipped; `skip_header` ignores line 1.
+## The result has one (key, total) pair per key, sorted by key.
+pub fn summarize(
+    text: string,
+    key: usize,
+    value: usize,
+    skip_header: bool,
+) -> Result[List[(string, i64)], SumError]:
+    require("columns are 1-based"):
+        key >= 1 && value >= 1
+    let mut totals: Map[string, i64] = {}
+    for (index, raw) in text.lines().iter().enumerate():
+        number := index + 1
+        if (skip_header && number == 1) || raw.trim() == "":
+            continue
+        fields := raw.split(",")
+        if key > fields.len() || value > fields.len():
+            return .Err(.MissingColumn(number))
+        name := fields[key - 1].trim()
+        amount_text := fields[value - 1].trim()
+        match amount_text.parse::[i64]():
+            .Ok(amount) => *totals.get_or_insert(name, 0) += amount
+            .Err(_) => return .Err(.NotANumber(number, amount_text))
+    .Ok(totals.entries().sorted_by_key(fn(entry): entry._0))
+
+tests:
+    it("sums the value column per key, sorted by key"):
+        assert_equal(summarize("b,2\na,1\nb,3\n", 1, 2, false), .Ok([("a", 1), ("b", 5)]))
+
+    it("uses the key and value columns it is given"):
+        assert_equal(summarize("1,x,9\n2,y,8\n", 2, 3, false), .Ok([("x", 9), ("y", 8)]))
+
+    it("trims spaces from keys and values and skips blank lines"):
+        assert_equal(summarize(" a , 1 \n\n   \na,2\n", 1, 2, false), .Ok([("a", 3)]))
+
+    it("adds signed values"):
+        assert_equal(summarize("a,-5\na,+2\nb,7\n", 1, 2, false), .Ok([("a", -3), ("b", 7)]))
+
+    it("ignores the first line when asked to skip the header"):
+        assert_equal(summarize("name,amount\na,1\n", 1, 2, true), .Ok([("a", 1)]))
+
+    it("reads the first line as data without skip_header"):
+        assert_equal(summarize("name,amount\na,1\n", 1, 2, false), .Err(.NotANumber(1, "amount")))
+
+    it("counts the header and blank lines in line numbers"):
+        assert_equal(summarize("h,h\n\na\n", 1, 2, true), .Err(.MissingColumn(3)))
+
+    it("reports a line with too few columns"):
+        assert_equal(summarize("a,1\nb\n", 1, 2, false), .Err(.MissingColumn(2)))
+
+    it("reports a value that is not an integer, trimmed"):
+        assert_equal(summarize("a,1\nb, x \n", 1, 2, false), .Err(.NotANumber(2, "x")))
+
+    it("gives an empty result for empty input"):
+        assert_equal(summarize("", 1, 2, false), .Ok([]))
+
+    it("compares and prints errors"):
+        assert_equal(SumError.MissingColumn(2), SumError.MissingColumn(2))
+        assert(SumError.MissingColumn(2) != SumError.MissingColumn(3))
+        assert_equal(debug(SumError.NotANumber(4, "x")), "SumError.NotANumber(line=4, text=\"x\")")

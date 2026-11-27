@@ -1,0 +1,74 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 5,
+      "passed": 5,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 2,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": true
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/derive.md",
+      "reference/packages.md",
+      "design/testing.md"
+    ],
+    "bash": 4,
+    "hd": {
+      "check": 2,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 17,
+    "cost_usd": 0.014435780000000002,
+    "duration_s": 30,
+    "tokens": 378961,
+    "final_message": "The `fields` package is in place and passes `hd check --tests`, `hd test` (5 passed), `hd fmt` and `hd lint`.\n\nUsers write `@derive(FieldNames)` on any struct and get its field names in declaration order. The trait is defined in `src/fields.hd` with a derive template, `impl[T] FieldNames for T by Structure:`, which walks the fields with a `Walker`. Nothing per-struct is needed.\n\nFiles:\n- `hd.toml`: package name `fields`.\n- `src/fields.hd`: the `FieldNames` trait, the template and a `tests:` block. The tests derive the trait on a struct defined in the same module, and check a multi-field struct, a one-field struct and an empty struct.\n- `src/shapes.hd`: a separate module that derives `FieldNames` on `Person`, `Circle` and `Empty`.\n- `tests/fields.hd`: an integration test that derives the trait on a struct in a test module.\n\nChoices I made:\n- The trait's name is `FieldNames` and the template lives in `src/fields.hd`, because the derive must sit in the trait's module (the docs' `misplaced-derivation` rule).\n- Users import the trait (`use pkg.fields.FieldNames` inside the package, `dep.fields` from outside) before deriving it. A derive needs the trait name in scope.\n- I did not add a `src/lib.hd`. The spec named only `src/fields.hd`, and `hd check` and `hd test` pass without it.\n- Enums are not covered. The template returns an empty list for an enum, since the walker reports no member names for variants. The spec asked for structs only, and I did not add a test for enums.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

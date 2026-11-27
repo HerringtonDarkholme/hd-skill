@@ -1,0 +1,79 @@
+{
+  "task": "12-lru",
+  "package": "lru",
+  "scenario": "stateful data structure",
+  "selling_points": [
+    "model-based property test",
+    "commands"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 11,
+      "passed": 11,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "model-test",
+        "desc": "a generated-operations test (it_prop / it_prop_with / commands)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 14,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 7,
+      "test": 6,
+      "file": 2,
+      "fmt": 4,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: D=.claude/skills/hd-lang/reference/std-index.txt; wc -l $D; grep -nE \"List\\.(remove|position|index|contains|insert|retain|first|last|pop|clear|len|get|push|slice|iter|find|any|set)\\b|Map\\.(get|i",
+      "Bash: cp src/lru.hd /tmp/lru_good.hd && sed 's/        touch(&mut self.order, index)\\n        .Some(value)//' src/lru.hd > /dev/null && python3 -c \"\nimport sys\np='src/lru.hd'\ns=open(p).read()\nold='   "
+    ],
+    "diagnostic_codes": {
+      "missing-let": 1,
+      "invalid-test-statement": 1,
+      "unknown-name": 2,
+      "unknown-type": 2
+    },
+    "failing_checks": 3,
+    "turns": 28,
+    "cost_usd": 0.03227046,
+    "duration_s": 100,
+    "tokens": 1049355,
+    "final_message": "The `lru` package is in the current directory. `hd check --tests` and `hd test` both pass: 11 tests, 10 examples and one model-based property.\n\n**Files**\n- `hd.toml`: the package manifest (`hd new --lib`).\n- `src/lru.hd`: the cache, with its tests in a `tests:` block at the end.\n- `src/lib.hd`: re-exports `Lru` and `new_lru`, so the package's public surface is those two names.\n\n**Design**\n- `order` is a `List[string]` with the least recent key first; `values` is a `Map[string, i64]`.\n- `get` on a hit moves the key to the end. On a miss it returns `.None` and changes nothing.\n- `put` inserts or updates, moves the key to the end, then evicts from the front while over capacity.\n- `len` returns the number of keys.\n- Each operation scans `order`, so it is O(capacity). That is simple and fine for small caches, but a doubly linked list with a key-to-node index would make `get` and `put` O(1).\n- Capacity 0 is handled: `put` stores the key and immediately evicts it, so the cache stays empty.\n\n**Tests**\n- Example tests cover: an empty cache, a basic hit, a miss changing nothing, updating a key without growing, a hit protecting a key from eviction, eviction order, a put refreshing recency, capacity 1, capacity 0, and reads not reinserting evicted keys.\n- The model test uses `commands` with `it_prop_with`. The generator picks a capacity from 0 to 4 and a history of up to 40 `Get` and `Put` operations over keys `a` to `d`. The model is a plain list of entries, least recent first. After ea",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

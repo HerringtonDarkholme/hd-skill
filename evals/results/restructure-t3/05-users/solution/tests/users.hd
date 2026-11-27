@@ -1,0 +1,7 @@
+use std.process.Command
+use std.testing.hd_run
+
+it("prints the renames and the missing-user error"):
+    let out = hd_run!(*Command::new("users"))
+    assert_equal(out.stdout, "renamed 1 to Ada Lovelace\nerror: no user 2\n")
+    assert_equal(out.status, 0)

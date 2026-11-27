@@ -1,0 +1,88 @@
+{
+  "task": "02-todos",
+  "package": "todos",
+  "scenario": "JSON in and out",
+  "selling_points": [
+    "derive Serialize/Deserialize",
+    "field defaults",
+    "property tests"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 18,
+      "passed": 18,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-serde",
+        "desc": "JSON through @derive(Serialize, Deserialize)",
+        "ok": true
+      },
+      {
+        "id": "field-default",
+        "desc": "done defaults with a field default",
+        "ok": true
+      },
+      {
+        "id": "prop-test",
+        "desc": "round trip checked with a property test",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "reference/packages.md",
+      "design/testing.md",
+      "scenarios/configuration.md"
+    ],
+    "bash": 10,
+    "hd": {
+      "new": 1,
+      "check": 5,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: mkdir -p /tmp/hd-scratch-layout && cd /tmp/hd-scratch-layout && hd new todos --lib 2>&1; find todos -type f | sort; echo ---; cat todos/hd.toml; echo ---; cat todos/src/lib.hd; echo ---; cat tod"
+    ],
+    "diagnostic_codes": {
+      "type-mismatch": 2,
+      "local-reference-escapes": 1,
+      "syntax-error": 2,
+      "unsatisfied-trait-bound": 5
+    },
+    "failing_checks": 3,
+    "turns": 26,
+    "cost_usd": 0.023596690000000003,
+    "duration_s": 59,
+    "tokens": 731154,
+    "final_message": "The `todos` package is written in `src/todos.hd`, and `hd check --tests`, `hd test` (18 passed, 0 failed) and `hd lint` all pass.\n\nThe formatter (`hd fmt`) reflowed the test code after my last edit, so the file on disk differs from what I wrote. Tests still pass after it.\n\nDecisions to review:\n\n- **Layout:** `hd new` was denied by the permission system, so I wrote the package by hand. `hd.toml` names the package `todos` with no capabilities. `src/lib.hd` is the library root and re-exports the six public items from `src/todos.hd`, which holds the implementation and the `tests:` block.\n- **Missing `done`:** `done: bool = false` on the struct, so an absent key reads as `false`.\n- **Extra JSON fields:** ignored, the decoder's default. Only wrong types, missing `id` or `title`, non-array top levels, and malformed JSON are `BadJson`.\n- **`complete` with duplicate ids:** every todo with that id is marked done. An id matching nothing gives `UnknownId`.\n- **`dump`:** compact JSON with fields in declaration order (`id`, `title`, `done`).\n- **Derives:** `Todo` has `Serialize, Deserialize, Arbitrary, Eq, Debug`. `TodoError` has `Eq, Debug` and `@error` messages.\n\nTests cover the defaulting and the list of bad inputs (one row each, via `it_each`), the `BadJson` variant, exact dump output, `complete` success and `UnknownId`, `pending` ordering, and a property that `load(dump(x)) == x`.\n\nNothing is committed; the directory is not a git repository.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

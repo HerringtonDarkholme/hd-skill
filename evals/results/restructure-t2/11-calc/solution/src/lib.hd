@@ -1,0 +1,2 @@
+## The integer expression evaluator. The implementation lives in `calc.hd`.
+pub use pkg.calc.{CalcError, eval}

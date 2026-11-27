@@ -1,0 +1,111 @@
+{
+  "task": "01-colsum",
+  "package": "colsum",
+  "scenario": "CLI over standard input",
+  "selling_points": [
+    "derive Cli",
+    "@error",
+    "Result"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 10,
+      "passed": 10,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [
+          "--skip-header"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "a,1\nb,7\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 2: not a number: zz\n"
+      },
+      {
+        "args": [
+          "--key",
+          "2",
+          "--value",
+          "3"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "x,-2\ny,8\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 1: missing column\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "derive-cli",
+        "desc": "options parsed with @derive(Cli)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "SumError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 10,
+    "hd": {
+      "help": 3,
+      "new": 1,
+      "check": 2,
+      "test": 2,
+      "run": 6,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: S=.claude/skills/hd-lang; sed -n 1,80p $S/reference/packages.md; echo ----; sed -n 1,60p $S/scenarios/text-records.md; echo ----; grep -n \"split\\|lines\\|trim\\|parse\\|usize\\|Result\" $S/reference/"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 19,
+    "cost_usd": 0.02008358,
+    "duration_s": 51,
+    "tokens": 595758,
+    "final_message": "The `colsum` package is in the current directory and passes `hd check --tests`, `hd test` (10 tests), `hd fmt` and `hd lint`. I also ran the binary against sample input and the error cases, and the output matches the spec.\n\n**Files**\n- `hd.toml`: package `colsum`, granting only `Args`, `Console` and `ConsoleInput`.\n- `src/sum.hd`: the public `SumError` enum (`@error`, `@derive(Eq, Debug)`, with `MissingColumn(line)` and `NotANumber(line, text)`) and `summarize` with the signature you gave. Its tests cover grouping, sorting, trimming, column options, header and blank-line handling, line numbering, short lines, non-integers and empty input.\n- `src/main.hd`: `@derive(Cli)` options `--key` (default 1), `--value` (default 2) and `--skip-header`. It reads stdin, prints `key,total` lines, and on error prints `colsum: line N: ...` to stderr with nothing on stdout and exit status 1. Two tests use scripted args and input.\n\n**Choices I made**\n- The spec didn't cover `--key 0` or `--value 0`. The program prints `colsum: columns start at 1` and exits with status 2, which is the same status `hd` uses for bad arguments.\n- I used `hd new --app`. The template's integration test asserted a \"hello, world\" greeting, so I deleted it rather than leave a failing test.\n- `hd fmt` reformatted `summarize`'s signature onto multiple lines. The content is unchanged, and check and tests pass after the format.\n\nI didn't search the machine or the internet for hd sources; everything came from the `hd-lang` s",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

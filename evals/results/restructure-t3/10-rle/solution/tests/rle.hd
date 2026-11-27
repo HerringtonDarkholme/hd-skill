@@ -1,0 +1,7 @@
+use pkg.{Run, decode, encode}
+use std.testing.assert_equal
+
+it("round-trips through the package root"):
+    xs := [4, 4, 4, -2]
+    assert_equal(decode(encode(xs)), xs)
+    assert_equal(encode(xs), [Run { value: 4, count: 3 }, Run { value: -2, count: 1 }])

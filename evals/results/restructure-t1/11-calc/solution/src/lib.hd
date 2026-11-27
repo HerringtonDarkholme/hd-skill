@@ -1,0 +1,2 @@
+## The library's interface: the evaluator in `calc.hd`.
+pub use self.calc.{CalcError, eval}

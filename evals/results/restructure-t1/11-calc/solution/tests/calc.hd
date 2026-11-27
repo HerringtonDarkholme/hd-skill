@@ -1,0 +1,8 @@
+use pkg.{CalcError, eval}
+use std.testing.assert_equal
+
+it("evaluates through the public interface"):
+    assert_equal(eval("2 + 3 * (4 - 1)"), .Ok(11), reason="precedence and parentheses")
+
+it("reports a division by zero"):
+    assert_equal(eval("6 / (3 - 3)"), .Err(CalcError.DivideByZero), reason="zero divisor")

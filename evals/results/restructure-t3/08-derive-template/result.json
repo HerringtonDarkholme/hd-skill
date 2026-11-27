@@ -1,0 +1,82 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 4,
+      "passed": 4,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 2,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": true
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "design/derive.md",
+      "language.md",
+      "reference/packages.md"
+    ],
+    "bash": 24,
+    "hd": {
+      "help": 4,
+      "doc": 6,
+      "new": 1,
+      "check": 15,
+      "test": 6,
+      "fmt": 1
+    },
+    "denied": [
+      "Bash: cat > src/scratch.hd <<'EOF'\nuse pkg.fields.FieldNames\n\n@derive(FieldNames, Eq, Debug)\npub struct Wrapper[T]:\n    pub inner: T\n    pub count: usize\n\npub fn names() -> List[string]:\n    w := Wrap",
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/restructure-t3/08-derive-template/fields && sed -i.bak 's/use std.meta.{Field, Structure, Variant, Describer}/use std.m"
+    ],
+    "diagnostic_codes": {
+      "syntax-error": 2,
+      "unknown-method": 6,
+      "unsatisfied-trait-bound": 2
+    },
+    "failing_checks": 6,
+    "turns": 42,
+    "cost_usd": 0.03608548000000001,
+    "duration_s": 98,
+    "tokens": 1644053,
+    "final_message": "The `fields` package is in the current directory. `hd check --tests` and `hd test` both pass (4 tests), but `@derive(FieldNames)` does not work on generic structs.\n\n**What's there**\n- `src/fields.hd` declares `pub trait FieldNames` and its derive template: `impl[T] FieldNames for T by Structure`. The template walks the struct's fields in declaration order, so users never write a per-struct `impl`. It has unit tests for a plain struct and an empty struct.\n- `src/lib.hd` re-exports `FieldNames` (`pub use self.fields.{FieldNames}`), replacing the sample `greet` function that `hd new` generated.\n- `src/orders.hd` derives `FieldNames` on a struct in a different module, with a test in its `tests:` block.\n- `tests/fields.hd` derives on a struct in an integration-test module.\n- `hd new` was run with `--vcs none`, so no git repository was created.\n\n**Limitation: generic structs**\n`@derive(FieldNames)` on `struct Wrapper[T]` does not produce a method. `w.field_names()` fails with `unsatisfied-trait-bound: Wrapper[string] does not implement FieldNames`. The same struct gets `==` from `@derive(Eq)`, so the problem is specific to this template. I tried the template with both `Describer` and `Walker`, and the derive still didn't apply. The only form that worked was a hand-written `impl[T] FieldNames for Wrapper[T] by Structure:` per struct, which is what you asked to avoid. I removed the probe and did not add a generic test. I did not find a documented fix, so this needs either a compiler-",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

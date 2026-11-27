@@ -1,0 +1,11 @@
+use std.process.Command
+use std.testing.{assert_equal, hd_run}
+
+it("renames user 1 and reports the missing user 2"):
+    let out = hd_run!(*Command::new("users"))
+    assert_equal(
+        out.stdout,
+        "renamed 1 to Ada Lovelace\nerror: no user 2\n",
+        reason="the two renames",
+    )
+    assert_equal(out.status, 0, reason="a clean exit")

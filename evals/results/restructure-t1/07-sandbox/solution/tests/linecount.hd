@@ -1,0 +1,39 @@
+use std.process.Command
+use std.testing.{assert_equal, hd_run}
+
+# These run the built program, so they use the real grants in hd.toml:
+# FsRead may read only under data/.
+
+it("counts a file under data/"):
+    let out = hd_run!(*Command::new("linecount").args(["data/three.txt", "data/empty.txt"]))
+    assert_equal(
+        out.stdout,
+        "3 data/three.txt\n0 data/empty.txt\n3 total\n",
+        reason="each count and the total",
+    )
+    assert_equal(out.stderr, "", reason="nothing skipped")
+    assert_equal(out.status, 0, reason="a clean exit")
+
+it("reports a missing file and exits 1"):
+    let out = hd_run!(*Command::new("linecount").args(["data/nope.txt", "data/three.txt"]))
+    assert_equal(out.stdout, "3 data/three.txt\n3 total\n", reason="the readable file still counts")
+    assert_equal(
+        out.stderr,
+        "linecount: data/nope.txt: not found: data/nope.txt\n",
+        reason="the reason on stderr",
+    )
+    assert_equal(out.status, 1, reason="a skipped file fails the run")
+
+it("refuses files outside data/"):
+    let out = hd_run!(*Command::new("linecount").args(["hd.toml", "data/../hd.toml", "/etc/hosts"]))
+    assert_equal(out.stdout, "0 total\n", reason="nothing outside data/ is counted")
+    assert_equal(out.status, 1, reason="every refused file fails the run")
+    assert(out.stderr.contains("linecount: hd.toml: "), reason="hd.toml is named")
+    assert(out.stderr.contains("linecount: data/../hd.toml: "), reason="a path with .. is named")
+    assert(out.stderr.contains("linecount: /etc/hosts: "), reason="an absolute path is named")
+    assert_equal(out.stderr.lines().len(), 3, reason="one line per refused file")
+
+it("with no files prints a zero total"):
+    let out = hd_run!(*Command::new("linecount"))
+    assert_equal(out.stdout, "0 total\n")
+    assert_equal(out.status, 0)

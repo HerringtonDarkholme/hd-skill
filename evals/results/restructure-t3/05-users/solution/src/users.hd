@@ -1,0 +1,79 @@
+@derive(Eq, Debug)
+pub struct User:
+    pub id: i64
+    pub name: string
+
+@error
+@derive(Eq, Debug)
+pub enum UserError:
+    @error("no user $id")
+    NotFound(id: i64)
+    @error("a user needs a name")
+    EmptyName
+
+pub trait UserStore:
+    fn get!(&mut self, id: i64) -> User?
+    fn put!(&mut self, user: User) -> void
+
+## Rename a user. The name is trimmed; nothing is stored on failure.
+pub fn rename!(id: i64, name: string) -> Result[User, UserError] $ UserStore:
+    trimmed := name.trim()
+    if trimmed == "":
+        return .Err(.EmptyName)
+    let .Some(found) = $.use(UserStore).get!(id) else:
+        return .Err(.NotFound(id))
+    user := User { id: found.id, name: trimmed }
+    $.use(UserStore).put!(user)
+    .Ok(user)
+
+tests:
+    use std.testing.it_prop
+
+    struct Recording:
+        users: List[User]
+        puts: i32
+
+    impl UserStore for Recording:
+        fn get!(&mut self, id: i64) -> User?:
+            for user in self.users:
+                if user.id == id:
+                    return .Some(user)
+            .None
+
+        fn put!(&mut self, user: User) -> void:
+            self.puts += 1
+            for i in 0..self.users.len():
+                if self.users[i].id == user.id:
+                    self.users[i] = user
+                    return
+            self.users.push(user)
+
+    it("trims the name and stores the user once"):
+        store := box(Recording { users: [User { id: 1, name: "ada" }], puts: 0 })
+        $.with(UserStore=store):
+            assert_equal(rename!(1, "  Grace  "), .Ok(User { id: 1, name: "Grace" }))
+        assert_equal(store.puts, 1)
+        assert_equal(store.users, [User { id: 1, name: "Grace" }])
+
+    it("refuses a blank name and stores nothing"):
+        store := box(Recording { users: [User { id: 1, name: "ada" }], puts: 0 })
+        $.with(UserStore=store):
+            assert_equal(rename!(1, "   "), .Err(.EmptyName))
+        assert_equal(store.puts, 0)
+        assert_equal(store.users, [User { id: 1, name: "ada" }])
+
+    it("reports a missing user and stores nothing"):
+        store := box(Recording { users: [User { id: 1, name: "ada" }], puts: 0 })
+        $.with(UserStore=store):
+            assert_equal(rename!(2, "Grace"), .Err(.NotFound(2)))
+        assert_equal(store.puts, 0)
+
+    it("explains each error"):
+        assert_equal("${UserError.NotFound(2)}", "no user 2")
+        assert_equal("${UserError.EmptyName}", "a user needs a name")
+
+    it_prop("a name is accepted exactly when it has text", prop=fn!(name: string):
+        store := box(Recording { users: [User { id: 1, name: "ada" }], puts: 0 })
+        $.with(UserStore=store):
+            assert_equal(rename!(1, name).is_ok(), name.trim() != "")
+    )

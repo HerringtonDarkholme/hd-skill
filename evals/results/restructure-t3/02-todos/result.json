@@ -1,0 +1,86 @@
+{
+  "task": "02-todos",
+  "package": "todos",
+  "scenario": "JSON in and out",
+  "selling_points": [
+    "derive Serialize/Deserialize",
+    "field defaults",
+    "property tests"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 22,
+      "passed": 22,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-serde",
+        "desc": "JSON through @derive(Serialize, Deserialize)",
+        "ok": true
+      },
+      {
+        "id": "field-default",
+        "desc": "done defaults with a field default",
+        "ok": true
+      },
+      {
+        "id": "prop-test",
+        "desc": "round trip checked with a property test",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md"
+    ],
+    "bash": 13,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 6,
+      "test": 4,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: hd check --tests 2>&1 | tail -5; echo \"check exit=$?\"; hd test 2>&1 | tail -20; echo \"test exit=${PIPESTATUS[0]}\"; hd fmt 2>&1 | tail -3; hd lint 2>&1 | tail -20"
+    ],
+    "diagnostic_codes": {
+      "syntax-error": 1,
+      "unknown-import": 1,
+      "type-mismatch": 2,
+      "local-reference-escapes": 1
+    },
+    "failing_checks": 2,
+    "turns": 23,
+    "cost_usd": 0.023932459999999996,
+    "duration_s": 61,
+    "tokens": 888025,
+    "final_message": "The `todos` package is in place and `hd check --tests`, `hd test` and `hd lint` all pass. `hd test` ran 22 cases, all passing.\n\n**Files**\n- `hd.toml`: created by `hd new --lib`, package name `todos`.\n- `src/todos.hd`: the library code and its `tests:` block.\n- `src/lib.hd`: re-exports `Todo`, `TodoError`, `load`, `dump`, `complete` and `pending` as the public interface. I replaced the sample `greet` function.\n- `tests/todos.hd`: an integration test that uses only the public names.\n\n**Choices I made**\n- `Todo` and `TodoError` derive `Eq` and `Debug`. `Todo` also derives `Serialize`, `Deserialize` and `Arbitrary`, so `load` and `dump` use hd's JSON decode and encode.\n- `done` has a default of `false`, so a missing `done` field loads as false.\n- Every decode failure becomes `BadJson` with the JSON error text, so non-arrays, wrong field types, missing fields and truncated input all map to it.\n- `complete` returns `UnknownId` when no todo has that id. Duplicate ids all get marked done.\n- `pending` returns titles in their original order.\n\n**Tests cover**\n- Loading, default `done`, empty arrays and ignored extra fields.\n- A table of 13 invalid inputs, each expected to give `BadJson`.\n- `dump` output and a round trip through `load`, plus a property test over generated todo lists.\n- `complete` on a known and an unknown id, and `pending`.\n\n**Notes**\n- The `hd fmt` run reformatted the source files, so the code now has more line breaks than I first wrote. Check and tests were rerun after",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

@@ -1,0 +1,98 @@
+{
+  "task": "05-users",
+  "package": "users",
+  "scenario": "service with a user-defined effect",
+  "selling_points": [
+    "own effect trait",
+    "$.use",
+    "$.with providers",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 3,
+      "passed": 3,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [],
+        "ok": true,
+        "status": 0,
+        "stdout": "renamed 1 to Ada Lovelace\nerror: no user 2\n",
+        "stderr": ""
+      }
+    ],
+    "idiom": [
+      {
+        "id": "use-effect",
+        "desc": "logic reaches the store with $.use(UserStore)",
+        "ok": true
+      },
+      {
+        "id": "provide-in-main",
+        "desc": "main provides a store with $.with",
+        "ok": true
+      },
+      {
+        "id": "fake-store",
+        "desc": "tests define their own UserStore fake",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "UserError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/effects.md",
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 7,
+    "hd": {
+      "check": 6,
+      "test": 2,
+      "run": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {
+      "syntax-error": 2,
+      "invalid-test-statement": 1
+    },
+    "failing_checks": 3,
+    "turns": 21,
+    "cost_usd": 0.019837489999999996,
+    "duration_s": 50,
+    "tokens": 479078,
+    "final_message": "The `users` package is in the current directory. `hd check --tests` and `hd test` both pass (7 tests), and `hd run` prints the two lines from your spec.\n\nFiles:\n- `hd.toml`: package `users`, grants `Console`, plus `Process` for tests.\n- `src/users.hd`: `User`, `UserError` (`@error`, with a message per variant), the `UserStore` trait with `get!`/`put!`, and `pub fn rename!` with `$ UserStore`. The tests are in a `tests:` block at the end.\n- `src/main.hd`: a `Map`-backed `MemoryStore` provided with `$.with(UserStore=...)`, then the two renames.\n\nChoices I made:\n- **Check order:** an empty name is rejected before the store is read. So a blank name for a missing user gives `EmptyName`, not `NotFound`. The spec didn't say which wins.\n- **Store calls:** `rename!` calls `put!` only after both checks pass, so a failed rename stores nothing.\n- **Tests:** a counting fake store checks that `put!` runs exactly once on success and never on failure. `it_each` covers three blank-name inputs.\n- **Manifest:** I wrote `hd.toml` by hand instead of using `hd new`, since the directory had to stay in place.\n\n`hd fmt` reformatted some lines, and `hd lint` reports nothing. `build/` holds test output from `hd test`; delete it if you don't want it. I didn't initialise a git repository.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

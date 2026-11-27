@@ -1,0 +1,10 @@
+use pkg.{Run, decode, encode}
+use std.testing.{assert_equal, it_prop}
+
+it("the package root exports encode and decode"):
+    assert_equal(encode([1, 1, 2]), [Run { value: 1, count: 2 }, Run { value: 2, count: 1 }])
+
+it_prop(
+    "the package root round-trips any list",
+    prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)), xs)
+)

@@ -1,0 +1,15 @@
+use pkg.fields.FieldNames
+
+@derive(FieldNames)
+pub struct Person:
+    pub name: string
+    pub age: i32
+    pub email: string
+
+@derive(FieldNames)
+pub struct Circle:
+    pub radius: f64
+
+@derive(FieldNames)
+pub struct Empty:
+    pass

@@ -1,0 +1,94 @@
+{
+  "task": "03-config",
+  "package": "config",
+  "scenario": "configuration from file and environment",
+  "selling_points": [
+    "derive Validate + field facts",
+    "env_decode",
+    "@from errors",
+    "fakes"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 23,
+      "passed": 23,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 11,
+      "passed": 11,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "derive-validate",
+        "desc": "rules written as @derive(Validate) field facts",
+        "ok": true
+      },
+      {
+        "id": "field-facts",
+        "desc": "uses @range / @length facts",
+        "ok": true
+      },
+      {
+        "id": "from-errors",
+        "desc": "error variants convert with @from",
+        "ok": true
+      },
+      {
+        "id": "fake-fs-env",
+        "desc": "tests use MemoryFs and ScriptedEnv",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/configuration.md"
+    ],
+    "bash": 12,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 5,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: python3 - <<'EOF'\nimport re\np='src/config.hd'\ns=open(p).read()\nstart=s.index('    it_each(\\n        \"checks the port range\"')\nhead=s[:start]\nnew_tail='''    it_each(\n        \"checks the port ran"
+    ],
+    "diagnostic_codes": {
+      "syntax-error": 4,
+      "unknown-import": 1,
+      "unknown-name": 1,
+      "misplaced-tests-block": 1,
+      "unknown-trait": 4
+    },
+    "failing_checks": 2,
+    "turns": 24,
+    "cost_usd": 0.030410939999999994,
+    "duration_s": 92,
+    "tokens": 888920,
+    "final_message": "The `config` library is in place and passes `hd check --tests`, `hd test` (23 passed, 0 failed), `hd fmt` and `hd lint`.\n\n**Files**\n- `hd.toml`: package `config`, created with `hd new --lib --vcs none .` in the current directory.\n- `src/config.hd`: `Config`, `ConfigError`, `load_config!`, plus the unit tests in a `tests:` block.\n- `src/lib.hd`: re-exports `Config`, `ConfigError` and `load_config` as the package's public interface.\n- `tests/config.hd`: an integration test that goes through the public interface.\n\n**How it behaves**\n- `Config` derives `Deserialize`, `Validate`, `Eq` and `Debug`. `host` is `@length(1, 253)`, `port` is `@range(1024, 65535)`, and `workers` is `@range(1, 64)` with default `4`.\n- `load_config!` reads the file, decodes it, applies `APP_PORT` if it is set, then runs `validated()`. So a bad overridden port is reported as `Invalid`.\n- Each `ConfigError` variant has one field and an `@error` message.\n\n**Choices I made**\n- The library's root `lib.hd` re-exports from `config.hd`, so `src/config.hd` holds the implementation.\n- `Config` does not derive `Serialize`, since the spec did not ask for it.\n- `load_config!` takes `path: string` and wraps it in `Path` internally.\n- The `Environment` error comes from `env_as::[i32](\"APP_PORT\")`. An unset variable means \"keep the file's port.\"\n\nI did not search the machine or the internet for hd sources; everything came from the hd-lang skill docs and `hd help`.\n\nOne thing went wrong along the way: a shell command that ",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

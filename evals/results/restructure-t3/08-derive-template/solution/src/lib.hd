@@ -1,0 +1,2 @@
+## Derive `FieldNames` on any struct to list its field names.
+pub use self.fields.{FieldNames}

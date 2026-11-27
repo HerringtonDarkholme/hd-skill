@@ -1,0 +1,7 @@
+[package]
+name = "colsum"
+
+[capabilities]
+Args = true
+Console = true
+ConsoleInput = true

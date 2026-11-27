@@ -1,0 +1,2 @@
+## Loads a service's configuration: see `load_config!`.
+pub use self.config.{Config, ConfigError, load_config}

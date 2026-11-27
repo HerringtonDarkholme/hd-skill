@@ -1,0 +1,86 @@
+{
+  "task": "09-contracts",
+  "package": "bank",
+  "scenario": "invariants",
+  "selling_points": [
+    "require",
+    "ensure"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 19,
+      "passed": 19,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 6,
+      "passed": 6,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "require",
+        "desc": "preconditions with require",
+        "ok": true
+      },
+      {
+        "id": "ensure",
+        "desc": "postconditions with ensure",
+        "ok": false
+      },
+      {
+        "id": "no-raw-panic",
+        "desc": "no hand-written panic( for checks",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 0.75
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/contracts.md",
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 10,
+    "hd": {
+      "new": 1,
+      "check": 3,
+      "test": 2,
+      "run": 4,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: S=.claude/skills/hd-lang; sed -n 40,400p $S/language.md; echo ======; cat $S/design/contracts.md; echo =====; ls $S $S/*"
+    ],
+    "diagnostic_codes": {
+      "syntax-error": 1,
+      "missing-capability": 2
+    },
+    "failing_checks": 1,
+    "turns": 28,
+    "cost_usd": 0.032277570000000005,
+    "duration_s": 70,
+    "tokens": 1196919,
+    "final_message": "The `bank` package is in the current directory and both `hd check --tests` and `hd test` pass: 19 tests, 0 failures.\n\n**Files**\n- `src/account.hd`: `Account`, `open`, `transfer`, and the `balance`/`deposit`/`withdraw` methods, with the tests in its `tests:` block.\n- `src/lib.hd`: re-exports `Account`, `open` and `transfer`, so callers write `bank.open(...)`. This is my addition; the package root needs it for the public interface.\n- `tests/bank.hd`: an integration test through the public interface.\n- `hd.toml`: created by `hd new --lib`; it has no capabilities because the library needs none.\n\n**Design choices**\n- **Preconditions use `require`.** Negative opening balance, non-positive deposit/withdrawal/transfer, and withdrawals or transfers above the balance all stop the program with `explicit-panic`.\n- **Invariants use `require` too, not `ensure`.** `ensure` runs in every build, so it would cost something in release. Here the balance-never-negative check lives in a private `check()` method that every mutator calls, and transfer checks that the total is unchanged. Both are `require`s, so they are free in release.\n- **Release behaviour is verified.** With a temporary `main` calling `open(-1)`, `hd run` exits 3 with the panic, and `hd run --release` exits 0. I removed that file afterwards.\n- **Zero is allowed** as an opening balance, and a withdrawal of exactly the balance is allowed.\n\n**Tests** cover the normal paths, each panic case (`expect_panic=\"explicit-panic\"`), a table t",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

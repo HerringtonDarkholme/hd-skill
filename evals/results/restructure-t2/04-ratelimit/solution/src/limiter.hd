@@ -1,0 +1,85 @@
+use std.time.{Clock, Duration, now}
+
+## A sliding-window rate limiter: per key, at most `max` events may be
+## allowed within any `window` of time.
+pub struct Limiter:
+    max: usize
+    window_ms: i64
+    events: Map[string, List[i64]]
+
+## A limiter that allows `max` events per key in each `window`.
+pub fn new_limiter(max: usize, window: Duration) -> Limiter:
+    Limiter { max, window_ms: window.as_milliseconds(), events: {} }
+
+impl Limiter:
+    ## Records an event for `key` at the current time, and reports whether
+    ## it is allowed. A refused event is not recorded.
+    pub fn allow(&mut self, key: string) -> bool $ Clock:
+        at := now().unix_milliseconds()
+        let past: List[i64] = self.events.get(key).unwrap_or([])
+        let mut kept: List[i64] = []
+        for t in past:
+            if at - t < self.window_ms:
+                kept.push(t)
+        allowed := kept.len() < self.max
+        if allowed:
+            kept.push(at)
+        self.events[key] = kept
+        allowed
+
+tests:
+    use std.time.{ManualClock, Timestamp, ms, sleep}
+
+    it("allows max events, then refuses"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut lim = new_limiter(2, ms(100))
+            assert(lim.allow("a"))
+            assert(lim.allow("a"))
+            assert(!lim.allow("a"), reason="third event in the window")
+
+    it("an event counts while now - t is less than the window"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut lim = new_limiter(1, ms(100))
+            assert(lim.allow("a"))
+            sleep!(ms(99))
+            assert(!lim.allow("a"), reason="99 ms old is still inside")
+            sleep!(ms(1))
+            assert(lim.allow("a"), reason="exactly 100 ms old has expired")
+
+    it("a refused event is not recorded"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut lim = new_limiter(1, ms(100))
+            assert(lim.allow("a"))
+            sleep!(ms(50))
+            assert(!lim.allow("a"))
+            sleep!(ms(50))
+            assert(lim.allow("a"), reason="the refused event at 50 ms left no trace")
+
+    it("the window slides rather than resetting"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut lim = new_limiter(2, ms(100))
+            assert(lim.allow("a"))
+            sleep!(ms(60))
+            assert(lim.allow("a"))
+            sleep!(ms(40))
+            assert(lim.allow("a"), reason="the event at 0 ms expired, the one at 60 ms did not")
+            assert(!lim.allow("a"), reason="two events remain in the window")
+
+    it("keys are independent"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut lim = new_limiter(1, ms(100))
+            assert(lim.allow("a"))
+            assert(lim.allow("b"))
+            assert(!lim.allow("a"))
+            assert(!lim.allow("b"))
+
+    it("max of zero refuses everything"):
+        clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+        $.with(Clock=clock):
+            let mut lim = new_limiter(0, ms(100))
+            assert(!lim.allow("a"))

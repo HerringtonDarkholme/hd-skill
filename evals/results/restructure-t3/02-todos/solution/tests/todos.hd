@@ -1,0 +1,13 @@
+use pkg.{Todo, TodoError, load, dump, complete, pending}
+use std.testing.assert_equal
+
+it("works through the public interface"):
+    todos := load("[{\"id\": 1, \"title\": \"milk\"}, {\"id\": 2, \"title\": \"eggs\"}]")
+        .expect("valid")
+    done := complete(todos, 1).expect("known id")
+    assert_equal(pending(done), ["eggs"])
+    assert_equal(load(dump(done)), .Ok(done))
+    assert_equal(complete(done, 9), .Err(.UnknownId(9)))
+    match load("{}"):
+        .Err(.BadJson(message)) => assert(message != "", reason="the error says why")
+        _ => panic("expected BadJson")

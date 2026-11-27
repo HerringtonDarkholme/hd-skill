@@ -1,0 +1,28 @@
+use std.process.Command
+use std.testing.hd_run
+
+it("counts each file under data/ and the total"):
+    let out = hd_run!(*Command::new("linecount").args(["data/three.txt", "data/empty.txt"]))
+    assert_equal(out.stdout, "3 data/three.txt\n0 data/empty.txt\n3 total\n")
+    assert_equal(out.stderr, "")
+    assert_equal(out.status, 0)
+
+it("reports a missing file, keeps going, and exits 1"):
+    let out = hd_run!(*Command::new("linecount").args(["data/missing.txt", "data/three.txt"]))
+    assert_equal(out.stdout, "3 data/three.txt\n3 total\n")
+    assert_equal(out.stderr.lines().len(), 1)
+    assert(out.stderr.starts_with("linecount: data/missing.txt: "), reason=out.stderr)
+    assert_equal(out.status, 1)
+
+it("refuses files outside data/, even through .."):
+    let out = hd_run!(*Command::new("linecount").args(["../hd.toml", "data/../hd.toml"]))
+    assert_equal(out.stdout, "0 total\n")
+    assert_equal(out.stderr.lines().len(), 2)
+    assert(out.stderr.starts_with("linecount: ../hd.toml: "), reason=out.stderr)
+    assert(out.stderr.contains("linecount: data/../hd.toml: "), reason=out.stderr)
+    assert_equal(out.status, 1)
+
+it("prints a zero total with no arguments"):
+    let out = hd_run!(*Command::new("linecount"))
+    assert_equal(out.stdout, "0 total\n")
+    assert_equal(out.status, 0)

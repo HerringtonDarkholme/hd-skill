@@ -1,0 +1,10 @@
+[package]
+name = "linecount"
+
+[capabilities]
+Console = true
+Args = true
+FsRead = ["data/"]
+
+[dev-capabilities]
+Process = true

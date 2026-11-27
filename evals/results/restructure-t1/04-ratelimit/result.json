@@ -1,0 +1,73 @@
+{
+  "task": "04-ratelimit",
+  "package": "ratelimit",
+  "scenario": "time-dependent logic",
+  "selling_points": [
+    "Clock requirement",
+    "ManualClock fake"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 6,
+      "passed": 6,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "manual-clock",
+        "desc": "tests control time with ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "reference/packages.md",
+      "design/effects.md",
+      "design/testing.md"
+    ],
+    "bash": 12,
+    "hd": {
+      "help": 2,
+      "doc": 8,
+      "check": 3,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: ls -la && hd help 2>&1 | head -40; S=.claude/skills/hd-lang/reference/std-index.txt; grep -n -i -E \"time|Duration|Clock|ManualClock|now|Timestamp|elapsed|minus|sub\" $S | head -80"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 22,
+    "cost_usd": 0.02358596,
+    "duration_s": 53,
+    "tokens": 830375,
+    "final_message": "The `ratelimit` package is in this directory. `hd check --tests`, `hd test` (6 passed), `hd fmt` and `hd lint` all pass.\n\n**Files**\n- `hd.toml`: package manifest, `name = \"ratelimit\"`.\n- `src/limiter.hd`: `Limiter`, `new_limiter` and `allow`, with a `tests:` block.\n- `src/lib.hd`: `pub use self.limiter.{Limiter, new_limiter}`, so the package exposes both.\n\n**Design**\n- Each key maps to the list of timestamps of its allowed events. `allow` reads `now()` from `$ Clock`.\n- On each call it keeps only events where `now.since(t) < window`, so an event counts until exactly `window` has passed.\n- If fewer than `max` remain, it records the new event and returns true. Otherwise it returns false without recording.\n- I did not use `hd new` because the current directory is already the package folder, so it would have nested a second `ratelimit/`.\n\n**Tests**\n- Limit reached, then refused.\n- A slot frees once the oldest event leaves the window.\n- An event stops counting exactly at the window's end.\n- A refused event is not recorded.\n- Keys are independent.\n- A zero limit refuses everything.\n\nTests use `ManualClock` through `$.with(Clock=...)` and advance it with `sleep!`.\n\n**Things to know**\n- Keys are never removed from the map, so memory grows with the number of distinct keys ever seen. Eviction of empty keys would fix that if you need it.\n- I did not commit anything. The repository is not a git repo.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

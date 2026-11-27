@@ -1,0 +1,2 @@
+## The todos library: a todo list stored as JSON.
+pub use self.todos.{Todo, TodoError, load, dump, complete, pending}

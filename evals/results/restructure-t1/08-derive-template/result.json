@@ -1,0 +1,77 @@
+{
+  "task": "08-derive-template",
+  "package": "fields",
+  "scenario": "custom derive",
+  "selling_points": [
+    "derive template by Structure",
+    "Walker"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 5,
+      "passed": 5,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 2,
+      "passed": 2,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "template",
+        "desc": "a derive template: impl[T] FieldNames for T by Structure",
+        "ok": true
+      },
+      {
+        "id": "walker",
+        "desc": "walks members with a Walker",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "design/derive.md",
+      "reference/packages.md"
+    ],
+    "bash": 7,
+    "hd": {
+      "help": 1,
+      "new": 1,
+      "check": 3,
+      "test": 3,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: cd \"$(mktemp -d)\" && hd new scratchlib --lib 2>&1; find scratchlib -type f | while read f; do echo \"== $f\"; cat \"$f\"; done"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 16,
+    "cost_usd": 0.014144860000000002,
+    "duration_s": 35,
+    "tokens": 485259,
+    "final_message": "The `fields` package is in place and both required commands pass: `hd check --tests` reports 0 errors and `hd test` runs 5 tests, all passing.\n\n**Layout**\n- `hd.toml`: `[package] name = \"fields\"`.\n- `src/fields.hd`: the `pub trait FieldNames` with `fn field_names(self) -> List[string]`, a `Walker` that records each field name in declaration order, and the template `impl[T] FieldNames for T by Structure`. This means users write `@derive(FieldNames)` on any struct and never write an implementation. The file also has a `tests:` block that derives on two structs in the same module.\n- `src/shapes.hd`: a second module with `pub` structs (`Rect`, `Unit`) that derive `FieldNames`, to show derives work outside the trait's module.\n- `tests/fields.hd`: an integration test that derives on its own struct and checks the `Rect` and `Unit` cases.\n\n**Notes**\n- I didn't create `src/lib.hd`. The module is `pkg.fields`, which is what the brief's `src/fields.hd` path implies. Other modules import it with `use pkg.fields.FieldNames`.\n- I tried `hd new` to see the scaffold layout, but the permission prompt was denied, so I wrote the files by hand.\n- `hd fmt` reformatted `tests/fields.hd`, and `hd lint` is clean.\n- I only tested structs. The template's behaviour on enums is not covered by these tests.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

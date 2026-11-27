@@ -1,0 +1,9 @@
+use pkg.{Account, open, transfer}
+use std.testing.assert_equal
+
+it("moves money through the public interface"):
+    let mut from: Account = open(500)
+    let mut to = open(0)
+    transfer(&mut from, &mut to, 200)
+    assert_equal(from.balance(), 300)
+    assert_equal(to.balance(), 200)

@@ -1,0 +1,8 @@
+use pkg.{Lru, new_lru}
+use std.testing.assert_equal
+
+it("is reachable from the package root"):
+    let mut cache: Lru = new_lru(1)
+    cache.put("a", 1)
+    assert_equal(cache.get("a"), .Some(1))
+    assert_equal(cache.len(), 1)

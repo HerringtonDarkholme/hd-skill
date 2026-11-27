@@ -1,0 +1,151 @@
+use std.contract.require
+
+## A bank account holding a whole number of cents.
+##
+## Invariant, true after every call: the balance is never negative.
+## Each rule is a `require`, which is checked in debug and test builds and
+## costs nothing in release builds.
+pub struct Account:
+    cents: i64
+
+## Opens an account with `cents` (zero or more).
+pub fn open(cents: i64) -> Account:
+    require("an opening balance is not negative"):
+        cents >= 0
+    account := Account { cents: cents }
+    account.check()
+    account
+
+## Moves `cents` from `from` to `to`. The total of both balances is kept.
+pub fn transfer(from: &mut Account, to: &mut Account, cents: i64) -> void:
+    require("a transfer moves a positive amount"):
+        cents > 0
+    before := from.cents + to.cents
+    from.withdraw(cents)
+    to.deposit(cents)
+    require("a transfer keeps the total of both balances"):
+        from.cents + to.cents == before
+
+impl Account:
+    ## The current balance, in cents.
+    pub fn balance(self) -> i64:
+        self.cents
+
+    ## Adds `cents` (positive) to the balance.
+    pub fn deposit(&mut self, cents: i64) -> void:
+        require("a deposit is positive"):
+            cents > 0
+        self.cents += cents
+        self.check()
+
+    ## Takes `cents` (positive, at most the balance) from the balance.
+    pub fn withdraw(&mut self, cents: i64) -> void:
+        require("a withdrawal is positive"):
+            cents > 0
+        require("a withdrawal is not larger than the balance"):
+            cents <= self.cents
+        self.cents -= cents
+        self.check()
+
+    ## The invariant every method leaves true: the balance is never negative.
+    fn check(&self) -> void:
+        require("the balance is never negative"):
+            self.cents >= 0
+
+tests:
+    use std.testing.{Choices, it_each, it_prop_with}
+
+    fn deposit_then_withdraw(start: i64, cents: i64) -> void:
+        let mut account = open(start)
+        account.deposit(cents)
+        account.withdraw(cents)
+        assert_equal(account.balance(), start)
+
+    # (opening balance of `from`, opening balance of `to`, amount); `from` is
+    # at least 1, so the amount always fits.
+    fn transfer_case(c: &mut Choices) -> (i64, i64, i64):
+        from := c.int(1..=1_000_000)
+        to := c.int(0..=1_000_000)
+        amount := c.int(1..=from)
+        (from, to, amount)
+
+    it("opens with the given balance"):
+        assert_equal(open(500).balance(), 500)
+
+    it("opens empty"):
+        assert_equal(open(0).balance(), 0)
+
+    it("refuses a negative opening balance", expect_panic="explicit-panic"):
+        _ := open(-1)
+
+    it("deposits into the balance"):
+        let mut account = open(100)
+        account.deposit(50)
+        assert_equal(account.balance(), 150)
+
+    it("refuses a zero deposit", expect_panic="explicit-panic"):
+        let mut account = open(100)
+        account.deposit(0)
+
+    it("refuses a negative deposit", expect_panic="explicit-panic"):
+        let mut account = open(100)
+        account.deposit(-5)
+
+    it("withdraws from the balance"):
+        let mut account = open(100)
+        account.withdraw(40)
+        assert_equal(account.balance(), 60)
+
+    it("withdraws the whole balance"):
+        let mut account = open(100)
+        account.withdraw(100)
+        assert_equal(account.balance(), 0)
+
+    it("refuses a withdrawal larger than the balance", expect_panic="explicit-panic"):
+        let mut account = open(100)
+        account.withdraw(101)
+
+    it("refuses a zero withdrawal", expect_panic="explicit-panic"):
+        let mut account = open(100)
+        account.withdraw(0)
+
+    it("moves money between accounts"):
+        let mut from = open(300)
+        let mut to = open(20)
+        transfer(&mut from, &mut to, 120)
+        assert_equal(from.balance(), 180)
+        assert_equal(to.balance(), 140)
+
+    it("transfers the whole balance"):
+        let mut from = open(75)
+        let mut to = open(0)
+        transfer(&mut from, &mut to, 75)
+        assert_equal(from.balance(), 0)
+        assert_equal(to.balance(), 75)
+
+    it("refuses a transfer larger than the balance", expect_panic="explicit-panic"):
+        let mut from = open(10)
+        let mut to = open(0)
+        transfer(&mut from, &mut to, 11)
+
+    it("refuses a non-positive transfer", expect_panic="explicit-panic"):
+        let mut from = open(10)
+        let mut to = open(0)
+        transfer(&mut from, &mut to, 0)
+
+    it_each(
+        "a deposit then a withdrawal of the same amount keeps the balance",
+        [(100, 30), (30, 30), (0, 1)],
+        body=fn!(row: (i64, i64)): deposit_then_withdraw(row._0, row._1)
+    )
+
+    it_prop_with("a transfer keeps the total and never overdraws", gen=transfer_case, prop=fn!(
+        input: (i64, i64, i64),
+    ):
+        let mut from = open(input._0)
+        let mut to = open(input._1)
+        transfer(&mut from, &mut to, input._2)
+        assert_equal(from.balance() + to.balance(), input._0 + input._1)
+        assert_equal(from.balance(), input._0 - input._2)
+        assert_equal(to.balance(), input._1 + input._2)
+    )

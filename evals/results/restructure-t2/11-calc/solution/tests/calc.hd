@@ -1,0 +1,15 @@
+use pkg.{eval, CalcError}
+use std.testing.assert_equal
+
+it("evaluates through the public API"):
+    assert_equal(eval("2 * (3 + 4)"), .Ok(14))
+    assert_equal(eval("1 + 2 * 3 - 4 / 2"), .Ok(5))
+
+it("reports errors through the public API"):
+    assert_equal(eval("1 +"), .Err(CalcError.Unexpected(3)))
+    assert_equal(eval("1 / 0"), .Err(CalcError.DivideByZero))
+
+it("compares and prints errors"):
+    assert(CalcError.Unexpected(3) == CalcError.Unexpected(3), reason="equal values compare equal")
+    assert(CalcError.Unexpected(3) != CalcError.DivideByZero, reason="different variants differ")
+    assert(debug(CalcError.Unexpected(3)).contains("3"), reason="debug text shows the offset")

@@ -1,0 +1,3 @@
+## Bank accounts that hold whole cents. Misuse stops the program in debug
+## and test builds; see `account.hd` for the rules.
+pub use self.account.{Account, open, transfer}

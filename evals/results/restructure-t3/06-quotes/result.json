@@ -1,0 +1,95 @@
+{
+  "task": "06-quotes",
+  "package": "quotes",
+  "scenario": "concurrent calls with retries",
+  "selling_points": [
+    "map_join! / join!",
+    "retry policy",
+    "own effect",
+    "ManualClock"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 9,
+      "passed": 9,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "bounded-concurrency",
+        "desc": "concurrency through map_join (limit 4)",
+        "ok": true
+      },
+      {
+        "id": "retry-policy",
+        "desc": "retries through std.task retry/Backoff",
+        "ok": true
+      },
+      {
+        "id": "fake-quotes",
+        "desc": "tests define their own Quotes fake",
+        "ok": true
+      },
+      {
+        "id": "manual-clock",
+        "desc": "tests use ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "design/effects.md",
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 16,
+    "hd": {
+      "new": 3,
+      "file": 1,
+      "check": 3,
+      "test": 2,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [
+      "Bash: grep -n -i \"ManualClock\\|with_clock\\|Clock\\|fake\\|\\$.with\\|pub trait\\|tests:\" design/testing.md design/effects.md | head -80",
+      "Bash: hd --version; rm -rf /tmp/hd-scaffold && mkdir -p /tmp/hd-scaffold && cd /tmp/hd-scaffold && hd new quotes --lib && find quotes -type f | sort && cat quotes/hd.toml quotes/src/lib.hd quotes/test",
+      "Bash: find /tmp/hd-scaffold/quotes -type f",
+      "Read: /tmp/hd-scaffold/quotes/src/lib.hd",
+      "Read: /tmp/hd-scaffold/quotes/hd.toml"
+    ],
+    "diagnostic_codes": {
+      "type-mismatch": 1
+    },
+    "failing_checks": 1,
+    "turns": 34,
+    "cost_usd": 0.17179531,
+    "duration_s": 79,
+    "tokens": 1846037,
+    "final_message": "The `quotes` library is written in `src/quotes.hd`, and `hd check --tests` and `hd test` both pass (9 tests, 0 failures). I also ran `hd fmt` and `hd lint`, which reported clean.\n\n**What's in the package**\n\n- `hd.toml`: package `quotes`, no capabilities, since it's a library.\n- `src/quotes.hd`: `QuoteError` (`@error` with `Busy` and `Unknown(sku)`, deriving `Eq` and `Debug`), the `Quotes` trait, and `order_total!`.\n- `src/lib.hd`: re-exports `QuoteError`, `Quotes` and `order_total` at the package root.\n- `tests/quotes.hd`: one integration test that uses the public API.\n\n**How `order_total!` works**\n\n- Each sku goes through `quote_one!`, which uses `retry(Backoff { attempts: 3, initial: 10ms, factor: 1, max: 10ms })`. That gives up to 3 attempts with 10 ms between them.\n- `map_join!` runs the skus with a limit of 4 in flight and returns results in list order.\n- The results are summed in order with `?`, so the first failing sku in list order is the error returned. An empty list gives `.Ok(0)`.\n\n**Choices I made**\n\n- `QuoteError` uses `@error` messages, following the hd error convention. The spec didn't ask for them.\n- `Unknown` errors are retried like `Busy`, because the spec says every sku gets 3 attempts before its error counts.\n- `factor: 1` is what keeps the wait at 10 ms rather than doubling.\n\n**Tests in `src/quotes.hd`**\n\n- Empty order, summing, and a retry that succeeds on the third attempt.\n- Giving up after 3 attempts, for both `Busy` and `Unknown`.\n- Reporting the fir",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

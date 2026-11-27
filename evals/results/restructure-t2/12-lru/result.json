@@ -1,0 +1,73 @@
+{
+  "task": "12-lru",
+  "package": "lru",
+  "scenario": "stateful data structure",
+  "selling_points": [
+    "model-based property test",
+    "commands"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 15,
+      "passed": 15,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "model-test",
+        "desc": "a generated-operations test (it_prop / it_prop_with / commands)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 13,
+    "hd": {
+      "new": 1,
+      "help": 2,
+      "check": 5,
+      "test": 4,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: set -e; rm -rf /tmp/lru-mut && cp -R /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/restructure-t2/12-lru/lru /tmp/lru-mut && rm -rf /tmp/lru-mut/.git && cd /tmp/lru-mut"
+    ],
+    "diagnostic_codes": {
+      "missing-let": 1,
+      "syntax-error": 1,
+      "type-mismatch": 3,
+      "not-writable": 1
+    },
+    "failing_checks": 2,
+    "turns": 25,
+    "cost_usd": 0.035128160000000005,
+    "duration_s": 112,
+    "tokens": 1074978,
+    "final_message": "The `lru` package is in this directory. `hd check --tests` passes with no errors or warnings, `hd lint` is clean, and `hd test` passes 15 of 15 cases.\n\n**What's there**\n- `src/lru.hd`: the cache. Entries sit in slots linked from most to least recent, and a `Map[string, i64]` maps each key to its slot, so `get` and `put` are O(1). `put` at capacity reuses the least-recent slot. Capacity 0 stores nothing.\n- `src/lib.hd`: the library root, re-exporting `Lru` and `new_lru`. The sample `greet` from `hd new --lib` is gone.\n- `tests/lru.hd`: one integration test through the public API. I rewrote the generated sample, which called `greet`.\n\n**Tests in `src/lru.hd`**\n- Example cases cover: empty cache, read-back, update in place, eviction, a hit making a key recent, a put making a key recent, a miss changing nothing, capacity 0, and an `it_each` table over capacities 0 to 4.\n- A model-based test, `it_prop_with` plus `commands`, draws a capacity from 0 to 4 and up to 40 operations on keys `a` to `e`. The model is a plain list of entries, most recent first. The test checks every `get` result and the length after every step.\n\n**Choices I made**\n- A `put` on a full cache evicts the least-recent entry before inserting the new key.\n- Capacity 0 means `put` is a no-op. The model agrees, because it truncates to 0.\n\n**Things to know**\n- `hd new` ran `git init` and wrote a `.gitignore`, though the directory was not a repo before. I haven't committed anything. Remove `.git` if you don't want it.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

@@ -1,0 +1,122 @@
+{
+  "task": "01-colsum",
+  "package": "colsum",
+  "scenario": "CLI over standard input",
+  "selling_points": [
+    "derive Cli",
+    "@error",
+    "Result"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 15,
+      "passed": 15,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [
+      {
+        "args": [
+          "--skip-header"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "a,1\nb,7\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 2: not a number: zz\n"
+      },
+      {
+        "args": [
+          "--key",
+          "2",
+          "--value",
+          "3"
+        ],
+        "ok": true,
+        "status": 0,
+        "stdout": "x,-2\ny,8\n",
+        "stderr": ""
+      },
+      {
+        "args": [],
+        "ok": true,
+        "status": 1,
+        "stdout": "",
+        "stderr": "colsum: line 1: missing column\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "derive-cli",
+        "desc": "options parsed with @derive(Cli)",
+        "ok": true
+      },
+      {
+        "id": "error-enum",
+        "desc": "SumError declared with @error",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/cli-tool.md",
+      "scenarios/stdin-filter.md",
+      "packages.md",
+      "reference/packages.md",
+      "design/errors.md",
+      "design/capabilities.md",
+      "design/contracts.md"
+    ],
+    "bash": 17,
+    "hd": {
+      "help": 4,
+      "new": 1,
+      "check": 3,
+      "test": 4,
+      "run": 7,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: cd /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/restructure-t2/01-colsum/colsum/.claude/skills/hd-lang && grep -n \"ConsoleInput\\|^| \\`Args\\|Console = \" design/capabili",
+      "Bash: hd test --format json 2>&1 | head -80; echo \"exit=${PIPESTATUS[0]}\"",
+      "Bash: printf 'tea, 3\\njam,2\\n\\ntea,4\\n' | hd run -- ; echo \"status=$?\"; printf 'k,v\\na,1\\nb,x\\n' | hd run -- --skip-header --key 1 --value 2 >/tmp/colsum_out.txt 2>/tmp/colsum_err.txt; echo \"status=$?"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 35,
+    "cost_usd": 0.03108616,
+    "duration_s": 88,
+    "tokens": 997641,
+    "final_message": "The `colsum` package is in this directory, and `hd check --tests` and `hd test` both pass (15 tests, 0 failures). `hd lint` is clean.\n\n**Layout**\n- `hd.toml`: package `colsum`, granting `Console`, `ConsoleInput` and `Args`. Nothing else.\n- `src/sum.hd`: `pub enum SumError` with `MissingColumn(line: usize)` and `NotANumber(line: usize, text: string)`, deriving `Eq` and `Debug`. Also `pub fn summarize(...)` with the signature you specified. Its tests are in a `tests:` block at the bottom.\n- `src/main.hd`: options via `@derive(Cli)`, so `--key`, `--value` (defaults 1 and 2) and `--skip-header` are parsed, with a built-in `--help`. It reads all of stdin, calls `summarize`, and prints `key,total` lines.\n- I deleted the scaffold `tests/colsum.hd`. It expected the old \"hello, world\" greeting and needed an installed binary.\n\n**Behaviour**\n- Errors print `colsum: line N: missing column` or `colsum: line N: not a number: X` to stderr, exit 1, and write nothing to stdout.\n- Line numbers count the header and blank lines. Blank means empty after trimming.\n- Keys and values are trimmed. Values are parsed as `i64`, so signs work.\n- Output is sorted by key in `summarize`, so the returned list is already in order.\n\n**Decisions I made where the spec was silent**\n- `--key 0` or `--value 0` is a usage error: message on stderr, exit 2. The spec didn't cover this.\n- Summing past the range of `i64` panics (exit 3) rather than being reported. I didn't handle it.\n- I did not check CRLF input. Whether",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

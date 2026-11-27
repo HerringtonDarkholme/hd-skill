@@ -1,0 +1,24 @@
+[package]
+name = "linecount"
+
+# What `main` may use. Only the arguments, standard output and error, and
+# reads under data/ (relative to this package) are granted.
+[capabilities]
+Args = true
+Console = true
+FsRead = ["data/"]
+ConsoleInput = false
+Clock = false
+Random = false
+FsWrite = false
+Env = false
+Http = false
+Net = false
+Sys = false
+Signals = false
+Workers = false
+
+# Integration tests run the built program and need to spawn it. Process is
+# left out of [capabilities] on purpose: `false` there would also deny tests.
+[dev-capabilities]
+Process = true

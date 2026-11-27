@@ -1,0 +1,70 @@
+{
+  "task": "04-ratelimit",
+  "package": "ratelimit",
+  "scenario": "time-dependent logic",
+  "selling_points": [
+    "Clock requirement",
+    "ManualClock fake"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 4,
+      "passed": 4,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "manual-clock",
+        "desc": "tests control time with ManualClock",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 14,
+    "hd": {
+      "test": 3,
+      "new": 3,
+      "help": 1,
+      "check": 3,
+      "fmt": 1,
+      "lint": 1
+    },
+    "denied": [],
+    "diagnostic_codes": {
+      "unknown-type": 3,
+      "unknown-trait": 8,
+      "unknown-name": 1
+    },
+    "failing_checks": 1,
+    "turns": 23,
+    "cost_usd": 0.023098980000000005,
+    "duration_s": 71,
+    "tokens": 663412,
+    "final_message": "The `ratelimit` package is written and both `hd check --tests` and `hd test` pass: 7 tests, 0 failures.\n\nFiles:\n- **`src/limiter.hd`**: `Limiter` and `new_limiter` as specified, plus six unit tests. `allow` reads the time through `now()` under `$ Clock`. It drops events older than the window, refuses when `max` events remain, and otherwise records the new event.\n- **`src/lib.hd`**: re-exports `Limiter` and `new_limiter` as the package interface.\n- **`tests/ratelimit.hd`**: one integration test through the public interface.\n- **`hd.toml`**: created by `hd new`, package name `ratelimit`.\n\nThe unit tests cover:\n- allowing up to `max`, then refusing;\n- `max = 0` refusing everything;\n- the boundary: an event counts while `now - t < window` and expires exactly at `window`;\n- a refused event not being recorded;\n- a sliding window across several events;\n- keys being independent.\n\nChoices I made:\n- **Time in tests:** the tests install a `ManualClock` and advance it with `sleep!`, which the docs say finishes at once in virtual time. I did not find a dedicated advance method.\n- **Expired keys stay in the map:** a key whose events have all expired keeps an empty list. Memory grows with the number of distinct keys ever seen. Removing empty entries would be a small change if you want it.\n- **No git repo:** I used `--vcs none`, so nothing was committed.",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

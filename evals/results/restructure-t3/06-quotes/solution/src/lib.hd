@@ -1,0 +1,2 @@
+## Prices an order through a quote service the caller provides.
+pub use self.quotes.{QuoteError, Quotes, order_total}

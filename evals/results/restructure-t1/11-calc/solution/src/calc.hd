@@ -1,0 +1,234 @@
+use std.testing.it_each
+
+## Why an expression could not be evaluated.
+@error
+@derive(Eq, Debug)
+pub enum CalcError:
+    @error("division by zero")
+    DivideByZero
+    @error("unexpected input at byte $at")
+    Unexpected(at: usize)
+
+## One token of the input, with the byte offset where it starts.
+@derive(Eq, Debug)
+enum Token:
+    Num(i64)
+    Plus
+    Minus
+    Star
+    Slash
+    Open
+    Close
+    Invalid # a byte or number the grammar can never accept
+    End
+
+@derive(Eq, Debug)
+struct Lexeme:
+    token: Token
+    at: usize
+
+## A binary operator.
+@derive(Eq, Debug)
+enum Op:
+    Add
+    Sub
+    Mul
+    Div
+
+## The syntax tree. A child of the same type is boxed, since a type cannot
+## contain itself by value.
+@derive(Eq, Debug)
+enum Expr:
+    Num(i64)
+    Neg(*Expr)
+    Bin(op: Op, lhs: *Expr, rhs: *Expr)
+
+fn is_space(b: u8) -> bool:
+    b == 32 || b == 9 || b == 10 || b == 13 # space, tab, newline, carriage return
+
+fn is_digit(b: u8) -> bool:
+    b >= 48 && b <= 57 # '0' to '9'
+
+fn punct(b: u8) -> Token?:
+    match b:
+        40 => .Some(.Open) # (
+        41 => .Some(.Close) # )
+        42 => .Some(.Star) # *
+        43 => .Some(.Plus) # +
+        45 => .Some(.Minus) # -
+        47 => .Some(.Slash) # /
+        _ => .None
+
+## Splits the source into lexemes, always ending with `End` at `src.len()`.
+fn lex(src: string) -> List[Lexeme]:
+    let bytes = src.to_utf8()
+    let mut out: List[Lexeme] = []
+    let at: usize = 0
+    while at < bytes.len():
+        b := bytes[at]
+        if is_space(b):
+            at += 1
+        else if is_digit(b):
+            start := at
+            while at < bytes.len() && is_digit(bytes[at]):
+                at += 1
+            text := string::from_utf8(bytes.slice(start, at)).expect("digits are ASCII")
+            match text.parse::[i64]():
+                .Ok(n) => out.push(Lexeme { token: .Num(n), at: start })
+                .Err(_) => out.push(Lexeme { token: .Invalid, at: start }) # out of i64 range
+        else:
+            match punct(b):
+                .Some(token) => out.push(Lexeme { token: token, at: at })
+                .None => out.push(Lexeme { token: .Invalid, at: at })
+            at += 1
+    out.push(Lexeme { token: .End, at: bytes.len() })
+    out
+
+fn additive(token: Token) -> Op?:
+    match token:
+        .Plus => .Some(Op.Add)
+        .Minus => .Some(Op.Sub)
+        _ => .None
+
+fn multiplicative(token: Token) -> Op?:
+    match token:
+        .Star => .Some(Op.Mul)
+        .Slash => .Some(Op.Div)
+        _ => .None
+
+## A recursive-descent parser. Each rule returns the tree it read, or the
+## offset of the first token it cannot accept.
+struct Parser:
+    lexemes: List[Lexeme]
+    at: usize
+
+impl Parser:
+    fn token(&self) -> Token:
+        self.lexemes[self.at].token
+
+    fn position(&self) -> usize:
+        self.lexemes[self.at].at
+
+    # expr := term (('+' | '-') term)*
+    fn expr(&mut self) -> Result[Expr, CalcError]:
+        let mut left = self.term()?
+        while true:
+            let .Some(op) = additive(self.token()) else:
+                break
+            self.at += 1
+            right := self.term()?
+            left = Expr.Bin(op, box(left), box(right))
+        .Ok(left)
+
+    # term := unary (('*' | '/') unary)*
+    fn term(&mut self) -> Result[Expr, CalcError]:
+        let mut left = self.unary()?
+        while true:
+            let .Some(op) = multiplicative(self.token()) else:
+                break
+            self.at += 1
+            right := self.unary()?
+            left = Expr.Bin(op, box(left), box(right))
+        .Ok(left)
+
+    # unary := '-' unary | primary
+    fn unary(&mut self) -> Result[Expr, CalcError]:
+        match self.token():
+            .Minus =>
+                self.at += 1
+                .Ok(Expr.Neg(box(self.unary()?)))
+            _ => self.primary()
+
+    # primary := NUMBER | '(' expr ')'
+    fn primary(&mut self) -> Result[Expr, CalcError]:
+        match self.token():
+            .Num(n) =>
+                self.at += 1
+                .Ok(Expr.Num(n))
+            .Open =>
+                self.at += 1
+                inner := self.expr()?
+                match self.token():
+                    .Close =>
+                        self.at += 1
+                        .Ok(inner)
+                    _ => .Err(.Unexpected(self.position()))
+            _ => .Err(.Unexpected(self.position()))
+
+fn parse(src: string) -> Result[Expr, CalcError]:
+    let mut parser = Parser { lexemes: lex(src), at: 0 }
+    tree := parser.expr()?
+    match parser.token():
+        .End => .Ok(tree)
+        _ => .Err(.Unexpected(parser.position()))
+
+## Integer arithmetic wraps on overflow, as `--release` does; there is no
+## overflow error in CalcError. `x / -1` is `0 - x`, which wraps for the minimum.
+fn apply(op: Op, a: i64, b: i64) -> Result[i64, CalcError]:
+    match op:
+        .Add => .Ok(a.wrapping_add(b))
+        .Sub => .Ok(a.wrapping_sub(b))
+        .Mul => .Ok(a.wrapping_mul(b))
+        .Div =>
+            if b == 0:
+                .Err(.DivideByZero)
+            else if b == -1:
+                .Ok(i64(0).wrapping_sub(a))
+            else:
+                .Ok(a / b)
+
+fn eval_tree(e: &Expr) -> Result[i64, CalcError]:
+    match e:
+        .Num(n) => .Ok(n)
+        .Neg(inner) => .Ok(i64(0).wrapping_sub(eval_tree(inner)?))
+        .Bin(op, lhs, rhs) =>
+            a := eval_tree(lhs)?
+            b := eval_tree(rhs)?
+            apply(op, a, b)
+
+## Evaluates an integer expression with `+ - * /`, parentheses and unary minus.
+pub fn eval(src: string) -> Result[i64, CalcError]:
+    eval_tree(&parse(src)?)
+
+tests:
+    it_each(
+        "evaluates",
+        [
+            ("7", 7i64),
+            ("  1  +  2 ", 3i64),
+            ("1 + 2 * 3", 7i64),
+            ("(1 + 2) * 3", 9i64),
+            ("10 - 4 - 3", 3i64),
+            ("8 / 2 / 2", 2i64),
+            ("-7 / 2", -3i64),
+            ("7 / -2", -3i64),
+            ("- -4", 4i64),
+            ("-(2 + 3) * 2", -10i64),
+            ("2 * -3", -6i64),
+            ("((((5))))", 5i64),
+            ("9223372036854775807 + 1", -9223372036854775807i64 - 1i64),
+        ],
+        body=fn!(row: (string, i64)): assert_equal(eval(row._0), .Ok(row._1), reason=row._0)
+    )
+
+    it_each(
+        "reports the failure",
+        [
+            ("1/0", CalcError.DivideByZero),
+            ("1 / (2 - 2)", CalcError.DivideByZero),
+            ("", CalcError.Unexpected(0)),
+            ("1 +", CalcError.Unexpected(3)),
+            ("1 2", CalcError.Unexpected(2)),
+            ("1 $ 2", CalcError.Unexpected(2)),
+            ("(1 $", CalcError.Unexpected(3)),
+            ("(1", CalcError.Unexpected(2)),
+            ("1)", CalcError.Unexpected(1)),
+            ("()", CalcError.Unexpected(1)),
+            ("+1", CalcError.Unexpected(0)),
+            ("*", CalcError.Unexpected(0)),
+            ("1 2 $", CalcError.Unexpected(2)),
+            ("99999999999999999999", CalcError.Unexpected(0)),
+            ("1 + é", CalcError.Unexpected(4)),
+        ],
+        body=fn!(row: (string, CalcError)): assert_equal(eval(row._0), .Err(row._1), reason=row._0)
+    )

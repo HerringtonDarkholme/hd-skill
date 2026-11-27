@@ -1,0 +1,11 @@
+use pkg.{Run, encode, decode}
+use std.testing.it_prop
+
+it("the public API encodes and decodes"):
+    assert_equal(encode([4, 4, 9]), [Run { value: 4, count: 2 }, Run { value: 9, count: 1 }])
+    assert_equal(decode(encode([4, 4, 9])), [4, 4, 9])
+
+it_prop(
+    "the public round trip holds for any list",
+    prop=fn!(xs: List[i32]): assert_equal(decode(encode(xs)), xs)
+)

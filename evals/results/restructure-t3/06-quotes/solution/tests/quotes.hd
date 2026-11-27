@@ -1,0 +1,17 @@
+use pkg.{QuoteError, Quotes, order_total}
+use std.task.{Backoff, retry}
+use std.time.{Clock, ManualClock, Timestamp}
+
+struct OneSku:
+    sku: string
+    price: i64
+
+impl Quotes for OneSku:
+    fn quote!(&mut self, sku: string) -> Result[i64, QuoteError]:
+        if sku == self.sku: .Ok(self.price) else: .Err(.Unknown(sku))
+
+it("prices an order through the public API"):
+    clock := ManualClock::new(Timestamp::from_unix_milliseconds(0))
+    $.with(Quotes=box(OneSku { sku: "tea", price: 300 }), Clock=clock):
+        assert_equal(order_total!(["tea", "tea"]), .Ok(600))
+        assert_equal(order_total!(["tea", "cake"]), .Err(.Unknown("cake")))

@@ -1,0 +1,67 @@
+{
+  "task": "10-rle",
+  "package": "rle",
+  "scenario": "algorithm with properties",
+  "selling_points": [
+    "it_prop",
+    "derive Eq/Debug"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 17,
+      "passed": 17,
+      "failed": []
+    },
+    "hidden": {
+      "expected": 5,
+      "passed": 5,
+      "failed": [],
+      "compile_errors": []
+    },
+    "runs": [],
+    "idiom": [
+      {
+        "id": "prop-test",
+        "desc": "a property test (it_prop)",
+        "ok": true
+      },
+      {
+        "id": "own-tests",
+        "desc": "writes at least 2 test cases of its own",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": true,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [],
+    "bash": 10,
+    "hd": {
+      "new": 1,
+      "check": 3,
+      "test": 4,
+      "fmt": 2,
+      "lint": 2
+    },
+    "denied": [
+      "Bash: set -e; M=$(mktemp -d); cp -R /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/hd-skill-evals/restructure-t1/10-rle/rle/hd.toml /private/var/folders/qt/_jh_5zt97cd748zcbynvz1v40000gn/T/h"
+    ],
+    "diagnostic_codes": {},
+    "failing_checks": 0,
+    "turns": 20,
+    "cost_usd": 0.02063769,
+    "duration_s": 66,
+    "tokens": 557105,
+    "final_message": "The `rle` package is in this directory, and `hd check --tests`, `hd test`, `hd fmt --check` and `hd lint` all pass with no warnings. `hd test` reports 17 passing cases.\n\n**What's there**\n\n- **`src/rle.hd`** holds the library. `Run` is `pub struct` with `pub value: i32` and `pub count: usize`, and it derives `Eq` and `Debug`. `encode` builds maximal runs with no empty run and no two neighbours equal. `decode` expands each run `count` times.\n- **`src/lib.hd`** is the library root, so it re-exports `Run`, `encode` and `decode` from `pkg.rle`. The scaffold put the root here, and the public API needs to come from it.\n- **`tests/rle.hd`** replaces the scaffold's `greet` test. It checks the public API through the package root with one example and one round-trip property.\n\n**Tests**\n\n- Example tables cover encoding and decoding, including empty lists, single runs, alternating values, negatives, and `i32` bounds.\n- Round-trip properties run `decode(encode(xs)) == xs` on two generators: arbitrary `List[i32]`, and a run-heavy generator that draws values from -2..=2 so repeats are common.\n- A property checks that every run is non-empty, neighbouring runs differ, and the counts sum to the input length.\n\n**Not verified**\n\nI tried a mutation check: break `encode` in a scratch copy and confirm the properties fail. The tool call was denied by a permission rule, so I did not run it. The properties have not been shown to catch a broken `encode`, though they pass against the real code.\n\n**Choice",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

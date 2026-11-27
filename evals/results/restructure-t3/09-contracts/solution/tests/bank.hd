@@ -1,0 +1,10 @@
+use pkg.{Account, open, transfer}
+
+it("moves money through the public interface"):
+    let mut savings: Account = open(1000)
+    let mut checking: Account = open(0)
+    transfer(&mut savings, &mut checking, 400)
+    savings.withdraw(100)
+    checking.deposit(25)
+    assert_equal(savings.balance(), 500)
+    assert_equal(checking.balance(), 425)

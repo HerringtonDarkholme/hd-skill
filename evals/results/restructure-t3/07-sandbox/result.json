@@ -1,0 +1,103 @@
+{
+  "task": "07-sandbox",
+  "package": "linecount",
+  "scenario": "sandboxed program",
+  "selling_points": [
+    "scoped capability grants",
+    "minimal capabilities"
+  ],
+  "grade": {
+    "check": {
+      "ok": true,
+      "errors": 0,
+      "codes": []
+    },
+    "own_tests": {
+      "cases": 7,
+      "passed": 7,
+      "failed": []
+    },
+    "hidden": {},
+    "runs": [
+      {
+        "args": [
+          "data/a.txt",
+          "data/b.txt"
+        ],
+        "ok": false,
+        "status": 0,
+        "stdout": "3 data/a.txt\n0 data/b.txt\n3 total\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "data/a.txt",
+          "hd.toml"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "3 data/a.txt\n3 total\n",
+        "stderr": "linecount: hd.toml: access to hd.toml is not granted\n"
+      },
+      {
+        "args": [
+          "data/nope.txt"
+        ],
+        "ok": true,
+        "status": 1,
+        "stdout": "0 total\n",
+        "stderr": "linecount: data/nope.txt: not found: data/nope.txt\n"
+      }
+    ],
+    "idiom": [
+      {
+        "id": "minimal-caps",
+        "desc": "[capabilities] grants only Console, Args and FsRead",
+        "ok": true
+      },
+      {
+        "id": "scoped-fsread",
+        "desc": "FsRead scoped to data/",
+        "ok": true
+      }
+    ],
+    "fmt_clean": true,
+    "pass": false,
+    "idiom_score": 1
+  },
+  "metrics": {
+    "skill_invoked": true,
+    "pages_read": [
+      "language.md",
+      "scenarios/cli-tool.md",
+      "design/capabilities.md",
+      "scenarios/files-and-directories.md",
+      "design/testing.md",
+      "reference/packages.md"
+    ],
+    "bash": 9,
+    "hd": {
+      "check": 5,
+      "test": 5,
+      "run": 3,
+      "fmt": 5,
+      "lint": 3
+    },
+    "denied": [
+      "Bash: ls -la && S=.claude/skills/hd-lang && grep -n -iE \"args|read_bytes|ExitCode|eprintln|^.*count|lines\" $S/reference/std-index.txt | head -80",
+      "Bash: hd fmt 2>&1 | tail -3; sed -i '' -E 's/let mut (lines|total|failed): ?/let \\1 = /' src/main.hd; grep -n \"let \" src/main.hd | head; hd fmt 2>&1 | tail -2; hd lint 2>&1 | tail -5; hd check --forma"
+    ],
+    "diagnostic_codes": {
+      "unknown-trait": 10,
+      "missing-requirement": 2
+    },
+    "failing_checks": 1,
+    "turns": 26,
+    "cost_usd": 0.027722149999999997,
+    "duration_s": 67,
+    "tokens": 970092,
+    "final_message": "The `linecount` package is in this directory, and `hd check --tests`, `hd fmt --check`, `hd lint` and `hd test` all pass (7 tests: 5 unit, 2 integration).\n\n**Files**\n- `hd.toml`: `Args = true`, `Console = true`, `FsRead = [\"data/\"]`. Tests get `Process = [\"linecount\"]` under `[dev-capabilities]`, so they can run the built program. Nothing else is granted.\n- `src/main.hd`: `main!` reads each argument with `read_bytes!`, prints `<lines> <file>` in order, then `<total> total`. Unreadable files go to stderr as `linecount: <file>: <reason>`, are skipped, and make the exit status 1.\n- `tests/linecount.hd`: integration tests that run the real program. One reads `data/sample.txt`. The other passes `hd.toml` and `data/../hd.toml` and checks that both are refused and the exit status is 1.\n- `src/main.hd` also has unit tests (with `MemoryFs` and `ScriptedArgs`) for the count, argument order, a missing file, and no arguments.\n- `data/sample.txt`: a three-line fixture for the integration test.\n\n**Choices to check**\n- **Line count:** I count newline bytes, as `wc -l` does. A final line with no trailing newline is not counted, so `a\\nb` gives 1. If you want that last line counted, the count needs to change.\n- **Bytes, not text:** I read with `read_bytes!`, so a file with invalid UTF-8 still gets a count rather than an error.\n- **Grant check:** `hd run -- data/sample.txt hd.toml data/../hd.toml` prints `3 data/sample.txt`, then the two refusals with `access to ... is not granted`, then `3 to",
+    "is_error": false
+  },
+  "agent_exit": 0
+}

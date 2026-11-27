@@ -1,0 +1,13 @@
+use pkg.fields.FieldNames
+
+## A rectangle, for checking that derives work outside the trait's module.
+@derive(FieldNames)
+pub struct Rect:
+    pub width: i32
+    pub height: i32
+    pub label: string
+
+## Nothing to name: a unit-like struct still derives.
+@derive(FieldNames)
+pub struct Unit:
+    pass

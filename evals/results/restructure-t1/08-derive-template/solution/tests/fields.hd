@@ -1,0 +1,19 @@
+use pkg.fields.FieldNames
+use pkg.shapes.{Rect, Unit}
+
+@derive(FieldNames)
+struct Pair:
+    left: string
+    right: string
+
+it("derives in a test module, in declaration order"):
+    assert_equal(Pair { left: "a", right: "b" }.field_names(), ["left", "right"])
+
+it("derives in another module of the package"):
+    assert_equal(
+        Rect { width: 1, height: 2, label: "r" }.field_names(),
+        ["width", "height", "label"],
+    )
+
+it("derives for a struct with no fields"):
+    assert_equal(Unit {}.field_names(), [])

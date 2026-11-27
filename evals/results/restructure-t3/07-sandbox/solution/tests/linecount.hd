@@ -1,0 +1,17 @@
+use std.process.Command
+use std.testing.hd_run
+
+it("counts a file under data/ with the real grants"):
+    let out = hd_run!(*Command::new("linecount").args(["data/sample.txt"]))
+    assert_equal(out.stdout, "3 data/sample.txt\n3 total\n")
+    assert_equal(out.stderr, "")
+    assert_equal(out.status, 0)
+
+it("refuses a file outside data/, skips it, and exits 1"):
+    let out = hd_run!(
+        *Command::new("linecount").args(["data/sample.txt", "hd.toml", "data/../hd.toml"]),
+    )
+    assert_equal(out.stdout, "3 data/sample.txt\n3 total\n")
+    assert(out.stderr.contains("linecount: hd.toml: "), reason="stderr was: ${out.stderr}")
+    assert(out.stderr.contains("linecount: data/../hd.toml: "), reason="stderr was: ${out.stderr}")
+    assert_equal(out.status, 1)
