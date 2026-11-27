@@ -5,9 +5,12 @@ write [hd-lang](https://github.com/HerringtonDarkholme/hd-lang): a
 statically typed, indentation-based language that compiles to WebAssembly.
 
 Without it, an agent writes hd from its Python and Rust habits, and the
-code does not check. With it, the agent has how-to pages for common
-scenarios, the syntax by example, the edit-check loop for the `hd`
-command, and a lookup from each common diagnostic to its fix.
+code does not check, or checks but ignores what hd is for. With it, the
+agent knows which hd feature fits each situation (effects, derives,
+contracts, property tests, capability grants), has the core language on
+one page, the standard library by job, complete programs by scenario, the
+edit-check loop for the `hd` command, and a lookup from each diagnostic to
+its fix.
 
 ## Install
 
@@ -34,56 +37,32 @@ cargo install --locked --git https://github.com/HerringtonDarkholme/hd-lang hd-l
 
 ```text
 skills/hd-lang/
-  SKILL.md                  when to use it, the edit-check loop, the hd way, the rules that surprise, the index
-  design/                   one page per hd design move: when to use it, and how
-    derive.md               built-in derives, and writing your own derive template
-    contracts.md            require and ensure
-  references/
-    how-to/                 one page per scenario: a complete, tested program and its pieces
-      common-operations.md  strings, numbers, lists, maps, trees, scanners, with the clues
-      cli-tool.md           options, --help, exit status
-      stdin-filter.md       read standard input and transform it
-      text-records.md       parse a text or CSV file into typed records
-      configuration.md      JSON file, environment variables, defaults
-      files-and-directories.md  list, read, write, move
-      http-api.md           call an API, decode JSON, test without a network
-      run-commands.md       run another program
-      concurrent-work.md    several waits at once, timeouts, retries, Ctrl-C
-      shared-state.md       &mut, box, or a provider
-      domain-model.md       states, transitions, rules
-      project-layout.md     start a project and split it into modules
-      from-other-languages.md  Python, TypeScript, Rust and Go habits in hd
-    language/               one page per topic
-      basics.md             scripts and main, bindings, numbers, strings
-      collections.md        lists, maps, tuples, loops, comprehensions, iterators
-      functions.md          functions, closures, pipes, control flow, defer
-      data.md               structs, methods, enums, match, let-else
-      errors.md             optionals, Result, ?, @error, exit codes
-      traits.md             traits, generics, dyn, @derive, operators
-      references.md         values, &T, &mut T, box, stored closures
-      requirements.md       rows after `$`, providers, capabilities
-      suspension.md         `!` functions, join!, race!, timeouts
-      modules.md            files as modules, pub, use
-    std/
-      api/                  every public std module, generated from `hd doc` (scripts/gen-std-api.mjs)
-      imports.md            the prelude, and the import line for everything else
-      text.md               string methods, parsing, building text, regex
-      collections.md        list, map, iterator, optional and result methods
-      host.md               console, arguments, files, time, JSON, random
-    testing/
-      unit-tests.md         tests: blocks, assertions, tables, properties
-      fakes.md              replacing the console, files, clock and your own traits
-      integration.md        tests/NAME.hd, snapshots, doc tests
-    cli/
-      commands.md           the commands and flags
-      output.md             JSON diagnostics, exit statuses, panics
-      packages.md           hd.toml, capabilities, dependencies, workspaces
-    mistakes/               what was written, the code hd reports, the fix
-      syntax.md  types.md  references.md  requirements.md  std.md
+  SKILL.md            what hd is, the hd way (which feature for which situation), the loop, where to look
+  language.md         the core language on one page, and the rules that surprise
+  std.md              the standard library by job
+  cli.md              the `hd` command, its flags, and reading its output
+  design/             one page per hd design move: when to use it, and how
+    effects.md        rows after `$`, your own effects, providers
+    capabilities.md   capability grants, sandboxing, plugins
+    derive.md         built-in derives, and writing your own derive template
+    contracts.md      require and ensure
+    errors.md         optionals, Result, @error enums
+    testing.md        tests, tables, properties, model-based tests, fakes, snapshots
+    concurrency.md    `!`, join!, race!, std.task policies, threads
+  scenarios/          one task as a complete, tested program
+    cli-tool.md  stdin-filter.md  text-records.md  configuration.md
+    files-and-directories.md  http-api.md  run-commands.md  concurrent-work.md
+    shared-state.md  domain-model.md  parser.md  project-layout.md  porting.md  performance.md
+  reference/
+    traits.md  references.md  packages.md
+    diagnostics.md    each diagnostic code, what was written, the fix
+    limitations.md    what hd can't do yet, and what to do instead
+    explore.md        where to look when the skill has no answer
+    std-index.txt     every std item on one line, for grep (scripts/gen-std-api.mjs)
 ```
 
-The agent reads `SKILL.md` first and opens a reference page only when the
-task needs it.
+The agent reads `SKILL.md` first, then `language.md`, and opens other
+pages when the task needs them.
 
 ## Every example is checked
 
@@ -94,7 +73,8 @@ trusted by eye:
 node scripts/check-examples.mjs                   # uses `hd` on PATH
 HD=/path/to/hd node scripts/check-examples.mjs
 node scripts/check-examples.mjs language/         # only paths that contain a word
-HD=/path/to/hd node scripts/gen-std-api.mjs       # regenerate references/std/api/ after std changes
+node scripts/check-examples.mjs --links           # only check links and anchors
+HD=/path/to/hd node scripts/gen-std-api.mjs       # regenerate reference/std-index.txt after std changes
 ```
 
 - Each `hd` block in the skill must pass `hd check`. With a `tests:` block
@@ -102,13 +82,15 @@ HD=/path/to/hd node scripts/gen-std-api.mjs       # regenerate references/std/ap
   print exactly that.
 - Blocks marked `<!-- file: PACKAGE/path -->` form a package, which must
   pass `hd check --all` and `hd test`.
-- Each row of the mistakes tables that names a diagnostic code has a file
-  under `checks/mistakes/` whose `# expect:` line states the code `hd`
-  must report.
+- Each row of `reference/diagnostics.md` that names a diagnostic code has
+  a file under `checks/mistakes/` whose `# expect:` line states the code
+  `hd` must report.
+- Every relative link points at a file that exists, and every `#anchor`
+  at a heading.
 
 ## Contributing
 
 Found an example that no longer checks, or a mistake an agent keeps
-making? Open an issue or a pull request. For a new mistakes row, add the
+making? Open an issue or a pull request. For a new diagnostics row, add the
 fixture under `checks/mistakes/` first, run the script, and copy the code
 it reports into the table.

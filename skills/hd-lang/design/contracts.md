@@ -15,7 +15,7 @@ bug in the program, not an outcome to handle.
 
 | The problem | Use |
 | --- | --- |
-| bad input from outside: a file, a request, a user | `Result` with an `@error` enum ([errors](../references/language/errors.md)) |
+| bad input from outside: a file, a request, a user | `Result` with an `@error` enum ([errors](errors.md)) |
 | a caller broke the rules of the call: a negative amount, an empty list | `require` |
 | what the function promises afterwards: a total kept, a list sorted | `ensure` |
 | a check inside a test | `assert` / `assert_equal` from `std.testing`; they are test-only |
@@ -95,7 +95,23 @@ println("${clamp(+15, +0, +10)}")
 
 ## Testing code with contracts
 
-A test cannot catch a panic, so a test can't assert that a contract
-fires. Test the behavior when the rules are kept; the contracts check
-every call those tests make. To see a contract fire, run the program
-once with an argument that breaks it and read the panic.
+Test the behavior when the rules are kept; the contracts check every call
+those tests make. To show that a broken rule stops the call, give the case
+`expect_panic="explicit-panic"`: it passes only if the body panics with
+that category ([testing](testing.md#cases-tests-it-and-it_each)).
+
+```hd
+use std.contract.require
+
+fn half(n: i32) -> i32:
+    require("n must be even"):
+        n % 2 == 0
+    n / 2
+
+tests:
+    it("halves an even number"):
+        assert_equal(half(+8), +4)
+
+    it("refuses an odd number", expect_panic="explicit-panic"):
+        _ := half(+3)
+```

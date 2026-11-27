@@ -1,0 +1,9 @@
+# expect: check pattern-arity
+enum Shape:
+    Rect(w: i32, h: i32)
+    Dot
+
+fn name(s: Shape) -> string:
+    match s:
+        .Rect(_) => "rect"
+        .Dot => "dot"

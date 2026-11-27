@@ -1,0 +1,7 @@
+# expect: check underivable-trait
+trait Describe:
+    fn describe(self) -> string
+
+@derive(Describe)
+struct Point:
+    x: i32

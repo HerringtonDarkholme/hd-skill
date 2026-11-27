@@ -1,0 +1,7 @@
+# expect: check unregistered-auto-closing
+use std.contract.ensure
+
+fn half(n: i32) -> i32:
+    result := n / 2
+    _ := ensure("doubles back", fn() -> bool: result * 2 == n)
+    result

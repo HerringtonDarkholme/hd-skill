@@ -4,7 +4,7 @@ hd has no macros. Code that follows a type's fields is **derived**:
 `@derive(Trait)` on a struct or enum writes `impl Trait for` that type
 from its fields. The built-in derives cover equality, ordering, hashing,
 debug text, JSON, command-line options, validation and test data
-([the table](../references/language/traits.md#derived-implementations)).
+([below](#the-built-in-derives)).
 A **derive template**, written in plain hd, makes your own trait derivable
 the same way.
 
@@ -20,6 +20,86 @@ the same way.
 A template is the only way to make `@derive(YourTrait)` work. Without
 one, the derive is `underivable-trait`, and no decorator on the trait
 fixes that.
+
+## The built-in derives
+
+`@derive(...)` writes a trait's implementation from the type's fields.
+Derive before writing an `impl` by hand: a derived parser, codec or
+checker stays in step with the fields.
+
+| Derive | Gives | Import |
+| --- | --- | --- |
+| `Eq` | `==` and `!=` | none |
+| `Eq, PartialOrd, Ord` | `<`, `>`, `sorted()`, `max` (list all three) | none |
+| `Eq, Hash` | use as a map key or set element | none |
+| `Debug` | `debug(x)`, and `assert_equal` on the type | none |
+| `Default` | `T::default()`, from the field defaults | `std.ops.Default` |
+| `Serialize, Deserialize` | JSON `encode` and `decode`, `env_decode`, regex `decode`, HTTP `json` and `set_json`, query and form values | `std.encoding` |
+| `MapKey` | a payload-free enum as a JSON object key | `std.encoding` |
+| `Cli` | a command-line parser with `--help` ([how-to/cli-tool.md](../scenarios/cli-tool.md)) | `std.cli` |
+| `Validate` | `value.validated()`, checking the rule facts on its fields ([how-to/configuration.md](../scenarios/configuration.md)) | `std.validate` |
+| `Arbitrary` | generated inputs for `it_prop` | `std.testing` |
+
+Values copy, so there is no `Clone` to derive. An `@error` enum gets
+`Display` and `Error` from its messages ([errors](errors.md)).
+
+```hd
+@derive(Eq, PartialOrd, Ord, Hash, Debug)
+struct Version:
+    major: u32
+    minor: u32
+
+impl Display for Version:
+    fn to_string(&self) -> string: "${self.major}.${self.minor}"
+
+a := Version { major: 1, minor: 2 }
+b := Version { major: 1, minor: 10 }
+let mut seen: Map[Version, string] = {}
+seen[a] = "old"
+println("$a < $b: ${a < b}; newest ${[a, b].sorted()[1]}; ${seen.len()} ${debug(a)}")
+```
+
+```output
+1.2 < 1.10: true; newest 1.10; 1 Version { major: 1, minor: 2 }
+```
+
+Implementing `Display` is what lets a type appear in `"$value"`.
+
+**Field facts** configure one derive from the field. `@rename("qty")` and
+`@skip()` change the JSON view; `@rename_all(.CamelCase)` on the type
+renames every field. `@short('n')` and `@positional` shape a `Cli`
+argument, and `@range(1, 99)`, `@length(1, 80)` and the other
+`std.validate` rules feed `Validate`. Each fact is imported from the
+module of its trait.
+
+```hd
+use std.encoding.{Deserialize, MapKey, Serialize, rename, skip}
+use std.encoding.json.{decode, encode}
+use std.ops.Default
+
+@derive(Eq, Hash, Debug, Serialize, Deserialize, MapKey)
+enum Size:
+    Small
+    Large
+
+@derive(Default, Serialize, Deserialize, Eq, Debug)
+struct Order:
+    @rename("qty")
+    quantity: u32 = 1
+    sizes: Map[Size, u32]
+    @skip()
+    cached_total: u32 = 0
+
+order := Order { ...Order::default(), sizes: {.Large: 2}, cached_total: 7 }
+text := encode(order)
+println("${debug(Order::default())} $text")
+println(debug(decode::[Order](text)))
+```
+
+```output
+Order { quantity: 1, sizes: {}, cached_total: 0 } {"qty":1,"sizes":{"Large":2}}
+Result.Ok(Order { quantity: 1, sizes: {Size.Large: 2}, cached_total: 0 })
+```
 
 ## A template
 

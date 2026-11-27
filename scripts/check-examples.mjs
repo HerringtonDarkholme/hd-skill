@@ -5,6 +5,7 @@
 //   HD=/path/to/hd node scripts/check-examples.mjs
 //   node scripts/check-examples.mjs --keep     keep the scratch directory
 //   node scripts/check-examples.mjs language/  only the files whose path contains a word
+//   node scripts/check-examples.mjs --links    only check links, which is fast
 //
 // What it checks:
 //
@@ -23,11 +24,14 @@
 //      # expect: ok             `hd check` reports nothing
 //      # expect: prints TEXT    `hd FILE` prints the line TEXT
 //
+// 4. Each relative link in skills/**/*.md points at a file that exists, and
+//    a `#anchor` on a Markdown link names a heading of that file.
+//
 // Cost: one pass over each Markdown file, then at most three `hd` processes
 // per example, run one at a time. Every process has a time limit.
 
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -212,6 +216,36 @@ function checkMistake(path) {
     }
 }
 
+// A heading's anchor, as GitHub writes it: lower case, punctuation dropped,
+// spaces turned into hyphens.
+function slug(heading) {
+    return heading.trim().toLowerCase().replace(/[^\p{L}\p{N}\s_-]/gu, "").replace(/\s/g, "-");
+}
+
+function anchorsOf(path) {
+    const text = readFileSync(path, "utf8").replace(/^```[\s\S]*?^```/gm, "");
+    return new Set([...text.matchAll(/^#{1,6}\s+(.+)$/gm)].map((m) => slug(m[1])));
+}
+
+function checkLinks(path) {
+    // Code is not prose: drop fenced blocks and inline code before looking for links.
+    const text = readFileSync(path, "utf8").replace(/^```[\s\S]*?^```/gm, "").replace(/`[^`\n]*`/g, "");
+    for (const match of text.matchAll(/\]\(([^)\s]+)\)/g)) {
+        const target = match[1];
+        if (/^[a-z]+:/.test(target)) continue;
+        const [file, anchor] = target.split("#");
+        const resolved = file === "" ? path : resolve(dirname(path), file);
+        const where = relative(root, path);
+        if (!existsSync(resolved)) {
+            fail(where, `broken link \`${target}\``, "no such file");
+            continue;
+        }
+        if (anchor && resolved.endsWith(".md") && !anchorsOf(resolved).has(anchor)) {
+            fail(where, `broken anchor \`${target}\``, `no heading with the anchor #${anchor}`);
+        }
+    }
+}
+
 const version = run(["help"], root);
 if (version.status !== 0) {
     console.error(`cannot run \`${hd}\`: ${version.stderr.trim()}\nInstall it with \`cargo install hd-lang\`, or set HD=/path/to/hd.`);
@@ -221,6 +255,12 @@ if (version.status !== 0) {
 const only = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
 const selected = (path) => only.length === 0 || only.some((part) => relative(root, path).includes(part));
 
+for (const path of filesUnder(join(root, "skills"), ".md").filter(selected)) checkLinks(path);
+if (process.argv.includes("--links")) {
+    for (const failure of failures) console.error(`FAIL ${failure}\n`);
+    console.log(`links checked, ${failures.length} failed`);
+    process.exit(failures.length ? 1 : 0);
+}
 for (const path of filesUnder(join(root, "skills"), ".md").filter(selected)) checkMarkdown(path);
 for (const path of filesUnder(join(root, "checks", "mistakes"), ".hd").filter(selected)) checkMistake(path);
 
