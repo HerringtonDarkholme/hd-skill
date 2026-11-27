@@ -1,2 +1,0 @@
-## Run-length encoding of integer lists.
-pub use self.rle.{Run, encode, decode}

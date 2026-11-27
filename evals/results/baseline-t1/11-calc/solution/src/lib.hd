@@ -1,2 +1,0 @@
-## The integer expression evaluator: `eval` and its error type.
-pub use self.calc.{CalcError, eval}
