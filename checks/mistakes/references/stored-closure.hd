@@ -1,6 +1,9 @@
 # expect: check local-reference-escapes
-struct Button:
-    on_click: fn() -> void
+struct Point:
+    x: i32
 
-fn button(on_click: fn() -> void) -> Button:
-    Button { on_click: on_click }
+fn keep(f: fn() -> i32) -> fn() -> i32:
+    f
+
+fn borrowed(p: &Point) -> fn() -> i32:
+    keep(fn() -> i32: p.x)
