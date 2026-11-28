@@ -1,2 +1,2 @@
-# expect: check syntax-error
+# expect: check missing-binding-type
 pub let LIMIT = 3

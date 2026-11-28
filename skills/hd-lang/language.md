@@ -45,7 +45,8 @@ println(count + seen.len() + low + high)    # 14
 
 An unused `Result` or optional is `discarded-must-use-value`: discard it
 with `_ := expr`. A number or string needs only `let` (`hd lint` reports
-`redundant-let-mut`). There is no `pub let`: export a function instead.
+`redundant-let-mut`). A public binding writes its type, as in
+`pub let LIMIT: usize = 3`; importing modules may read it but never write it.
 
 ## Numbers and conversion
 
