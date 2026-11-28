@@ -95,6 +95,32 @@ println("$line / $pattern / ${line.len()} bytes / {name}")
 Ada has 3 items, first letter A, cost $6 / \d+ items / 40 bytes / {name}
 ```
 
+A multiline string is `"""..."""`. It interpolates and takes escapes like
+`"..."`, and keeps its lines exactly as written: no dedent, no trim. Use it
+for text with several lines, such as generated source, a report or a
+template, rather than joining `"\n"` pieces or pushing line by line.
+
+```hd
+use std.console.print
+name := "Record"
+field := "count"
+source := """struct ${name}:
+    ${field}: i64
+
+fn make() -> ${name}:
+    ${name} { ${field}: 1 }
+"""
+print(source)
+```
+
+```output
+struct Record:
+    count: i64
+
+fn make() -> Record:
+    Record { count: 1 }
+```
+
 Only a `Display` type interpolates: numbers, `bool`, `char`, `string`, and
 types that implement `Display`. For an optional, list, map or struct write
 `${debug(x)}`. `+` joins two strings; in a loop use `parts.join(",")` or a
